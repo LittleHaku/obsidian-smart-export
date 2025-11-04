@@ -41,8 +41,6 @@ export default class SmartExportPlugin extends Plugin {
 
 		// This adds a settings tab so the user can configure various aspects of the plugin
 		this.addSettingTab(new SmartExportSettingTab(this.app, this));
-
-		console.log("Smart Export plugin loaded.");
 	}
 
 	/**
@@ -50,7 +48,6 @@ export default class SmartExportPlugin extends Plugin {
 	 * It's used to clean up any resources created by the plugin.
 	 */
 	onunload() {
-		console.log("Smart Export plugin unloaded.");
 	}
 
 	async loadSettings() {
