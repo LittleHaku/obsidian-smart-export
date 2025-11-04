@@ -30,7 +30,7 @@ body:
         - What is currently difficult or impossible to do?
         - How would this feature benefit other users?
     validations:
-      required: true
+      required: false
 
   - type: textarea
     id: proposed-solution
@@ -42,7 +42,7 @@ body:
         - How would users interact with this feature?
         - What settings or options should be available?
     validations:
-      required: true
+      required: false
 
   - type: dropdown
     id: feature-category
@@ -59,7 +59,7 @@ body:
         - Integration (with other plugins)
         - Other
     validations:
-      required: true
+      required: false
 
   - type: dropdown
     id: priority
@@ -71,7 +71,7 @@ body:
         - Medium - This would significantly improve my workflow
         - Low - This would be a nice-to-have enhancement
     validations:
-      required: true
+      required: false
 
   - type: textarea
     id: alternatives

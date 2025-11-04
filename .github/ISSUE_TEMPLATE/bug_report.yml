@@ -32,7 +32,7 @@ body:
         4. Click export...
         5. See error...
     validations:
-      required: true
+      required: false
 
   - type: textarea
     id: expected-behavior
@@ -41,7 +41,7 @@ body:
       description: What did you expect to happen?
       placeholder: Describe the expected behavior.
     validations:
-      required: true
+      required: false
 
   - type: dropdown
     id: export-format
@@ -54,7 +54,7 @@ body:
         - Print-Friendly Markdown
         - Not applicable
     validations:
-      required: true
+      required: false
 
   - type: input
     id: obsidian-version
@@ -63,7 +63,7 @@ body:
       description: What version of Obsidian are you using?
       placeholder: "1.5.3"
     validations:
-      required: true
+      required: false
 
   - type: input
     id: plugin-version
@@ -72,7 +72,7 @@ body:
       description: What version of Smart Export are you using?
       placeholder: "1.0.0"
     validations:
-      required: true
+      required: false
 
   - type: dropdown
     id: operating-system
@@ -84,7 +84,7 @@ body:
         - macOS
         - Linux
     validations:
-      required: true
+      required: false
 
   - type: textarea
     id: vault-info
