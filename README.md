@@ -1,15 +1,17 @@
-# Smart Export for LLMs
+# Smart Export
 
-[![CI/CD](https://github.com/LittleHaku/smart-export-for-llms/actions/workflows/ci.yml/badge.svg)](https://github.com/LittleHaku/smart-export-for-llms/actions/workflows/ci.yml)
-[![codecov](https://codecov.io/gh/LittleHaku/smart-export-for-llms/branch/main/graph/badge.svg)](https://codecov.io/gh/LittleHaku/smart-export-for-llms/branch/main)
+[![CI/CD](https://github.com/LittleHaku/smart-export/actions/workflows/ci.yml/badge.svg)](https://github.com/LittleHaku/smart-export/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/LittleHaku/smart-export/branch/main/graph/badge.svg)](https://codecov.io/gh/LittleHaku/smart-export/branch/main)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Version](https://img.shields.io/github/v/release/LittleHaku/smart-export-for-llms)](https://github.com/LittleHaku/smart-export-for-llms/releases)
-[![Downloads](https://img.shields.io/github/downloads/LittleHaku/smart-export-for-llms/total)](https://github.com/LittleHaku/smart-export-for-llms/releases)
+[![Version](https://img.shields.io/github/v/release/LittleHaku/smart-export)](https://github.com/LittleHaku/smart-export/releases)
+[![Downloads](https://img.shields.io/github/downloads/LittleHaku/smart-export/total)](https://github.com/LittleHaku/smart-export/releases)
 [![Buy Me a Coffee](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-support%20me-orange?logo=buy-me-a-coffee&logoColor=white&style=flat)](https://buymeacoffee.com/littlehaku)
+
+Obsidian plugin that lets you export your notes by following the wikilinks until a certain depth. It is optimized for human readable exports and LLM exports.
 
 Ever found yourself manually copying notes from Obsidian to paste into ChatGPT or Claude? I built this plugin to solve that exact problem.
 
-Smart Export automatically finds all the notes connected to your starting point and exports them in a format that LLMs can actually work with. No more copy-pasting individual notes or losing the connections between your ideas.
+Smart Export automatically finds all the notes connected to your starting point and exports them in a format that both humans and LLMs can actually work with. No more copy-pasting individual notes or losing the connections between your ideas.
 
 ## What it does
 
@@ -44,7 +46,7 @@ For beta testing and the easiest way to install pre-release plugins, use the [BR
 
 1. In Obsidian, go to **Settings → Community Plugins → Browse** and search for "BRAT" by TfTHacker. Install and enable it.
 2. Once BRAT is enabled, open its settings and click **Add a new plugin**.
-3. Paste this repository link: `https://github.com/LittleHaku/smart-export-for-llms`
+3. Paste this repository link: `https://github.com/LittleHaku/smart-export`
 4. Select the latest version when prompted.
 5. BRAT will handle installation and updates for you.
 
@@ -102,7 +104,7 @@ Content with [[wikilinks]] preserved...
 
 ## Settings
 
-You can customize the defaults in Settings → Smart Export for LLMs:
+You can customize the defaults in Settings → Smart Export:
 
 - **Default Content Depth**: How deep to go with full content (1-20)
 - **Default Title Depth**: How deep to go with titles only (1-30)
@@ -174,8 +176,8 @@ I'd love your help improving this plugin! Check out the [Contributing Guidelines
 ### Development setup
 
 ```bash
-git clone https://github.com/LittleHaku/smart-export-for-llms.git
-cd smart-export-for-llms
+git clone https://github.com/LittleHaku/obsidian-smart-export.git
+cd smart-export
 pnpm install
 pnpm run dev
 ```
@@ -186,7 +188,7 @@ MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## Support
 
-If Smart Export for LLMs helps you work more efficiently, consider supporting its development:
+If Smart Export helps you work more efficiently, consider supporting its development:
 
 - ⭐ **Star this repository** to show your support
 - 🐛 **Report bugs** to help improve the plugin

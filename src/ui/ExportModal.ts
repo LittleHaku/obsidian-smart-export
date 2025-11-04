@@ -48,11 +48,11 @@ export class ExportModal extends Modal {
 		// Header section with title and description
 		const headerEl = contentEl.createDiv({ cls: "smart-export-header" });
 		headerEl.createEl("h1", {
-			text: "Smart Export for LLMs",
+			text: "Smart Export",
 			cls: "smart-export-title",
 		});
 		headerEl.createEl("p", {
-			text: "Intelligently export interconnected notes using breadth-first traversal of wikilinks. Perfect for feeding context to Large Language Models.",
+			text: "Export interconnected notes by following wikilinks to a configurable depth for readable summaries and LLM-ready context.",
 			cls: "smart-export-description",
 		});
 
