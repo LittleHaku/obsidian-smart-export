@@ -21,11 +21,7 @@ export class ObsidianAPI {
 	 * @returns {TFile | null} The TFile object or null if not found.
 	 */
 	public getTFile(path: string): TFile | null {
-		const file = this.app.vault.getAbstractFileByPath(path);
-		if (file instanceof TFile) {
-			return file;
-		}
-		return null;
+		return this.app.vault.getFileByPath(path);
 	}
 
 	/**
