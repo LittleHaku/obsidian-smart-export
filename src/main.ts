@@ -47,8 +47,7 @@ export default class SmartExportPlugin extends Plugin {
 	 * This method is called when the plugin is unloaded.
 	 * It's used to clean up any resources created by the plugin.
 	 */
-	onunload() {
-	}
+	onunload() {}
 
 	async loadSettings() {
 		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
