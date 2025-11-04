@@ -4,6 +4,7 @@ import { App, Vault, MetadataCache } from "obsidian";
 // Partial mocks to satisfy TypeScript
 export const mockVault = {
 	getAbstractFileByPath: vi.fn(),
+	getFileByPath: vi.fn(),
 	cachedRead: vi.fn(),
 	getFiles: vi.fn(() => []),
 } as unknown as Vault;
