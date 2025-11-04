@@ -19,7 +19,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Migrated from `public getTFile(path: string): TFile | null {` to `Vault.getFileByPath()`
 - Made `isDesktopOnly` to return `false` to allow mobile installation
 
-
 ## [1.0.0] - 2025-01-25 - 🎉 **MVP RELEASE**
 
 ### 🎯 **MVP Complete**
