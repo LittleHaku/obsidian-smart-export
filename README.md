@@ -188,7 +188,6 @@ pnpm run dev
 
 Install the community plugin `Hot Reload` so that the plugin updates as you make changes. Remember to have `pnpm run dev` running.
 
-
 ## License
 
 MIT License - see the [LICENSE](LICENSE) file for details.
