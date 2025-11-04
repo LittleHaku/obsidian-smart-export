@@ -75,7 +75,7 @@ class SmartExportSettingTab extends PluginSettingTab {
 
 		containerEl.empty();
 
-		containerEl.createEl("h2", { text: "Smart Export for LLMs Settings" });
+		containerEl.createEl("h2", { text: "Smart Export Settings" });
 
 		new Setting(containerEl)
 			.setName("Default Content Depth")

@@ -1,6 +1,6 @@
-# Contributing to Smart Export for LLMs
+# Contributing to Smart Export
 
-Thank you for your interest in contributing to Smart Export for LLMs. This document provides guidelines and information for contributors to help maintain code quality and ensure a smooth development process.
+Thank you for your interest in contributing to Smart Export. This document provides guidelines and information for contributors to help maintain code quality and ensure a smooth development process.
 
 ## How to Contribute
 
@@ -27,8 +27,8 @@ We welcome contributions of all types:
 2. **Clone** your fork locally:
 
    ```bash
-   git clone https://github.com/LittleHaku/smart-export-for-llms.git
-   cd smart-export-for-llms
+   git clone https://github.com/LittleHaku/obsidian-smart-export.git
+   cd obsidian-smart-export
    ```
 
 3. **Install dependencies**:
@@ -50,7 +50,7 @@ We welcome contributions of all types:
      ```bash
      # Inside your test vault
      cd .obsidian/plugins
-     git clone https://github.com/<your-username>/smart-export-for-llms.git smart-export-for-llms
+     git clone https://github.com/<your-username>/obsidian-smart-export.git obsidian-smart-export
      ```
 
    Then reload Obsidian and enable the plugin.
@@ -236,9 +236,9 @@ Pull requests are evaluated on:
 
 ### Questions and Support
 
-- **General questions**: [GitHub Discussions](https://github.com/LittleHaku/smart-export-for-llms/discussions)
-- **Bug reports**: [GitHub Issues](https://github.com/LittleHaku/smart-export-for-llms/issues)
-- **Feature requests**: [GitHub Issues](https://github.com/LittleHaku/smart-export-for-llms/issues)
+- **General questions**: [GitHub Discussions](https://github.com/LittleHaku/obsidian-smart-export/discussions)
+- **Bug reports**: [GitHub Issues](https://github.com/LittleHaku/obsidian-smart-export/issues)
+- **Feature requests**: [GitHub Issues](https://github.com/LittleHaku/obsidian-smart-export/issues)
 
 ### Development Resources
 
@@ -248,4 +248,4 @@ Pull requests are evaluated on:
 
 ---
 
-Thank you for contributing to Smart Export for LLMs. Your contributions help make this plugin better for the entire Obsidian community.
+Thank you for contributing to Smart Export. Your contributions help make this plugin better for the entire Obsidian community.
