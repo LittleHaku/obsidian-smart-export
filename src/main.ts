@@ -25,7 +25,7 @@ export default class SmartExportPlugin extends Plugin {
 		await this.loadSettings();
 
 		// This creates an icon in the left ribbon.
-		this.addRibbonIcon("brain-circuit", "Smart Export", (evt: MouseEvent) => {
+		this.addRibbonIcon("brain-circuit", "Smart export", (evt: MouseEvent) => {
 			// Called when the user clicks the icon.
 			new ExportModal(this.app, this.settings).open();
 		});
@@ -33,7 +33,7 @@ export default class SmartExportPlugin extends Plugin {
 		// This adds a command that can be triggered anywhere
 		this.addCommand({
 			id: "open-smart-export-modal",
-			name: "Open Smart Export",
+			name: "Open smart export",
 			callback: () => {
 				new ExportModal(this.app, this.settings).open();
 			},
@@ -72,10 +72,10 @@ class SmartExportSettingTab extends PluginSettingTab {
 
 		containerEl.empty();
 
-		containerEl.createEl("h2", { text: "Smart Export Settings" });
+		containerEl.createEl("h2", { text: "Smart export settings" });
 
 		new Setting(containerEl)
-			.setName("Default Content Depth")
+			.setName("Default content depth")
 			.setDesc("Default number of levels to include full note content (1-20)")
 			.addSlider((slider) =>
 				slider
@@ -94,7 +94,7 @@ class SmartExportSettingTab extends PluginSettingTab {
 			);
 
 		new Setting(containerEl)
-			.setName("Default Title Depth")
+			.setName("Default title depth")
 			.setDesc("Default number of additional levels to include titles only (1-30)")
 			.addSlider((slider) =>
 				slider
@@ -113,13 +113,13 @@ class SmartExportSettingTab extends PluginSettingTab {
 			);
 
 		new Setting(containerEl)
-			.setName("Default Export Format")
+			.setName("Default export format")
 			.setDesc("Choose your preferred export format")
 			.addDropdown((dropdown) =>
 				dropdown
-					.addOption("xml", "XML - Structured format with metadata")
-					.addOption("llm-markdown", "LLM Markdown - Optimized for AI consumption")
-					.addOption("print-friendly-markdown", "Print-Friendly - Clean, readable format")
+					.addOption("xml", "XML - structured format with metadata")
+					.addOption("llm-markdown", "LLM Markdown - optimized for AI consumption")
+					.addOption("print-friendly-markdown", "Print-friendly - clean, readable format")
 					.setValue(this.plugin.settings.defaultExportFormat)
 					.onChange(async (value: "xml" | "llm-markdown" | "print-friendly-markdown") => {
 						this.plugin.settings.defaultExportFormat = value;
@@ -128,7 +128,7 @@ class SmartExportSettingTab extends PluginSettingTab {
 			);
 
 		new Setting(containerEl)
-			.setName("Auto-select Current Note")
+			.setName("Auto-select current note")
 			.setDesc(
 				"Automatically select the currently active note as the root when opening the export dialog"
 			)
