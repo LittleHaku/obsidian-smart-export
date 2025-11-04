@@ -6,7 +6,7 @@ on:
       - "*"
 
 env:
-  PLUGIN_NAME: smart-export
+  PLUGIN_NAME: obsidian-smart-export
 
 permissions:
   contents: write

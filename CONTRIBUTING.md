@@ -28,7 +28,7 @@ We welcome contributions of all types:
 
    ```bash
    git clone https://github.com/LittleHaku/obsidian-smart-export.git
-   cd smart-export
+   cd obsidian-smart-export
    ```
 
 3. **Install dependencies**:
@@ -50,7 +50,7 @@ We welcome contributions of all types:
      ```bash
      # Inside your test vault
      cd .obsidian/plugins
-     git clone https://github.com/<your-username>/smart-export.git smart-export
+     git clone https://github.com/<your-username>/obsidian-smart-export.git obsidian-smart-export
      ```
 
    Then reload Obsidian and enable the plugin.
@@ -236,9 +236,9 @@ Pull requests are evaluated on:
 
 ### Questions and Support
 
-- **General questions**: [GitHub Discussions](https://github.com/LittleHaku/smart-export/discussions)
-- **Bug reports**: [GitHub Issues](https://github.com/LittleHaku/smart-export/issues)
-- **Feature requests**: [GitHub Issues](https://github.com/LittleHaku/smart-export/issues)
+- **General questions**: [GitHub Discussions](https://github.com/LittleHaku/obsidian-smart-export/discussions)
+- **Bug reports**: [GitHub Issues](https://github.com/LittleHaku/obsidian-smart-export/issues)
+- **Feature requests**: [GitHub Issues](https://github.com/LittleHaku/obsidian-smart-export/issues)
 
 ### Development Resources
 

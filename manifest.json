@@ -1,9 +1,9 @@
 {
-	"id": "smart-export",
+	"id": "obsidian-smart-export",
 	"name": "Smart Export",
 	"version": "1.0.2",
 	"minAppVersion": "0.15.0",
-	"description": "Obsidian plugin that follows wikilinks to a configurable depth for human-readable and LLM-ready exports.",
+	"description": "Obsidian plugin that follows wikilinks to a configurable depth, joining the notes into a single export.",
 	"author": "Iván Sotillo",
 	"authorUrl": "https://github.com/LittleHaku",
 	"fundingUrl": "https://buymeacoffee.com/littlehaku",

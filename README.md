@@ -1,10 +1,10 @@
 # Smart Export
 
-[![CI/CD](https://github.com/LittleHaku/smart-export/actions/workflows/ci.yml/badge.svg)](https://github.com/LittleHaku/smart-export/actions/workflows/ci.yml)
-[![codecov](https://codecov.io/gh/LittleHaku/smart-export/branch/main/graph/badge.svg)](https://codecov.io/gh/LittleHaku/smart-export/branch/main)
+[![CI/CD](https://github.com/LittleHaku/obsidian-smart-export/actions/workflows/ci.yml/badge.svg)](https://github.com/LittleHaku/obsidian-smart-export/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/LittleHaku/obsidian-smart-export/branch/main/graph/badge.svg)](https://codecov.io/gh/LittleHaku/obsidian-smart-export/branch/main)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Version](https://img.shields.io/github/v/release/LittleHaku/smart-export)](https://github.com/LittleHaku/smart-export/releases)
-[![Downloads](https://img.shields.io/github/downloads/LittleHaku/smart-export/total)](https://github.com/LittleHaku/smart-export/releases)
+[![Version](https://img.shields.io/github/v/release/LittleHaku/obsidian-smart-export)](https://github.com/LittleHaku/obsidian-smart-export/releases)
+[![Downloads](https://img.shields.io/github/downloads/LittleHaku/obsidian-smart-export/total)](https://github.com/LittleHaku/obsidian-smart-export/releases)
 [![Buy Me a Coffee](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-support%20me-orange?logo=buy-me-a-coffee&logoColor=white&style=flat)](https://buymeacoffee.com/littlehaku)
 
 Obsidian plugin that lets you export your notes by following the wikilinks until a certain depth. It is optimized for human readable exports and LLM exports.
@@ -179,7 +179,7 @@ I'd love your help improving this plugin! Check out the [Contributing Guidelines
 
 ```bash
 git clone https://github.com/LittleHaku/obsidian-smart-export.git
-cd smart-export
+cd obsidian-smart-export
 pnpm install
 pnpm run dev
 ```
