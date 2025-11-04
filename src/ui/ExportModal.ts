@@ -44,11 +44,12 @@ export class ExportModal extends Modal {
 	onOpen() {
 		const { contentEl } = this;
 		contentEl.empty();
+		contentEl.addClass("smart-export-modal");
 
 		// Header section with title and description
 		const headerEl = contentEl.createDiv({ cls: "smart-export-header" });
 		headerEl.createEl("h1", {
-			text: "Smart Export",
+			text: "Smart export",
 			cls: "smart-export-title",
 		});
 		headerEl.createEl("p", {
@@ -58,10 +59,10 @@ export class ExportModal extends Modal {
 
 		// Root note selection section
 		const rootSection = contentEl.createDiv({ cls: "smart-export-section" });
-		rootSection.createEl("h3", { text: "📝 Root Note", cls: "smart-export-section-title" });
+		rootSection.createEl("h3", { text: "📝 Root note", cls: "smart-export-section-title" });
 
 		new Setting(rootSection)
-			.setName("Starting Point")
+			.setName("Starting point")
 			.setDesc("Choose the note to start traversing from. Default: current active note")
 			.addButton((button) => {
 				button.setButtonText("Select").onClick(() => {
@@ -88,20 +89,20 @@ export class ExportModal extends Modal {
 
 		// Depth configuration section
 		const depthSection = contentEl.createDiv({ cls: "smart-export-section" });
-		depthSection.createEl("h3", { text: "🌊 Traversal Depth", cls: "smart-export-section-title" });
+		depthSection.createEl("h3", { text: "🌊 Traversal depth", cls: "smart-export-section-title" });
 
 		const depthInfo = depthSection.createDiv({ cls: "smart-export-info-box" });
 		depthInfo.createEl("span", { text: "💡 " });
 		depthInfo.createEl("strong", { text: "How it works: " });
 		depthInfo.createEl("span", {
-			text: "Content Depth includes full note text, Title Depth adds linked note titles only. Title Depth must be ≥ Content Depth.",
+			text: "Content depth includes full note text, title depth adds linked note titles only. Title depth must be ≥ content depth.",
 		});
 
 		let contentSlider: SliderComponent;
 		let titleSlider: SliderComponent;
 
 		new Setting(depthSection)
-			.setName("Content Depth")
+			.setName("Content depth")
 			.setDesc("📄 Levels of linked notes to include full content (text, images, etc.)")
 			.addSlider((slider) => {
 				contentSlider = slider;
@@ -120,7 +121,7 @@ export class ExportModal extends Modal {
 			});
 
 		new Setting(depthSection)
-			.setName("Title Depth")
+			.setName("Title depth")
 			.setDesc("🏷️ Additional levels to include titles only (for context and navigation)")
 			.addSlider((slider) => {
 				titleSlider = slider;
@@ -140,16 +141,16 @@ export class ExportModal extends Modal {
 
 		// Export configuration section
 		const exportSection = contentEl.createDiv({ cls: "smart-export-section" });
-		exportSection.createEl("h3", { text: "📤 Export Settings", cls: "smart-export-section-title" });
+		exportSection.createEl("h3", { text: "📤 Export settings", cls: "smart-export-section-title" });
 
 		new Setting(exportSection)
-			.setName("Output Format")
+			.setName("Output format")
 			.setDesc("Choose the format optimized for your workflow")
 			.addDropdown((dropdown) => {
 				dropdown
-					.addOption("xml", "📋 XML - Structured format with metadata")
-					.addOption("llm-markdown", "🤖 LLM Markdown - Optimized for AI consumption")
-					.addOption("print-friendly-markdown", "🖨️ Print-Friendly - Clean, readable format")
+					.addOption("xml", "📋 XML - structured format with metadata")
+					.addOption("llm-markdown", "🤖 LLM markdown - optimized for AI consumption")
+					.addOption("print-friendly-markdown", "🖨️ Print-friendly - clean, readable format")
 					.setValue(this.exportFormat)
 					.onChange((value: "xml" | "llm-markdown" | "print-friendly-markdown") => {
 						this.exportFormat = value;
@@ -171,11 +172,11 @@ export class ExportModal extends Modal {
 		});
 
 		new Setting(exportActionSection)
-			.setName("Ready to Export?")
+			.setName("Ready to export?")
 			.setDesc("Generate your smart export and copy it to clipboard")
 			.addButton((button) => {
 				button
-					.setButtonText("🚀 Export to Clipboard")
+					.setButtonText("🚀 Export to clipboard")
 					.setCta()
 					.onClick(() => {
 						this.onExport();
@@ -324,5 +325,6 @@ export class ExportModal extends Modal {
 	onClose() {
 		const { contentEl } = this;
 		contentEl.empty();
+		contentEl.removeClass("smart-export-modal");
 	}
 }

@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.3] - 2025-11-04
+
+### Fixed
+
+- No more overwritten core styles
+- Removed unused `.slider` CSS class
+- Removed `console.log` statements from production code
+- Adapted texts to sentence case
+- Removed the heading in the settings to adhere to Obsidian UI guidelines
+- Migrated from `public getTFile(path: string): TFile | null {` to `Vault.getFileByPath()`
+- Made `isDesktopOnly` to return `false` to allow mobile installation
+
 ## [1.0.0] - 2025-01-25 - 🎉 **MVP RELEASE**
 
 ### 🎯 **MVP Complete**

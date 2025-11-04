@@ -70,6 +70,7 @@ describe("BFSTraversal", () => {
 
 		// Mock App object behavior
 		mockApp.vault.getAbstractFileByPath = vi.fn((path: string) => mockFiles[path]);
+		mockApp.vault.getFileByPath = vi.fn((path: string) => mockFiles[path] || null);
 		mockApp.vault.cachedRead = vi.fn((file: TFile) =>
 			Promise.resolve(mockFileContents[file.path] || "")
 		);
