@@ -110,27 +110,27 @@ Modern, clean styling for the export modal interface
 }
 
 /* Setting Enhancements */
-.setting-item {
+.smart-export-modal .setting-item {
 	border: none;
 	padding: 12px 0;
 }
 
-.setting-item:not(:last-child) {
+.smart-export-modal .setting-item:not(:last-child) {
 	border-bottom: 1px solid var(--background-modifier-border-hover);
 }
 
-.setting-item-name {
+.smart-export-modal .setting-item-name {
 	font-weight: 500;
 	color: var(--text-normal);
 }
 
-.setting-item-description {
+.smart-export-modal .setting-item-description {
 	color: var(--text-muted);
 	margin-top: 4px;
 }
 
 /* Dropdown Improvements */
-.dropdown select {
+.smart-export-modal .dropdown select {
 	background: var(--background-primary);
 	border: 1px solid var(--background-modifier-border);
 	border-radius: 4px;
@@ -139,7 +139,7 @@ Modern, clean styling for the export modal interface
 }
 
 /* Button Improvements */
-.mod-cta {
+.smart-export-modal .mod-cta {
 	background: var(--interactive-accent) !important;
 	color: var(--text-on-accent) !important;
 	border: none !important;
@@ -150,7 +150,7 @@ Modern, clean styling for the export modal interface
 	transition: background-color 0.2s ease !important;
 }
 
-.mod-cta:hover {
+.smart-export-modal .mod-cta:hover {
 	background: var(--interactive-accent-hover) !important;
 }
 

@@ -44,6 +44,7 @@ export class ExportModal extends Modal {
 	onOpen() {
 		const { contentEl } = this;
 		contentEl.empty();
+		contentEl.addClass("smart-export-modal");
 
 		// Header section with title and description
 		const headerEl = contentEl.createDiv({ cls: "smart-export-header" });
@@ -324,5 +325,6 @@ export class ExportModal extends Modal {
 	onClose() {
 		const { contentEl } = this;
 		contentEl.empty();
+		contentEl.removeClass("smart-export-modal");
 	}
 }
