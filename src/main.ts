@@ -72,8 +72,6 @@ class SmartExportSettingTab extends PluginSettingTab {
 
 		containerEl.empty();
 
-		containerEl.createEl("h2", { text: "Smart export settings" });
-
 		new Setting(containerEl)
 			.setName("Default content depth")
 			.setDesc("Default number of levels to include full note content (1-20)")
