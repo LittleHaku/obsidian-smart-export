@@ -154,11 +154,6 @@ Modern, clean styling for the export modal interface
 	background: var(--interactive-accent-hover) !important;
 }
 
-/* Slider Improvements */
-.slider {
-	margin: 8px 0;
-}
-
 /* Remove old separator styling */
 .smart-export-separator {
 	display: none;
