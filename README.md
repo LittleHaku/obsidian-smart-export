@@ -177,12 +177,17 @@ I'd love your help improving this plugin! Check out the [Contributing Guidelines
 
 ### Development setup
 
+Clone the repo inside your vault `/.obsidian/plugins/`. I recommend using a dev vault just in case you mess something up.
+
 ```bash
 git clone https://github.com/LittleHaku/obsidian-smart-export.git
 cd obsidian-smart-export
 pnpm install
 pnpm run dev
 ```
+
+Install the community plugin `Hot Reload` so that the plugin updates as you make changes. Remember to have `pnpm run dev` running.
+
 
 ## License
 
