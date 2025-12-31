@@ -114,11 +114,11 @@ class SmartExportSettingTab extends PluginSettingTab {
 			.setName("Default export format")
 			.setDesc("Choose your preferred export format")
 			.addDropdown((dropdown) =>
-					dropdown
-						.addOption("xml", "XML - structured format with metadata")
-						.addOption("llm-markdown", "Markdown for AI tools - optimized for model input")
-						.addOption("print-friendly-markdown", "Print-friendly - clean, readable format")
-						.setValue(this.plugin.settings.defaultExportFormat)
+				dropdown
+					.addOption("xml", "XML - structured format with metadata")
+					.addOption("llm-markdown", "Markdown for AI tools - optimized for model input")
+					.addOption("print-friendly-markdown", "Print-friendly - clean, readable format")
+					.setValue(this.plugin.settings.defaultExportFormat)
 					.onChange(async (value: "xml" | "llm-markdown" | "print-friendly-markdown") => {
 						this.plugin.settings.defaultExportFormat = value;
 						await this.plugin.saveSettings();

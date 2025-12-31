@@ -173,13 +173,13 @@ export class ExportModal extends Modal {
 
 		new Setting(exportActionSection)
 			.setName("Ready to export?")
-				.setDesc("Generate your smart export and copy it to clipboard")
-				.addButton((button) => {
-					button
-						.setButtonText("🚀 export to clipboard")
-						.setCta()
-						.onClick(() => {
-							void this.onExport();
+			.setDesc("Generate your smart export and copy it to clipboard")
+			.addButton((button) => {
+				button
+					.setButtonText("🚀 export to clipboard")
+					.setCta()
+					.onClick(() => {
+						void this.onExport();
 					});
 			});
 	}
