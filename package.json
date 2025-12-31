@@ -1,6 +1,6 @@
 {
 	"name": "smart-export",
-	"version": "1.0.6",
+	"version": "1.0.7",
 	"description": "Plugin that exports linked notes by following wikilinks to a configurable depth, optimized for human-readable and LLM-friendly outputs.",
 	"main": "main.js",
 	"scripts": {
@@ -24,17 +24,20 @@
 	"author": "Iván Sotillo",
 	"license": "MIT",
 	"devDependencies": {
+		"@eslint/js": "^9.39.2",
+		"@eslint/json": "^0.14.0",
 		"@types/node": "^16.11.6",
-		"@typescript-eslint/eslint-plugin": "^8.19.1",
-		"@typescript-eslint/parser": "^8.19.1",
+		"@typescript-eslint/eslint-plugin": "^8.51.0",
+		"@typescript-eslint/parser": "^8.51.0",
 		"@vitest/coverage-v8": "^3.2.4",
-		"builtin-modules": "3.3.0",
 		"esbuild": "0.25.0",
-		"eslint": "8.57.0",
+		"eslint": "^9.39.2",
+		"eslint-plugin-obsidianmd": "^0.1.9",
 		"jsdom": "^26.1.0",
 		"obsidian": "latest",
 		"prettier": "^3.5.3",
 		"tslib": "2.4.0",
+		"typescript-eslint": "^8.51.0",
 		"typescript": "^5.7.2",
 		"vitest": "^3.2.4"
 	}

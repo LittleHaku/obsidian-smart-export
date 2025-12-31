@@ -32,8 +32,8 @@ export default class SmartExportPlugin extends Plugin {
 
 		// This adds a command that can be triggered anywhere
 		this.addCommand({
-			id: "open-smart-export-modal",
-			name: "Open smart export",
+			id: "open-export-modal",
+			name: "Open export",
 			callback: () => {
 				new ExportModal(this.app, this.settings).open();
 			},
@@ -50,7 +50,8 @@ export default class SmartExportPlugin extends Plugin {
 	onunload() {}
 
 	async loadSettings() {
-		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+		const storedSettings = (await this.loadData()) as Partial<SmartExportSettings> | null;
+		this.settings = { ...DEFAULT_SETTINGS, ...(storedSettings ?? {}) };
 	}
 
 	async saveSettings() {
@@ -115,7 +116,7 @@ class SmartExportSettingTab extends PluginSettingTab {
 			.addDropdown((dropdown) =>
 				dropdown
 					.addOption("xml", "XML - structured format with metadata")
-					.addOption("llm-markdown", "LLM Markdown - optimized for AI consumption")
+					.addOption("llm-markdown", "Markdown for AI tools - optimized for model input")
 					.addOption("print-friendly-markdown", "Print-friendly - clean, readable format")
 					.setValue(this.plugin.settings.defaultExportFormat)
 					.onChange(async (value: "xml" | "llm-markdown" | "print-friendly-markdown") => {
