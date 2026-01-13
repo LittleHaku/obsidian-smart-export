@@ -48,7 +48,7 @@ For beta testing and the easiest way to install pre-release plugins, use the [BR
 
 1. In Obsidian, go to **Settings → Community Plugins → Browse** and search for "BRAT" by TfTHacker. Install and enable it.
 2. Once BRAT is enabled, open its settings and click **Add a new plugin**.
-3. Paste this repository link: `https://github.com/LittleHaku/obisidian-smart-export`
+3. Paste this repository link: `https://github.com/LittleHaku/obsidian-smart-export`
 4. Select the latest version when prompted.
 5. BRAT will handle installation and updates for you.
 
