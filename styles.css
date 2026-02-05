@@ -55,6 +55,13 @@ Modern, clean styling for the export modal interface
 	gap: 8px;
 }
 
+.smart-export-section-description {
+	color: var(--text-muted);
+	font-size: var(--font-ui-small);
+	margin: 0 0 12px 0;
+	line-height: 1.4;
+}
+
 /* Info Boxes */
 .smart-export-info-box {
 	background: var(--background-secondary);

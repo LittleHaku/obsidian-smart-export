@@ -180,11 +180,14 @@ export class ExportModal extends Modal {
 		// Notes visualization section
 		const treeSection = contentEl.createDiv({ cls: "smart-export-section" });
 		treeSection.createEl("h3", { text: "🌳 notes to export", cls: "smart-export-section-title" });
+		treeSection.createDiv({
+			cls: "smart-export-section-description",
+			text: "Pick which notes to include. Unchecked notes and their children are excluded.",
+		});
 		const treeInfo = treeSection.createDiv({ cls: "smart-export-info-box" });
-		treeInfo.createEl("span", { text: "✅ " });
 		treeInfo.createEl("strong", { text: "Tip: " });
 		treeInfo.createEl("span", {
-			text: "Uncheck a note to exclude it and all of its children from the export.",
+			text: "Shift-click a checkbox to select or deselect all notes in that branch.",
 		});
 		const treeControls = treeSection.createDiv({ cls: "smart-export-tree-controls" });
 		const expandAllButton = treeControls.createEl("button", {
@@ -613,7 +616,30 @@ export class ExportModal extends Modal {
 			}
 			if (hasChildren) {
 				rootLabel.addClass("smart-export-tree-root--toggle");
-				rootLabel.addEventListener("click", () => {
+				setTooltip(
+					rootLabel,
+					"Click to expand or collapse. Shift-click to toggle select all."
+				);
+				rootLabel.addEventListener("click", (event) => {
+					event.preventDefault();
+					event.stopPropagation();
+					if (!this.exportTree) {
+						return;
+					}
+					const shiftPressed = event.shiftKey;
+					if (shiftPressed) {
+						const counts = this.countTreeNodes(this.exportTree);
+						const allSelected = counts.selected === counts.total;
+						this.selectedNodeIds.clear();
+						if (!allSelected) {
+							this.selectAllNodes(this.exportTree);
+						} else {
+							this.selectedNodeIds.add(node.id);
+						}
+						this.renderExportTree();
+						this.debouncedTokenUpdate();
+						return;
+					}
 					if (this.collapsedNodeIds.has(node.id)) {
 						this.collapsedNodeIds.delete(node.id);
 					} else {
@@ -628,7 +654,7 @@ export class ExportModal extends Modal {
 				type: "checkbox",
 				cls: "smart-export-tree-checkbox",
 			}) as HTMLInputElement;
-			setTooltip(labelEl, "Shift-click to select this note and all of its children.");
+			setTooltip(labelEl, "Shift-click to toggle selecting all children.");
 
 			checkboxEl.checked = isSelected;
 			labelEl.createSpan({ text: node.title, cls: "smart-export-tree-label-text" });
@@ -641,13 +667,23 @@ export class ExportModal extends Modal {
 				shiftPressed = (event as MouseEvent).shiftKey;
 			});
 			checkboxEl.addEventListener("change", () => {
+				if (shiftPressed) {
+					const subtreeCounts = this.countSelectedInSubtree(node);
+					const allSelected = subtreeCounts.selected === subtreeCounts.total;
+					if (allSelected) {
+						deselectSubtree(this.selectedNodeIds, node);
+					} else {
+						selectAncestors(this.selectedNodeIds, ancestorIds);
+						selectSubtree(this.selectedNodeIds, node);
+					}
+					shiftPressed = false;
+					this.renderExportTree();
+					this.debouncedTokenUpdate();
+					return;
+				}
 				if (checkboxEl.checked) {
 					selectAncestors(this.selectedNodeIds, ancestorIds);
-					if (shiftPressed) {
-						selectSubtree(this.selectedNodeIds, node);
-					} else {
-						selectNode(this.selectedNodeIds, node.id);
-					}
+					selectNode(this.selectedNodeIds, node.id);
 				} else {
 					deselectSubtree(this.selectedNodeIds, node);
 				}
@@ -692,6 +728,23 @@ export class ExportModal extends Modal {
 
 		for (const child of node.children) {
 			const childCounts = this.countTreeNodes(child);
+			total += childCounts.total;
+			selected += childCounts.selected;
+		}
+
+		return { total, selected };
+	}
+
+	/**
+	 * Counts total and selected nodes within a subtree.
+	 * @private
+	 */
+	private countSelectedInSubtree(node: ExportNode): { total: number; selected: number } {
+		let total = 1;
+		let selected = this.selectedNodeIds.has(node.id) ? 1 : 0;
+
+		for (const child of node.children) {
+			const childCounts = this.countSelectedInSubtree(child);
 			total += childCounts.total;
 			selected += childCounts.selected;
 		}
