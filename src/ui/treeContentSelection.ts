@@ -1,9 +1,6 @@
 import { ExportNode } from "../types";
 
-export function applyContentSelection(
-	node: ExportNode,
-	selectedNodeIds: Set<string>
-): ExportNode {
+export function applyContentSelection(node: ExportNode, selectedNodeIds: Set<string>): ExportNode {
 	const includeContent = node.includeContent && selectedNodeIds.has(node.id);
 	const content = includeContent ? node.content : undefined;
 	const children = node.children.map((child) => applyContentSelection(child, selectedNodeIds));

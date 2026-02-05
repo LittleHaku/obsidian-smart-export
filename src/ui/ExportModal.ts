@@ -1,4 +1,13 @@
-import { App, Modal, Setting, TFile, SliderComponent, Notice, debounce, setTooltip } from "obsidian";
+import {
+	App,
+	Modal,
+	Setting,
+	TFile,
+	SliderComponent,
+	Notice,
+	debounce,
+	setTooltip,
+} from "obsidian";
 import { RootNoteSuggestModal } from "./RootNoteSuggestModal";
 import { BFSTraversal } from "../engine/BFSTraversal";
 import { ObsidianAPI } from "../obsidian-api";
@@ -692,11 +701,11 @@ export class ExportModal extends Modal {
 					}
 					const shiftPressed = event.shiftKey;
 					if (shiftPressed) {
-		const counts = this.countTreeNodes(this.exportTree);
-		const allSelected = counts.selected === counts.total;
-		this.selectedNodeIds.clear();
-		if (!allSelected) {
-			this.selectAllNodes(this.exportTree);
+						const counts = this.countTreeNodes(this.exportTree);
+						const allSelected = counts.selected === counts.total;
+						this.selectedNodeIds.clear();
+						if (!allSelected) {
+							this.selectAllNodes(this.exportTree);
 						} else {
 							this.selectedNodeIds.add(node.id);
 						}
@@ -775,7 +784,7 @@ export class ExportModal extends Modal {
 	 * @private
 	 */
 	private formatNodeTokenEstimate(node: ExportNode): string {
-		const content = node.includeContent ? node.content ?? "" : "";
+		const content = node.includeContent ? (node.content ?? "") : "";
 		const text = node.title + (content ? `\n${content}` : "");
 		const tokens = this.estimateTokens(text);
 		return `~${tokens.toLocaleString()} tokens`;
@@ -799,7 +808,6 @@ export class ExportModal extends Modal {
 			children,
 		};
 	}
-
 
 	/**
 	 * Counts total and selected nodes in the tree.
@@ -834,7 +842,6 @@ export class ExportModal extends Modal {
 
 		return { total, selected };
 	}
-
 
 	/**
 	 * Called when the modal is closed. Clears the content.

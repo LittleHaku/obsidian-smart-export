@@ -153,12 +153,10 @@ class SmartExportSettingTab extends PluginSettingTab {
 			.setName("Show per-note token estimates")
 			.setDesc("Display approximate token counts next to each note in the tree")
 			.addToggle((toggle) =>
-				toggle
-					.setValue(this.plugin.settings.showTokenEstimatesInTree)
-					.onChange(async (value) => {
-						this.plugin.settings.showTokenEstimatesInTree = value;
-						await this.plugin.saveSettings();
-					})
+				toggle.setValue(this.plugin.settings.showTokenEstimatesInTree).onChange(async (value) => {
+					this.plugin.settings.showTokenEstimatesInTree = value;
+					await this.plugin.saveSettings();
+				})
 			);
 	}
 }

@@ -2,7 +2,12 @@ import { describe, it, expect } from "vitest";
 import { applyContentSelection } from "../../src/ui/treeContentSelection";
 import { ExportNode } from "../../src/types";
 
-const createNode = (id: string, includeContent: boolean, content = "", children: ExportNode[] = []) => ({
+const createNode = (
+	id: string,
+	includeContent: boolean,
+	content = "",
+	children: ExportNode[] = []
+) => ({
 	id,
 	title: id,
 	depth: 0,
