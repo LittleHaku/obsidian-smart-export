@@ -739,11 +739,8 @@ export class ExportModal extends Modal {
 				const tokenText = this.formatNodeTokenEstimate(node);
 				labelEl.createSpan({ text: tokenText, cls: "smart-export-tree-token" });
 			}
-			let shiftPressed = false;
-			checkboxEl.addEventListener("click", (event) => {
-				shiftPressed = event.shiftKey;
-			});
-			checkboxEl.addEventListener("change", () => {
+			checkboxEl.addEventListener("change", (event) => {
+				const shiftPressed = event.shiftKey;
 				if (shiftPressed) {
 					const subtreeCounts = this.countTreeNodes(node);
 					const allSelected = subtreeCounts.selected === subtreeCounts.total;
@@ -753,7 +750,6 @@ export class ExportModal extends Modal {
 						selectAncestors(this.selectedNodeIds, ancestorIds);
 						selectSubtree(this.selectedNodeIds, node);
 					}
-					shiftPressed = false;
 					this.renderExportTree();
 					this.debouncedTokenUpdate();
 					return;
@@ -764,7 +760,6 @@ export class ExportModal extends Modal {
 				} else {
 					deselectSubtree(this.selectedNodeIds, node);
 				}
-				shiftPressed = false;
 				this.renderExportTree();
 				this.debouncedTokenUpdate();
 			});
