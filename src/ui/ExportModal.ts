@@ -430,45 +430,55 @@ export class ExportModal extends Modal {
 			return null;
 		}
 
-		const obsidianAPI = new ObsidianAPI(this.app);
-		const traversal = new BFSTraversal(obsidianAPI, this.contentDepth, this.titleDepth);
-		const exportTree = await traversal.traverse(this.selectedFile.path);
+		try {
+			const obsidianAPI = new ObsidianAPI(this.app);
+			const traversal = new BFSTraversal(obsidianAPI, this.contentDepth, this.titleDepth);
+			const exportTree = await traversal.traverse(this.selectedFile.path);
 
-		if (buildId !== this.treeBuildId) {
+			if (buildId !== this.treeBuildId) {
+				this.exportTreePromise = null;
+				return null;
+			}
+
+			if (!exportTree) {
+				this.exportTree = null;
+				this.missingNotesCount = 0;
+				this.exportTreePromise = null;
+				this.renderExportTree();
+				return null;
+			}
+
+			this.exportTree = exportTree;
+			this.treeIsStale = false;
+			this.missingNotesCount = traversal.getMissingNotes().length;
 			this.exportTreePromise = null;
-			return null;
-		}
+			this.exportTreeCacheKey = this.getTreeCacheKey();
+			this.exportTreeCache.set(this.exportTreeCacheKey, {
+				tree: exportTree,
+				missingNotes: this.missingNotesCount,
+			});
 
-		if (!exportTree) {
+			this.reconcileSelection(exportTree);
+			this.reconcileCollapsed(exportTree);
+			if (this.selectedNodeIds.size === 0) {
+				this.selectAllNodes(exportTree);
+			}
+			if (this.shouldApplyDefaultCollapse && this.collapsedNodeIds.size === 0) {
+				this.collapseRootOnly(exportTree);
+			}
+			this.shouldApplyDefaultCollapse = false;
+
+			this.renderExportTree();
+			return exportTree;
+		} catch (error) {
+			console.error("Failed to build export tree", error);
 			this.exportTree = null;
 			this.missingNotesCount = 0;
 			this.exportTreePromise = null;
+			new Notice("Failed to build export tree. See console for details.");
 			this.renderExportTree();
 			return null;
 		}
-
-		this.exportTree = exportTree;
-		this.treeIsStale = false;
-		this.missingNotesCount = traversal.getMissingNotes().length;
-		this.exportTreePromise = null;
-		this.exportTreeCacheKey = this.getTreeCacheKey();
-		this.exportTreeCache.set(this.exportTreeCacheKey, {
-			tree: exportTree,
-			missingNotes: this.missingNotesCount,
-		});
-
-		this.reconcileSelection(exportTree);
-		this.reconcileCollapsed(exportTree);
-		if (this.selectedNodeIds.size === 0) {
-			this.selectAllNodes(exportTree);
-		}
-		if (this.shouldApplyDefaultCollapse && this.collapsedNodeIds.size === 0) {
-			this.collapseRootOnly(exportTree);
-		}
-		this.shouldApplyDefaultCollapse = false;
-
-		this.renderExportTree();
-		return exportTree;
 	}
 
 	/**
@@ -490,10 +500,6 @@ export class ExportModal extends Modal {
 		}
 	}
 
-	/**
-	 * Gets a filtered export tree ready for export.
-	 * @private
-	 */
 	/**
 	 * Selects all nodes in the tree.
 	 * @private
@@ -527,11 +533,6 @@ export class ExportModal extends Modal {
 			this.collapseRootOnly(node);
 		}
 	}
-
-	/**
-	 * Ensures no node remains selected if any ancestor is deselected.
-	 * @private
-	 */
 
 	/**
 	 * Builds a cache key for the current tree.
