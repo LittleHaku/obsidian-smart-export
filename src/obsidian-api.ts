@@ -1,4 +1,4 @@
-import { App, TFile, LinkCache } from "obsidian";
+import { App, TFile, Reference } from "obsidian";
 
 /**
  * A wrapper class for the Obsidian API to provide a stable, testable interface
@@ -27,10 +27,17 @@ export class ObsidianAPI {
 	/**
 	 * Gets all outgoing links from a given file.
 	 * @param {TFile} file - The file to get links from.
-	 * @returns {LinkCache[] | undefined} An array of link caches or undefined if no links.
+	 * @returns {Reference[] | undefined} An array of link references or undefined if no links.
 	 */
-	public getLinksForFile(file: TFile): LinkCache[] | undefined {
-		return this.app.metadataCache.getCache(file.path)?.links;
+	public getLinksForFile(file: TFile): Reference[] | undefined {
+		const cache = this.app.metadataCache.getCache(file.path);
+		if (!cache) return;
+
+		const links = cache.links ?? [];
+		const frontmatterLinks = cache.frontmatterLinks ?? [];
+		if (links.length === 0 && frontmatterLinks.length === 0) return;
+
+		return [...links, ...frontmatterLinks];
 	}
 
 	/**

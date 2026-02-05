@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.9] - 2026-02-05
+
+### Added
+
+- Include frontmatter (properties) links during traversal
+
 ## [1.0.8] - 2026-02-05
 
 ### Added

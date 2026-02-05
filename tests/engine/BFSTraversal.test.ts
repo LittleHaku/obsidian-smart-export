@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { BFSTraversal } from "../../src/engine/BFSTraversal";
 import { mockApp } from "../mocks/mockObsidianAPI";
-import { TFile, LinkCache } from "obsidian";
+import { TFile, LinkCache, FrontmatterLinkCache } from "obsidian";
 import { ObsidianAPI } from "../../src/obsidian-api";
 
 // Mock TFile constructor
@@ -29,12 +29,18 @@ describe("BFSTraversal", () => {
 	const mockFiles: { [key: string]: TFile } = {};
 	const mockFileContents: { [key: string]: string } = {};
 	const mockFileLinks: { [key: string]: LinkCache[] } = {};
+	const mockFileFrontmatterLinks: { [key: string]: FrontmatterLinkCache[] } = {};
 
 	// Helper function to create LinkCache objects
 	const createLink = (link: string): LinkCache => ({
 		link,
 		original: `[[${link}]]`,
 		position: { start: { line: 0, col: 0, offset: 0 }, end: { line: 0, col: 0, offset: 0 } },
+	});
+	const createFrontmatterLink = (link: string, key: string): FrontmatterLinkCache => ({
+		link,
+		original: `[[${link}]]`,
+		key,
 	});
 
 	beforeEach(() => {
@@ -67,6 +73,13 @@ describe("BFSTraversal", () => {
 		mockFileLinks["D.md"] = [createLink("A")];
 		mockFileLinks["cycle1.md"] = [createLink("cycle2")];
 		mockFileLinks["cycle2.md"] = [createLink("cycle1")];
+		mockFileFrontmatterLinks["root.md"] = [];
+		mockFileFrontmatterLinks["A.md"] = [];
+		mockFileFrontmatterLinks["B.md"] = [];
+		mockFileFrontmatterLinks["C.md"] = [];
+		mockFileFrontmatterLinks["D.md"] = [];
+		mockFileFrontmatterLinks["cycle1.md"] = [];
+		mockFileFrontmatterLinks["cycle2.md"] = [];
 
 		// Mock App object behavior
 		mockApp.vault.getAbstractFileByPath = vi.fn((path: string) => mockFiles[path]);
@@ -76,6 +89,7 @@ describe("BFSTraversal", () => {
 		);
 		mockApp.metadataCache.getCache = vi.fn((path: string) => ({
 			links: mockFileLinks[path] || [],
+			frontmatterLinks: mockFileFrontmatterLinks[path] || [],
 		}));
 		mockApp.metadataCache.getFirstLinkpathDest = vi.fn((link: string, sourcePath: string) => {
 			if (link === "missing") return null;
@@ -143,6 +157,19 @@ describe("BFSTraversal", () => {
 	it("should return null if the root note is not found", async () => {
 		const result = await bfsTraversal.traverse("nonexistent.md");
 		expect(result).toBeNull();
+	});
+
+	it("should include links from frontmatter properties", async () => {
+		mockFiles["fm-root.md"] = createMockTFile("fm-root.md", "fm-root");
+		mockFileContents["fm-root.md"] = "No links in body.";
+		mockFileLinks["fm-root.md"] = [];
+		mockFileFrontmatterLinks["fm-root.md"] = [createFrontmatterLink("A", "related")];
+
+		const rootNode = await bfsTraversal.traverse("fm-root.md");
+
+		expect(rootNode).not.toBeNull();
+		expect(rootNode?.children.length).toBe(1);
+		expect(rootNode?.children[0].title).toBe("A");
 	});
 
 	it("should track multiple missing notes across different depths", async () => {
