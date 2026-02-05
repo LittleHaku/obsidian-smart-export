@@ -726,7 +726,7 @@ export class ExportModal extends Modal {
 			const checkboxEl = labelEl.createEl("input", {
 				type: "checkbox",
 				cls: "smart-export-tree-checkbox",
-			}) as HTMLInputElement;
+			});
 			setTooltip(labelEl, "Shift-click to toggle content for all notes in this branch.");
 
 			checkboxEl.checked = isSelected;
@@ -737,7 +737,7 @@ export class ExportModal extends Modal {
 			}
 			let shiftPressed = false;
 			checkboxEl.addEventListener("click", (event) => {
-				shiftPressed = (event as MouseEvent).shiftKey;
+				shiftPressed = event.shiftKey;
 			});
 			checkboxEl.addEventListener("change", () => {
 				if (shiftPressed) {

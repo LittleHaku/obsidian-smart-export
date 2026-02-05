@@ -31,8 +31,6 @@ describe("treeSelection", () => {
 	it("deselectSubtree removes node and descendants but keeps others", () => {
 		const nodeA1 = createNode("A1");
 		const nodeA = createNode("A", [nodeA1]);
-		const nodeB = createNode("B");
-		const root = createNode("root", [nodeA, nodeB]);
 
 		const selected = new Set<string>(["root", "A", "A1", "B"]);
 		deselectSubtree(selected, nodeA);
@@ -47,6 +45,7 @@ describe("treeSelection", () => {
 		const nodeA1a = createNode("A1a");
 		const nodeA1 = createNode("A1", [nodeA1a]);
 		const nodeA = createNode("A", [nodeA1]);
+		const root = createNode("root", [nodeA]);
 
 		const selected = new Set<string>();
 		selectAncestors(selected, ["root", "A"]);
@@ -77,6 +76,7 @@ describe("treeSelection", () => {
 		const nodeA1a = createNode("A1a", []);
 		const nodeA1 = createNode("A1", [nodeA1a]);
 		const nodeA = createNode("A", [nodeA1]);
+		const root = createNode("root", [nodeA]);
 
 		nodeA1.includeContent = false;
 		nodeA1a.includeContent = false;
