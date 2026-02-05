@@ -73,4 +73,22 @@ describe("treeSelection", () => {
 		expect(selected.has("A1a")).toBe(true);
 		expect(selected.has("root")).toBe(false);
 	});
+
+	it("selectSubtree skips nodes without content", () => {
+		const nodeA1a = createNode("A1a", []);
+		const nodeA1 = createNode("A1", [nodeA1a]);
+		const nodeA = createNode("A", [nodeA1]);
+		const root = createNode("root", [nodeA]);
+
+		nodeA1.includeContent = false;
+		nodeA1a.includeContent = false;
+
+		const selected = new Set<string>();
+		selectSubtree(selected, root);
+
+		expect(selected.has("root")).toBe(true);
+		expect(selected.has("A")).toBe(true);
+		expect(selected.has("A1")).toBe(false);
+		expect(selected.has("A1a")).toBe(false);
+	});
 });

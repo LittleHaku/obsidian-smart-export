@@ -5,7 +5,9 @@ export function selectNode(selectedNodeIds: Set<string>, nodeId: string) {
 }
 
 export function selectSubtree(selectedNodeIds: Set<string>, node: ExportNode) {
-	selectedNodeIds.add(node.id);
+	if (node.includeContent) {
+		selectedNodeIds.add(node.id);
+	}
 	for (const child of node.children) {
 		selectSubtree(selectedNodeIds, child);
 	}

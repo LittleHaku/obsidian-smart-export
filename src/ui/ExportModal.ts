@@ -6,6 +6,7 @@ import { ExportNode, SmartExportSettings } from "../types";
 import { XMLExporter } from "../engine/XMLExporter";
 import { LlmMarkdownExporter } from "../engine/LlmMarkdownExporter";
 import { PrintFriendlyMarkdownExporter } from "../engine/PrintFriendlyMarkdownExporter";
+import { applyContentSelection } from "./treeContentSelection";
 import { deselectSubtree, selectAncestors, selectNode, selectSubtree } from "./treeSelection";
 
 /**
@@ -182,12 +183,12 @@ export class ExportModal extends Modal {
 		treeSection.createEl("h3", { text: "🌳 notes to export", cls: "smart-export-section-title" });
 		treeSection.createDiv({
 			cls: "smart-export-section-description",
-			text: "Pick which notes to include. Unchecked notes and their children are excluded.",
+			text: "Pick which notes to include content for. Titles are always included up to the title depth.",
 		});
 		const treeInfo = treeSection.createDiv({ cls: "smart-export-info-box" });
 		treeInfo.createEl("strong", { text: "Tip: " });
 		treeInfo.createEl("span", {
-			text: "Shift-click a checkbox to select or deselect all notes in that branch.",
+			text: "Shift-click a checkbox to select or deselect content for all notes in that branch.",
 		});
 		const treeControls = treeSection.createDiv({ cls: "smart-export-tree-controls" });
 		const expandAllButton = treeControls.createEl("button", {
@@ -262,14 +263,8 @@ export class ExportModal extends Modal {
 			this.tokenCountEl.setText("❌ token count: error");
 			return;
 		}
-
-		const filteredTree = this.filterExportTree(exportTree);
-		if (!filteredTree) {
-			this.tokenCountEl.setText("⚪ no notes selected");
-			return;
-		}
-
-		const output = this.buildExportOutput(filteredTree);
+		const adjustedTree = applyContentSelection(exportTree, this.selectedNodeIds);
+		const output = this.buildExportOutput(adjustedTree);
 		const tokenCount = this.estimateTokens(output);
 		let tokenText = `📊 ~${tokenCount.toLocaleString()} tokens`;
 
@@ -302,15 +297,8 @@ export class ExportModal extends Modal {
 			new Notice("Failed to generate export. See console for details.");
 			return;
 		}
-
-		const filteredTree = this.filterExportTree(exportTree);
-		if (!filteredTree) {
-			this.tokenCountEl.setText("⚪ no notes selected");
-			new Notice("No notes selected. Please select at least one note to export.");
-			return;
-		}
-
-		const output = this.buildExportOutput(filteredTree);
+		const adjustedTree = applyContentSelection(exportTree, this.selectedNodeIds);
+		const output = this.buildExportOutput(adjustedTree);
 		const tokenCount = this.estimateTokens(output);
 		let tokenText = `📊 ~${tokenCount.toLocaleString()} tokens`;
 
@@ -454,25 +442,6 @@ export class ExportModal extends Modal {
 	}
 
 	/**
-	 * Filters the export tree based on selected node ids.
-	 * @private
-	 */
-	private filterExportTree(node: ExportNode): ExportNode | null {
-		if (!this.selectedNodeIds.has(node.id)) {
-			return null;
-		}
-
-		const filteredChildren = node.children
-			.map((child) => this.filterExportTree(child))
-			.filter((child): child is ExportNode => !!child);
-
-		return {
-			...node,
-			children: filteredChildren,
-		};
-	}
-
-	/**
 	 * Gets a filtered export tree ready for export.
 	 * @private
 	 */
@@ -481,7 +450,9 @@ export class ExportModal extends Modal {
 	 * @private
 	 */
 	private selectAllNodes(node: ExportNode) {
-		this.selectedNodeIds.add(node.id);
+		if (node.includeContent) {
+			this.selectedNodeIds.add(node.id);
+		}
 		for (const child of node.children) {
 			this.selectAllNodes(child);
 		}
@@ -555,12 +526,22 @@ export class ExportModal extends Modal {
 			return;
 		}
 
-			this.selectedNodeIds.add(this.exportTree.id);
-		const counts = this.countTreeNodes(this.exportTree);
-		this.treeSummaryEl.setText(`Selected ${counts.selected} of ${counts.total} notes`);
+		this.selectedNodeIds.add(this.exportTree.id);
+		const displayTree = this.buildContentDisplayTree(this.exportTree);
+		if (!displayTree) {
+			this.treeContainerEl.createDiv({
+				cls: "smart-export-tree-placeholder",
+				text: "No notes with content at the current depth.",
+			});
+			return;
+		}
+		const counts = this.countTreeNodes(displayTree);
+		this.treeSummaryEl.setText(
+			`Content selected for ${counts.selected} of ${counts.total} notes`
+		);
 
 		const listEl = this.treeContainerEl.createEl("ul", { cls: "smart-export-tree" });
-		this.renderExportTreeNode(this.exportTree, listEl, true, true, []);
+		this.renderExportTreeNode(displayTree, listEl, true, true, []);
 	}
 
 	/**
@@ -622,7 +603,7 @@ export class ExportModal extends Modal {
 				rootLabel.addClass("smart-export-tree-root--toggle");
 				setTooltip(
 					rootLabel,
-					"Click to expand or collapse. Shift-click to toggle select all."
+					"Click to expand or collapse. Shift-click to toggle content for all notes."
 				);
 				rootLabel.addEventListener("click", (event) => {
 					event.preventDefault();
@@ -632,11 +613,11 @@ export class ExportModal extends Modal {
 					}
 					const shiftPressed = event.shiftKey;
 					if (shiftPressed) {
-						const counts = this.countTreeNodes(this.exportTree);
-						const allSelected = counts.selected === counts.total;
-						this.selectedNodeIds.clear();
-						if (!allSelected) {
-							this.selectAllNodes(this.exportTree);
+		const counts = this.countTreeNodes(this.exportTree);
+		const allSelected = counts.selected === counts.total;
+		this.selectedNodeIds.clear();
+		if (!allSelected) {
+			this.selectAllNodes(this.exportTree);
 						} else {
 							this.selectedNodeIds.add(node.id);
 						}
@@ -658,7 +639,7 @@ export class ExportModal extends Modal {
 				type: "checkbox",
 				cls: "smart-export-tree-checkbox",
 			}) as HTMLInputElement;
-			setTooltip(labelEl, "Shift-click to toggle selecting all children.");
+			setTooltip(labelEl, "Shift-click to toggle content for all notes in this branch.");
 
 			checkboxEl.checked = isSelected;
 			labelEl.createSpan({ text: node.title, cls: "smart-export-tree-label-text" });
@@ -721,14 +702,33 @@ export class ExportModal extends Modal {
 		return `~${tokens.toLocaleString()} tokens`;
 	}
 
+	/**
+	 * Builds a tree that only includes nodes with content at the current depth.
+	 * @private
+	 */
+	private buildContentDisplayTree(node: ExportNode): ExportNode | null {
+		if (!node.includeContent) {
+			return null;
+		}
+
+		const children = node.children
+			.map((child) => this.buildContentDisplayTree(child))
+			.filter((child): child is ExportNode => !!child);
+
+		return {
+			...node,
+			children,
+		};
+	}
+
 
 	/**
 	 * Counts total and selected nodes in the tree.
 	 * @private
 	 */
 	private countTreeNodes(node: ExportNode): { total: number; selected: number } {
-		let total = 1;
-		let selected = this.selectedNodeIds.has(node.id) ? 1 : 0;
+		let total = node.includeContent ? 1 : 0;
+		let selected = node.includeContent && this.selectedNodeIds.has(node.id) ? 1 : 0;
 
 		for (const child of node.children) {
 			const childCounts = this.countTreeNodes(child);
@@ -744,8 +744,8 @@ export class ExportModal extends Modal {
 	 * @private
 	 */
 	private countSelectedInSubtree(node: ExportNode): { total: number; selected: number } {
-		let total = 1;
-		let selected = this.selectedNodeIds.has(node.id) ? 1 : 0;
+		let total = node.includeContent ? 1 : 0;
+		let selected = node.includeContent && this.selectedNodeIds.has(node.id) ? 1 : 0;
 
 		for (const child of node.children) {
 			const childCounts = this.countSelectedInSubtree(child);
