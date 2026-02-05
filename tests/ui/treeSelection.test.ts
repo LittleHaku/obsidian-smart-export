@@ -97,7 +97,7 @@ describe("treeSelection", () => {
 		const root = createNode("root", [nodeA]);
 
 		const selected = new Set<string>(["root", "A1", "A1a"]);
-		enforceAncestorSelection(selected, root, true, true);
+		enforceAncestorSelection(selected, root, true);
 
 		expect(selected.has("root")).toBe(true);
 		expect(selected.has("A")).toBe(false);

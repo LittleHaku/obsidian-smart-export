@@ -527,7 +527,7 @@ export class ExportModal extends Modal {
 		if (node.includeContent) {
 			this.selectedNodeIds.add(node.id);
 		}
-		enforceAncestorSelection(this.selectedNodeIds, node, true, true);
+		enforceAncestorSelection(this.selectedNodeIds, node, true);
 	}
 
 	/**

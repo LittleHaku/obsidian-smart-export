@@ -29,15 +29,14 @@ export function deselectSubtree(selectedNodeIds: Set<string>, node: ExportNode) 
 export function enforceAncestorSelection(
 	selectedNodeIds: Set<string>,
 	node: ExportNode,
-	parentSelected: boolean,
-	isRoot: boolean
+	parentSelected: boolean
 ) {
-	const isSelected = isRoot || selectedNodeIds.has(node.id);
-	if (!parentSelected && !isRoot) {
+	const isSelected = selectedNodeIds.has(node.id);
+	if (!parentSelected) {
 		selectedNodeIds.delete(node.id);
 	}
 	const nextParentSelected = parentSelected && isSelected;
 	for (const child of node.children) {
-		enforceAncestorSelection(selectedNodeIds, child, nextParentSelected, false);
+		enforceAncestorSelection(selectedNodeIds, child, nextParentSelected);
 	}
 }
