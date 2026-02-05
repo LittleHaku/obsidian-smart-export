@@ -2,7 +2,7 @@ import { App, Modal, Setting, TFile, SliderComponent, Notice, debounce } from "o
 import { RootNoteSuggestModal } from "./RootNoteSuggestModal";
 import { BFSTraversal } from "../engine/BFSTraversal";
 import { ObsidianAPI } from "../obsidian-api";
-import { SmartExportSettings } from "../types";
+import { ExportNode, SmartExportSettings } from "../types";
 import { XMLExporter } from "../engine/XMLExporter";
 import { LlmMarkdownExporter } from "../engine/LlmMarkdownExporter";
 import { PrintFriendlyMarkdownExporter } from "../engine/PrintFriendlyMarkdownExporter";
@@ -29,6 +29,18 @@ export class ExportModal extends Modal {
 	private debouncedTokenUpdate = debounce(() => this.calculateAndDisplayTokens(), 500, true);
 	/** Plugin settings for default values. */
 	private settings: SmartExportSettings;
+	/** Cached export tree for the current selection and depth settings. */
+	private exportTree: ExportNode | null = null;
+	/** In-flight export tree build promise. */
+	private exportTreePromise: Promise<ExportNode | null> | null = null;
+	/** Missing notes count from the last traversal. */
+	private missingNotesCount = 0;
+	/** Selected node ids for export. */
+	private selectedNodeIds: Set<string> = new Set();
+	/** Container element for the tree visualization. */
+	private treeContainerEl: HTMLElement;
+	/** Incremented on each tree invalidation to discard stale builds. */
+	private treeBuildId = 0;
 
 	constructor(app: App, settings: SmartExportSettings) {
 		super(app);
@@ -116,6 +128,7 @@ export class ExportModal extends Modal {
 							this.titleDepth = this.contentDepth;
 							titleSlider?.setValue(this.titleDepth);
 						}
+						this.invalidateExportTree();
 						this.debouncedTokenUpdate();
 					});
 			});
@@ -135,6 +148,7 @@ export class ExportModal extends Modal {
 							this.contentDepth = this.titleDepth;
 							contentSlider?.setValue(this.contentDepth);
 						}
+						this.invalidateExportTree();
 						this.debouncedTokenUpdate();
 					});
 			});
@@ -157,6 +171,18 @@ export class ExportModal extends Modal {
 						this.debouncedTokenUpdate();
 					});
 			});
+
+		// Notes visualization section
+		const treeSection = contentEl.createDiv({ cls: "smart-export-section" });
+		treeSection.createEl("h3", { text: "🌳 notes to export", cls: "smart-export-section-title" });
+		const treeInfo = treeSection.createDiv({ cls: "smart-export-info-box" });
+		treeInfo.createEl("span", { text: "✅ " });
+		treeInfo.createEl("strong", { text: "Tip: " });
+		treeInfo.createEl("span", {
+			text: "Uncheck a note to exclude it and all of its children from the export.",
+		});
+		this.treeContainerEl = treeSection.createDiv({ cls: "smart-export-tree-container" });
+		this.renderExportTree();
 
 		// Token count and export section
 		const exportActionSection = contentEl.createDiv({ cls: "smart-export-action-section" });
@@ -185,50 +211,6 @@ export class ExportModal extends Modal {
 	}
 
 	/**
-	 * Retrieves the export data by traversing the note graph.
-	 * @private
-	 * @returns {Promise<{ output: string, tokenCount: number } | null>} An object containing the formatted output and token count, or null on failure.
-	 */
-	private async getExportData(): Promise<{ output: string; tokenCount: number } | null> {
-		if (!this.selectedFile) {
-			return null;
-		}
-		try {
-			const obsidianAPI = new ObsidianAPI(this.app);
-			const traversal = new BFSTraversal(obsidianAPI, this.contentDepth, this.titleDepth);
-
-			const exportTree = await traversal.traverse(this.selectedFile.path);
-
-			if (!exportTree) {
-				return null;
-			}
-
-			const missingNotesCount = traversal.getMissingNotes().length;
-			let output: string;
-			const vaultPath = this.app.vault.getName();
-
-			switch (this.exportFormat) {
-				case "xml":
-					output = new XMLExporter().export(exportTree, vaultPath, missingNotesCount);
-					break;
-				case "llm-markdown":
-					output = new LlmMarkdownExporter().export(exportTree, vaultPath, missingNotesCount);
-					break;
-				case "print-friendly-markdown":
-					output = new PrintFriendlyMarkdownExporter().export(exportTree);
-					break;
-			}
-			const tokenCount = this.estimateTokens(output);
-
-			return { output, tokenCount };
-		} catch (error) {
-			console.error("Smart Export failed:", error);
-			new Notice("Failed to generate export. See console for details.");
-			return null;
-		}
-	}
-
-	/**
 	 * Calculates the token count for the current settings and updates the UI.
 	 * @private
 	 */
@@ -239,25 +221,32 @@ export class ExportModal extends Modal {
 		}
 
 		this.tokenCountEl.setText("🔄 calculating tokens...");
-		const data = await this.getExportData();
-
-		if (data) {
-			const tokenCount = data.tokenCount;
-			let tokenText = `📊 ~${tokenCount.toLocaleString()} tokens`;
-
-			// Add context warnings for common LLMs
-			if (tokenCount > 200000) {
-				tokenText += " ⚠️ exceeds most AI limits";
-			} else if (tokenCount > 128000) {
-				tokenText += " ⚠️ may exceed common AI limits";
-			} else if (tokenCount > 100000) {
-				tokenText += " ⚡ large export";
-			}
-
-			this.tokenCountEl.setText(tokenText);
-		} else {
+		const exportTree = await this.ensureExportTree();
+		if (!exportTree) {
 			this.tokenCountEl.setText("❌ token count: error");
+			return;
 		}
+
+		const filteredTree = this.filterExportTree(exportTree);
+		if (!filteredTree) {
+			this.tokenCountEl.setText("⚪ no notes selected");
+			return;
+		}
+
+		const output = this.buildExportOutput(filteredTree);
+		const tokenCount = this.estimateTokens(output);
+		let tokenText = `📊 ~${tokenCount.toLocaleString()} tokens`;
+
+		// Add context warnings for common LLMs
+		if (tokenCount > 200000) {
+			tokenText += " ⚠️ exceeds most AI limits";
+		} else if (tokenCount > 128000) {
+			tokenText += " ⚠️ may exceed common AI limits";
+		} else if (tokenCount > 100000) {
+			tokenText += " ⚡ large export";
+		}
+
+		this.tokenCountEl.setText(tokenText);
 	}
 
 	/**
@@ -271,29 +260,38 @@ export class ExportModal extends Modal {
 		}
 
 		this.tokenCountEl.setText("🚀 exporting...");
-		const data = await this.getExportData();
-
-		if (data) {
-			const tokenCount = data.tokenCount;
-			let tokenText = `📊 ~${tokenCount.toLocaleString()} tokens`;
-
-			// Add context warnings for common LLMs
-			if (tokenCount > 200000) {
-				tokenText += " ⚠️ exceeds most AI limits";
-			} else if (tokenCount > 128000) {
-				tokenText += " ⚠️ may exceed common AI limits";
-			} else if (tokenCount > 100000) {
-				tokenText += " ⚡ large export";
-			}
-
-			this.tokenCountEl.setText(tokenText);
-			await navigator.clipboard.writeText(data.output);
-			new Notice("✅ export copied to clipboard! Ready to paste into your AI tool.");
-			if (this.settings.closeModalAfterExport) {
-				this.close();
-			}
-		} else {
+		const exportTree = await this.ensureExportTree();
+		if (!exportTree) {
 			this.tokenCountEl.setText("❌ export failed");
+			new Notice("Failed to generate export. See console for details.");
+			return;
+		}
+
+		const filteredTree = this.filterExportTree(exportTree);
+		if (!filteredTree) {
+			this.tokenCountEl.setText("⚪ no notes selected");
+			new Notice("No notes selected. Please select at least one note to export.");
+			return;
+		}
+
+		const output = this.buildExportOutput(filteredTree);
+		const tokenCount = this.estimateTokens(output);
+		let tokenText = `📊 ~${tokenCount.toLocaleString()} tokens`;
+
+		// Add context warnings for common LLMs
+		if (tokenCount > 200000) {
+			tokenText += " ⚠️ exceeds most AI limits";
+		} else if (tokenCount > 128000) {
+			tokenText += " ⚠️ may exceed common AI limits";
+		} else if (tokenCount > 100000) {
+			tokenText += " ⚡ large export";
+		}
+
+		this.tokenCountEl.setText(tokenText);
+		await navigator.clipboard.writeText(output);
+		new Notice("✅ export copied to clipboard! Ready to paste into your AI tool.");
+		if (this.settings.closeModalAfterExport) {
+			this.close();
 		}
 	}
 
@@ -319,7 +317,226 @@ export class ExportModal extends Modal {
 		} else {
 			this.selectedFileEl.setText("❌ no file selected");
 		}
+		this.invalidateExportTree();
 		this.debouncedTokenUpdate();
+	}
+
+	/**
+	 * Invalidates the current export tree and selection state.
+	 * @private
+	 */
+	private invalidateExportTree() {
+		this.exportTree = null;
+		this.exportTreePromise = null;
+		this.missingNotesCount = 0;
+		this.selectedNodeIds.clear();
+		this.treeBuildId += 1;
+		this.renderExportTree();
+	}
+
+	/**
+	 * Ensures the export tree is built and cached.
+	 * @private
+	 */
+	private async ensureExportTree(): Promise<ExportNode | null> {
+		if (!this.selectedFile) {
+			return null;
+		}
+		if (this.exportTree) {
+			return this.exportTree;
+		}
+		if (this.exportTreePromise) {
+			return this.exportTreePromise;
+		}
+
+		const currentBuildId = this.treeBuildId;
+		this.exportTreePromise = this.buildExportTree(currentBuildId);
+		this.renderExportTree();
+		return this.exportTreePromise;
+	}
+
+	/**
+	 * Builds the export tree for the current selection.
+	 * @private
+	 */
+	private async buildExportTree(buildId: number): Promise<ExportNode | null> {
+		if (!this.selectedFile) {
+			this.exportTreePromise = null;
+			return null;
+		}
+
+		const obsidianAPI = new ObsidianAPI(this.app);
+		const traversal = new BFSTraversal(obsidianAPI, this.contentDepth, this.titleDepth);
+		const exportTree = await traversal.traverse(this.selectedFile.path);
+
+		if (buildId !== this.treeBuildId) {
+			this.exportTreePromise = null;
+			return null;
+		}
+
+		if (!exportTree) {
+			this.exportTree = null;
+			this.missingNotesCount = 0;
+			this.exportTreePromise = null;
+			this.renderExportTree();
+			return null;
+		}
+
+		this.exportTree = exportTree;
+		this.missingNotesCount = traversal.getMissingNotes().length;
+		this.exportTreePromise = null;
+
+		if (this.selectedNodeIds.size === 0) {
+			this.selectAllNodes(exportTree);
+		}
+
+		this.renderExportTree();
+		return exportTree;
+	}
+
+	/**
+	 * Builds the export output string for a filtered tree.
+	 * @private
+	 */
+	private buildExportOutput(rootNode: ExportNode): string {
+		const vaultPath = this.app.vault.getName();
+
+		switch (this.exportFormat) {
+			case "xml":
+				return new XMLExporter().export(rootNode, vaultPath, this.missingNotesCount);
+			case "llm-markdown":
+				return new LlmMarkdownExporter().export(rootNode, vaultPath, this.missingNotesCount);
+			case "print-friendly-markdown":
+				return new PrintFriendlyMarkdownExporter().export(rootNode);
+			default:
+				return "";
+		}
+	}
+
+	/**
+	 * Filters the export tree based on selected node ids.
+	 * @private
+	 */
+	private filterExportTree(node: ExportNode): ExportNode | null {
+		if (!this.selectedNodeIds.has(node.id)) {
+			return null;
+		}
+
+		const filteredChildren = node.children
+			.map((child) => this.filterExportTree(child))
+			.filter((child): child is ExportNode => !!child);
+
+		return {
+			...node,
+			children: filteredChildren,
+		};
+	}
+
+	/**
+	 * Gets a filtered export tree ready for export.
+	 * @private
+	 */
+	/**
+	 * Selects all nodes in the tree.
+	 * @private
+	 */
+	private selectAllNodes(node: ExportNode) {
+		this.selectedNodeIds.add(node.id);
+		for (const child of node.children) {
+			this.selectAllNodes(child);
+		}
+	}
+
+	/**
+	 * Sets selection state for a node and all its descendants.
+	 * @private
+	 */
+	private setSelectionForSubtree(node: ExportNode, selected: boolean) {
+		if (selected) {
+			this.selectedNodeIds.add(node.id);
+		} else {
+			this.selectedNodeIds.delete(node.id);
+		}
+
+		for (const child of node.children) {
+			this.setSelectionForSubtree(child, selected);
+		}
+	}
+
+	/**
+	 * Renders the export tree visualization.
+	 * @private
+	 */
+	private renderExportTree() {
+		if (!this.treeContainerEl) return;
+		this.treeContainerEl.empty();
+
+		if (!this.selectedFile) {
+			this.treeContainerEl.createDiv({
+				cls: "smart-export-tree-placeholder",
+				text: "Select a root note to preview the export tree.",
+			});
+			return;
+		}
+
+		if (this.exportTreePromise) {
+			this.treeContainerEl.createDiv({
+				cls: "smart-export-tree-placeholder",
+				text: "Loading note tree...",
+			});
+			return;
+		}
+
+		if (!this.exportTree) {
+			this.treeContainerEl.createDiv({
+				cls: "smart-export-tree-placeholder",
+				text: "Note tree will appear here after calculating.",
+			});
+			return;
+		}
+
+		const listEl = this.treeContainerEl.createEl("ul", { cls: "smart-export-tree" });
+		this.renderExportTreeNode(this.exportTree, listEl, true);
+	}
+
+	/**
+	 * Renders a single tree node and its children.
+	 * @private
+	 */
+	private renderExportTreeNode(
+		node: ExportNode,
+		containerEl: HTMLElement,
+		parentSelected: boolean
+	) {
+		const itemEl = containerEl.createEl("li", { cls: "smart-export-tree-item" });
+		const rowEl = itemEl.createDiv({ cls: "smart-export-tree-row" });
+		if (!parentSelected) {
+			rowEl.addClass("smart-export-tree-row--disabled");
+		}
+
+		const checkboxEl = rowEl.createEl("input", {
+			type: "checkbox",
+			cls: "smart-export-tree-checkbox",
+		}) as HTMLInputElement;
+
+		const isSelected = parentSelected && this.selectedNodeIds.has(node.id);
+		checkboxEl.checked = isSelected;
+		checkboxEl.disabled = !parentSelected;
+
+		rowEl.createSpan({ text: node.title, cls: "smart-export-tree-label" });
+
+		checkboxEl.addEventListener("change", () => {
+			this.setSelectionForSubtree(node, checkboxEl.checked);
+			this.renderExportTree();
+			this.debouncedTokenUpdate();
+		});
+
+		if (node.children.length > 0) {
+			const childListEl = itemEl.createEl("ul", { cls: "smart-export-tree" });
+			for (const child of node.children) {
+				this.renderExportTreeNode(child, childListEl, isSelected);
+			}
+		}
 	}
 
 	/**

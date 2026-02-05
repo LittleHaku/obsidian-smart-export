@@ -109,6 +109,51 @@ Modern, clean styling for the export modal interface
 	line-height: 1.4;
 }
 
+/* Tree Visualization */
+.smart-export-tree-container {
+	background: var(--background-secondary);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 6px;
+	padding: 12px;
+	max-height: 320px;
+	overflow: auto;
+}
+
+.smart-export-tree-placeholder {
+	color: var(--text-muted);
+	font-size: var(--font-ui-small);
+	padding: 6px 0;
+}
+
+.smart-export-tree {
+	list-style: none;
+	margin: 0;
+	padding-left: 16px;
+}
+
+.smart-export-tree-item {
+	margin: 6px 0;
+}
+
+.smart-export-tree-row {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	color: var(--text-normal);
+}
+
+.smart-export-tree-row--disabled {
+	color: var(--text-muted);
+}
+
+.smart-export-tree-checkbox {
+	margin: 0;
+}
+
+.smart-export-tree-label {
+	font-size: var(--font-ui-medium);
+}
+
 /* Setting Enhancements */
 .smart-export-modal .setting-item {
 	border: none;
