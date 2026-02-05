@@ -119,6 +119,32 @@ Modern, clean styling for the export modal interface
 	overflow: auto;
 }
 
+.smart-export-tree-controls {
+	display: flex;
+	gap: 8px;
+	margin: 8px 0 12px 0;
+}
+
+.smart-export-tree-summary {
+	color: var(--text-muted);
+	font-size: var(--font-ui-small);
+	margin: 0 0 8px 0;
+}
+
+.smart-export-tree-control {
+	border: 1px solid var(--background-modifier-border);
+	background: var(--background-primary);
+	color: var(--text-normal);
+	border-radius: 6px;
+	padding: 6px 12px;
+	font-size: var(--font-ui-small);
+	cursor: pointer;
+}
+
+.smart-export-tree-control:hover {
+	background: var(--background-modifier-hover);
+}
+
 .smart-export-tree-placeholder {
 	color: var(--text-muted);
 	font-size: var(--font-ui-small);
@@ -140,18 +166,70 @@ Modern, clean styling for the export modal interface
 	align-items: center;
 	gap: 8px;
 	color: var(--text-normal);
+	padding: 2px 4px;
+	border-radius: 4px;
 }
 
 .smart-export-tree-row--disabled {
 	color: var(--text-muted);
 }
 
+.smart-export-tree-row:hover {
+	background: var(--background-modifier-hover);
+}
+
+.smart-export-tree-row--disabled:hover {
+	background: transparent;
+}
+
 .smart-export-tree-checkbox {
 	margin: 0;
 }
 
+.smart-export-tree-toggle {
+	border: none;
+	background: transparent;
+	color: var(--text-muted);
+	border-radius: 4px;
+	width: 18px;
+	height: 18px;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 0.9em;
+	padding: 0;
+	cursor: pointer;
+}
+
+.smart-export-tree-toggle:hover {
+	color: var(--text-normal);
+}
+
+.smart-export-tree-toggle-placeholder {
+	display: inline-block;
+	width: 18px;
+	height: 18px;
+}
+
 .smart-export-tree-label {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
 	font-size: var(--font-ui-medium);
+	cursor: pointer;
+}
+
+.smart-export-tree-root {
+	font-weight: 600;
+	cursor: default;
+}
+
+.smart-export-tree-label-text {
+	display: inline-flex;
+}
+
+.smart-export-tree-row--disabled .smart-export-tree-label {
+	cursor: default;
 }
 
 /* Setting Enhancements */

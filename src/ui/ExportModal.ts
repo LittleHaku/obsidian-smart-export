@@ -37,8 +37,12 @@ export class ExportModal extends Modal {
 	private missingNotesCount = 0;
 	/** Selected node ids for export. */
 	private selectedNodeIds: Set<string> = new Set();
+	/** Collapsed node ids for the tree visualization. */
+	private collapsedNodeIds: Set<string> = new Set();
 	/** Container element for the tree visualization. */
 	private treeContainerEl: HTMLElement;
+	/** Summary element for selected notes count. */
+	private treeSummaryEl: HTMLElement;
 	/** Incremented on each tree invalidation to discard stale builds. */
 	private treeBuildId = 0;
 
@@ -181,6 +185,34 @@ export class ExportModal extends Modal {
 		treeInfo.createEl("span", {
 			text: "Uncheck a note to exclude it and all of its children from the export.",
 		});
+		const treeControls = treeSection.createDiv({ cls: "smart-export-tree-controls" });
+		const expandAllButton = treeControls.createEl("button", {
+			text: "Expand all",
+			cls: "smart-export-tree-control",
+		});
+		expandAllButton.setAttr("type", "button");
+		expandAllButton.addEventListener("click", () => {
+			if (!this.exportTree) {
+				return;
+			}
+			this.collapsedNodeIds.clear();
+			this.expandAllNodes(this.exportTree);
+			this.renderExportTree();
+		});
+		const collapseAllButton = treeControls.createEl("button", {
+			text: "Collapse all",
+			cls: "smart-export-tree-control",
+		});
+		collapseAllButton.setAttr("type", "button");
+		collapseAllButton.addEventListener("click", () => {
+			if (!this.exportTree) {
+				return;
+			}
+			this.collapsedNodeIds.clear();
+			this.collapseAllNodes(this.exportTree);
+			this.renderExportTree();
+		});
+		this.treeSummaryEl = treeSection.createDiv({ cls: "smart-export-tree-summary" });
 		this.treeContainerEl = treeSection.createDiv({ cls: "smart-export-tree-container" });
 		this.renderExportTree();
 
@@ -330,6 +362,7 @@ export class ExportModal extends Modal {
 		this.exportTreePromise = null;
 		this.missingNotesCount = 0;
 		this.selectedNodeIds.clear();
+		this.collapsedNodeIds.clear();
 		this.treeBuildId += 1;
 		this.renderExportTree();
 	}
@@ -388,6 +421,9 @@ export class ExportModal extends Modal {
 
 		if (this.selectedNodeIds.size === 0) {
 			this.selectAllNodes(exportTree);
+		}
+		if (this.collapsedNodeIds.size === 0) {
+			this.collapseRootOnly(exportTree);
 		}
 
 		this.renderExportTree();
@@ -448,6 +484,39 @@ export class ExportModal extends Modal {
 	}
 
 	/**
+	 * Collapses all nodes in the tree by default.
+	 * @private
+	 */
+	private collapseRootOnly(node: ExportNode) {
+		if (node.children.length > 0) {
+			this.collapsedNodeIds.add(node.id);
+		}
+	}
+
+	/**
+	 * Collapses all nodes in the tree.
+	 * @private
+	 */
+	private collapseAllNodes(node: ExportNode) {
+		if (node.children.length > 0) {
+			this.collapsedNodeIds.add(node.id);
+			for (const child of node.children) {
+				this.collapseAllNodes(child);
+			}
+		}
+	}
+
+	/**
+	 * Expands all nodes in the tree.
+	 * @private
+	 */
+	private expandAllNodes(node: ExportNode) {
+		this.collapsedNodeIds.delete(node.id);
+		for (const child of node.children) {
+			this.expandAllNodes(child);
+		}
+	}
+	/**
 	 * Sets selection state for a node and all its descendants.
 	 * @private
 	 */
@@ -470,6 +539,9 @@ export class ExportModal extends Modal {
 	private renderExportTree() {
 		if (!this.treeContainerEl) return;
 		this.treeContainerEl.empty();
+		if (this.treeSummaryEl) {
+			this.treeSummaryEl.setText("");
+		}
 
 		if (!this.selectedFile) {
 			this.treeContainerEl.createDiv({
@@ -495,6 +567,10 @@ export class ExportModal extends Modal {
 			return;
 		}
 
+		this.selectedNodeIds.add(this.exportTree.id);
+		const counts = this.countTreeNodes(this.exportTree);
+		this.treeSummaryEl.setText(`Selected ${counts.selected} of ${counts.total} notes`);
+
 		const listEl = this.treeContainerEl.createEl("ul", { cls: "smart-export-tree" });
 		this.renderExportTreeNode(this.exportTree, listEl, true, true);
 	}
@@ -515,17 +591,43 @@ export class ExportModal extends Modal {
 			rowEl.addClass("smart-export-tree-row--disabled");
 		}
 
+		const hasChildren = node.children.length > 0;
+		const isCollapsed = this.collapsedNodeIds.has(node.id);
+
+		if (hasChildren) {
+			const toggleEl = rowEl.createEl("button", {
+				text: isCollapsed ? "▸" : "▾",
+				cls: "smart-export-tree-toggle",
+			});
+			toggleEl.setAttr("aria-label", isCollapsed ? "Expand note" : "Collapse note");
+			toggleEl.addEventListener("click", (event) => {
+				event.preventDefault();
+				event.stopPropagation();
+				if (this.collapsedNodeIds.has(node.id)) {
+					this.collapsedNodeIds.delete(node.id);
+				} else {
+					this.collapsedNodeIds.add(node.id);
+				}
+				this.renderExportTree();
+			});
+		} else {
+			rowEl.createSpan({ cls: "smart-export-tree-toggle-placeholder" });
+		}
+
 		let isSelected = isRoot || (parentSelected && this.selectedNodeIds.has(node.id));
 		if (isRoot) {
 			this.selectedNodeIds.add(node.id);
+			rowEl.createSpan({ text: node.title, cls: "smart-export-tree-label smart-export-tree-root" });
 		} else {
-			const checkboxEl = rowEl.createEl("input", {
+			const labelEl = rowEl.createEl("label", { cls: "smart-export-tree-label" });
+			const checkboxEl = labelEl.createEl("input", {
 				type: "checkbox",
 				cls: "smart-export-tree-checkbox",
 			}) as HTMLInputElement;
 
 			checkboxEl.checked = isSelected;
 			checkboxEl.disabled = !parentSelected;
+			labelEl.createSpan({ text: node.title, cls: "smart-export-tree-label-text" });
 
 			checkboxEl.addEventListener("change", () => {
 				this.setSelectionForSubtree(node, checkboxEl.checked);
@@ -534,14 +636,31 @@ export class ExportModal extends Modal {
 			});
 		}
 
-		rowEl.createSpan({ text: node.title, cls: "smart-export-tree-label" });
-
-		if (node.children.length > 0) {
+		if (hasChildren) {
 			const childListEl = itemEl.createEl("ul", { cls: "smart-export-tree" });
-			for (const child of node.children) {
-				this.renderExportTreeNode(child, childListEl, isSelected, false);
+			if (!this.collapsedNodeIds.has(node.id)) {
+				for (const child of node.children) {
+					this.renderExportTreeNode(child, childListEl, isSelected, false);
+				}
 			}
 		}
+	}
+
+	/**
+	 * Counts total and selected nodes in the tree.
+	 * @private
+	 */
+	private countTreeNodes(node: ExportNode): { total: number; selected: number } {
+		let total = 1;
+		let selected = this.selectedNodeIds.has(node.id) ? 1 : 0;
+
+		for (const child of node.children) {
+			const childCounts = this.countTreeNodes(child);
+			total += childCounts.total;
+			selected += childCounts.selected;
+		}
+
+		return { total, selected };
 	}
 
 	/**
