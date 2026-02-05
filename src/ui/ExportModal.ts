@@ -30,6 +30,7 @@ import {
  * and export the resulting note tree to the clipboard.
  */
 export class ExportModal extends Modal {
+	private static readonly MAX_TREE_CACHE_ENTRIES = 5;
 	/** The currently selected file to be used as the root of the export. */
 	private selectedFile: TFile | null = null;
 	/** The HTML element that displays the name of the selected file. */
@@ -382,6 +383,7 @@ export class ExportModal extends Modal {
 			this.collapsedNodeIds.clear();
 			this.shouldApplyDefaultCollapse = true;
 			this.shouldSelectAllOnBuild = true;
+			this.exportTreeCache.clear();
 		}
 		this.exportTreeCacheKey = null;
 		this.treeBuildId += 1;
@@ -459,6 +461,7 @@ export class ExportModal extends Modal {
 				tree: exportTree,
 				missingNotes: this.missingNotesCount,
 			});
+			this.enforceCacheLimit();
 
 			this.reconcileSelection(exportTree);
 			this.reconcileCollapsed(exportTree);
@@ -544,6 +547,20 @@ export class ExportModal extends Modal {
 	private getTreeCacheKey(): string {
 		const rootPath = this.selectedFile?.path ?? "unknown";
 		return `${rootPath}|content:${this.contentDepth}|title:${this.titleDepth}`;
+	}
+
+	/**
+	 * Keeps the export tree cache bounded.
+	 * @private
+	 */
+	private enforceCacheLimit() {
+		while (this.exportTreeCache.size > ExportModal.MAX_TREE_CACHE_ENTRIES) {
+			const firstKey = this.exportTreeCache.keys().next().value as string | undefined;
+			if (!firstKey) {
+				break;
+			}
+			this.exportTreeCache.delete(firstKey);
+		}
 	}
 
 	/**
