@@ -209,7 +209,7 @@ export class ExportModal extends Modal {
 		treeSection.createEl("h3", { text: "🌳 notes to export", cls: "smart-export-section-title" });
 		treeSection.createDiv({
 			cls: "smart-export-section-description",
-			text: "Pick which notes to include content for. Titles are always included up to the title depth.",
+			text: "Pick which notes to include content for. The root note is always included. Titles are always included up to the title depth.",
 		});
 		const treeInfo = treeSection.createDiv({ cls: "smart-export-info-box" });
 		treeInfo.createEl("strong", { text: "Tip: " });
