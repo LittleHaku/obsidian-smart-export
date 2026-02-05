@@ -607,6 +607,10 @@ export class ExportModal extends Modal {
 				text: node.title,
 				cls: "smart-export-tree-label smart-export-tree-root",
 			});
+			if (this.settings.showTokenEstimatesInTree) {
+				const tokenText = this.formatNodeTokenEstimate(node);
+				rootLabel.createSpan({ text: tokenText, cls: "smart-export-tree-token" });
+			}
 			if (hasChildren) {
 				rootLabel.addClass("smart-export-tree-root--toggle");
 				rootLabel.addEventListener("click", () => {
@@ -627,6 +631,10 @@ export class ExportModal extends Modal {
 
 			checkboxEl.checked = isSelected;
 			labelEl.createSpan({ text: node.title, cls: "smart-export-tree-label-text" });
+			if (this.settings.showTokenEstimatesInTree) {
+				const tokenText = this.formatNodeTokenEstimate(node);
+				labelEl.createSpan({ text: tokenText, cls: "smart-export-tree-token" });
+			}
 
 			checkboxEl.addEventListener("change", () => {
 				if (checkboxEl.checked) {
@@ -651,6 +659,17 @@ export class ExportModal extends Modal {
 				}
 			}
 		}
+	}
+
+	/**
+	 * Formats an approximate token estimate for a single node.
+	 * @private
+	 */
+	private formatNodeTokenEstimate(node: ExportNode): string {
+		const content = node.includeContent ? node.content ?? "" : "";
+		const text = node.title + (content ? `\n${content}` : "");
+		const tokens = this.estimateTokens(text);
+		return `~${tokens.toLocaleString()} tokens`;
 	}
 
 

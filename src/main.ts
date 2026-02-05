@@ -8,6 +8,7 @@ const DEFAULT_SETTINGS: SmartExportSettings = {
 	defaultExportFormat: "xml",
 	autoSelectCurrentNote: true,
 	closeModalAfterExport: false,
+	showTokenEstimatesInTree: false,
 };
 
 /**
@@ -146,6 +147,18 @@ class SmartExportSettingTab extends PluginSettingTab {
 					this.plugin.settings.closeModalAfterExport = value;
 					await this.plugin.saveSettings();
 				})
+			);
+
+		new Setting(containerEl)
+			.setName("Show per-note token estimates")
+			.setDesc("Display approximate token counts next to each note in the tree")
+			.addToggle((toggle) =>
+				toggle
+					.setValue(this.plugin.settings.showTokenEstimatesInTree)
+					.onChange(async (value) => {
+						this.plugin.settings.showTokenEstimatesInTree = value;
+						await this.plugin.saveSettings();
+					})
 			);
 	}
 }

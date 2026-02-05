@@ -232,6 +232,12 @@ Modern, clean styling for the export modal interface
 	display: inline-flex;
 }
 
+.smart-export-tree-token {
+	color: var(--text-muted);
+	font-size: var(--font-ui-small);
+	margin-left: 6px;
+}
+
 
 /* Setting Enhancements */
 .smart-export-modal .setting-item {
