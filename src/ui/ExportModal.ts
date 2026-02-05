@@ -746,7 +746,7 @@ export class ExportModal extends Modal {
 			});
 			checkboxEl.addEventListener("change", () => {
 				if (shiftPressed) {
-					const subtreeCounts = this.countSelectedInSubtree(node);
+					const subtreeCounts = this.countTreeNodes(node);
 					const allSelected = subtreeCounts.selected === subtreeCounts.total;
 					if (allSelected) {
 						deselectSubtree(this.selectedNodeIds, node);
@@ -824,23 +824,6 @@ export class ExportModal extends Modal {
 
 		for (const child of node.children) {
 			const childCounts = this.countTreeNodes(child);
-			total += childCounts.total;
-			selected += childCounts.selected;
-		}
-
-		return { total, selected };
-	}
-
-	/**
-	 * Counts total and selected nodes within a subtree.
-	 * @private
-	 */
-	private countSelectedInSubtree(node: ExportNode): { total: number; selected: number } {
-		let total = node.includeContent ? 1 : 0;
-		let selected = node.includeContent && this.selectedNodeIds.has(node.id) ? 1 : 0;
-
-		for (const child of node.children) {
-			const childCounts = this.countSelectedInSubtree(child);
 			total += childCounts.total;
 			selected += childCounts.selected;
 		}
