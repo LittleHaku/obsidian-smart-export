@@ -696,7 +696,7 @@ export class ExportModal extends Modal {
 				rootLabel.addClass("smart-export-tree-root--toggle");
 				setTooltip(
 					rootLabel,
-					"Click to expand or collapse. Shift-click to toggle content for all notes."
+					"Click to expand or collapse. Shift-click to toggle between this note and all notes."
 				);
 				rootLabel.addEventListener("click", (event) => {
 					event.preventDefault();
