@@ -496,7 +496,7 @@ export class ExportModal extends Modal {
 		}
 
 		const listEl = this.treeContainerEl.createEl("ul", { cls: "smart-export-tree" });
-		this.renderExportTreeNode(this.exportTree, listEl, true);
+		this.renderExportTreeNode(this.exportTree, listEl, true, true);
 	}
 
 	/**
@@ -506,7 +506,8 @@ export class ExportModal extends Modal {
 	private renderExportTreeNode(
 		node: ExportNode,
 		containerEl: HTMLElement,
-		parentSelected: boolean
+		parentSelected: boolean,
+		isRoot: boolean = false
 	) {
 		const itemEl = containerEl.createEl("li", { cls: "smart-export-tree-item" });
 		const rowEl = itemEl.createDiv({ cls: "smart-export-tree-row" });
@@ -514,27 +515,31 @@ export class ExportModal extends Modal {
 			rowEl.addClass("smart-export-tree-row--disabled");
 		}
 
-		const checkboxEl = rowEl.createEl("input", {
-			type: "checkbox",
-			cls: "smart-export-tree-checkbox",
-		}) as HTMLInputElement;
+		let isSelected = isRoot || (parentSelected && this.selectedNodeIds.has(node.id));
+		if (isRoot) {
+			this.selectedNodeIds.add(node.id);
+		} else {
+			const checkboxEl = rowEl.createEl("input", {
+				type: "checkbox",
+				cls: "smart-export-tree-checkbox",
+			}) as HTMLInputElement;
 
-		const isSelected = parentSelected && this.selectedNodeIds.has(node.id);
-		checkboxEl.checked = isSelected;
-		checkboxEl.disabled = !parentSelected;
+			checkboxEl.checked = isSelected;
+			checkboxEl.disabled = !parentSelected;
+
+			checkboxEl.addEventListener("change", () => {
+				this.setSelectionForSubtree(node, checkboxEl.checked);
+				this.renderExportTree();
+				this.debouncedTokenUpdate();
+			});
+		}
 
 		rowEl.createSpan({ text: node.title, cls: "smart-export-tree-label" });
-
-		checkboxEl.addEventListener("change", () => {
-			this.setSelectionForSubtree(node, checkboxEl.checked);
-			this.renderExportTree();
-			this.debouncedTokenUpdate();
-		});
 
 		if (node.children.length > 0) {
 			const childListEl = itemEl.createEl("ul", { cls: "smart-export-tree" });
 			for (const child of node.children) {
-				this.renderExportTreeNode(child, childListEl, isSelected);
+				this.renderExportTreeNode(child, childListEl, isSelected, false);
 			}
 		}
 	}
