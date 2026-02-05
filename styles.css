@@ -232,9 +232,6 @@ Modern, clean styling for the export modal interface
 	display: inline-flex;
 }
 
-.smart-export-tree-row--disabled .smart-export-tree-label {
-	cursor: default;
-}
 
 /* Setting Enhancements */
 .smart-export-modal .setting-item {
