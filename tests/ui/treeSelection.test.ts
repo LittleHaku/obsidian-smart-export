@@ -1,5 +1,10 @@
 import { describe, it, expect } from "vitest";
-import { deselectSubtree, selectAncestors, selectNode } from "../../src/ui/treeSelection";
+import {
+	deselectSubtree,
+	selectAncestors,
+	selectNode,
+	selectSubtree,
+} from "../../src/ui/treeSelection";
 import { ExportNode } from "../../src/types";
 
 const createNode = (id: string, children: ExportNode[] = []): ExportNode => ({
@@ -52,5 +57,20 @@ describe("treeSelection", () => {
 		expect(selected.has("A1")).toBe(true);
 		expect(selected.has("A1a")).toBe(false);
 		expect(root.children[0].children[0].id).toBe("A1");
+	});
+
+	it("selectSubtree selects node and descendants", () => {
+		const nodeA1a = createNode("A1a");
+		const nodeA1 = createNode("A1", [nodeA1a]);
+		const nodeA = createNode("A", [nodeA1]);
+		const root = createNode("root", [nodeA]);
+
+		const selected = new Set<string>();
+		selectSubtree(selected, nodeA);
+
+		expect(selected.has("A")).toBe(true);
+		expect(selected.has("A1")).toBe(true);
+		expect(selected.has("A1a")).toBe(true);
+		expect(selected.has("root")).toBe(false);
 	});
 });

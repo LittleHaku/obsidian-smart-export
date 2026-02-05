@@ -4,6 +4,13 @@ export function selectNode(selectedNodeIds: Set<string>, nodeId: string) {
 	selectedNodeIds.add(nodeId);
 }
 
+export function selectSubtree(selectedNodeIds: Set<string>, node: ExportNode) {
+	selectedNodeIds.add(node.id);
+	for (const child of node.children) {
+		selectSubtree(selectedNodeIds, child);
+	}
+}
+
 export function selectAncestors(selectedNodeIds: Set<string>, ancestorIds: string[]) {
 	for (const id of ancestorIds) {
 		selectedNodeIds.add(id);

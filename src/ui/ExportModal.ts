@@ -1,4 +1,4 @@
-import { App, Modal, Setting, TFile, SliderComponent, Notice, debounce } from "obsidian";
+import { App, Modal, Setting, TFile, SliderComponent, Notice, debounce, setTooltip } from "obsidian";
 import { RootNoteSuggestModal } from "./RootNoteSuggestModal";
 import { BFSTraversal } from "../engine/BFSTraversal";
 import { ObsidianAPI } from "../obsidian-api";
@@ -6,7 +6,7 @@ import { ExportNode, SmartExportSettings } from "../types";
 import { XMLExporter } from "../engine/XMLExporter";
 import { LlmMarkdownExporter } from "../engine/LlmMarkdownExporter";
 import { PrintFriendlyMarkdownExporter } from "../engine/PrintFriendlyMarkdownExporter";
-import { deselectSubtree, selectAncestors, selectNode } from "./treeSelection";
+import { deselectSubtree, selectAncestors, selectNode, selectSubtree } from "./treeSelection";
 
 /**
  * The main modal for configuring and triggering a smart export.
@@ -552,7 +552,7 @@ export class ExportModal extends Modal {
 			return;
 		}
 
-		this.selectedNodeIds.add(this.exportTree.id);
+			this.selectedNodeIds.add(this.exportTree.id);
 		const counts = this.countTreeNodes(this.exportTree);
 		this.treeSummaryEl.setText(`Selected ${counts.selected} of ${counts.total} notes`);
 
@@ -628,6 +628,7 @@ export class ExportModal extends Modal {
 				type: "checkbox",
 				cls: "smart-export-tree-checkbox",
 			}) as HTMLInputElement;
+			setTooltip(labelEl, "Shift-click to select this note and all of its children.");
 
 			checkboxEl.checked = isSelected;
 			labelEl.createSpan({ text: node.title, cls: "smart-export-tree-label-text" });
@@ -635,14 +636,22 @@ export class ExportModal extends Modal {
 				const tokenText = this.formatNodeTokenEstimate(node);
 				labelEl.createSpan({ text: tokenText, cls: "smart-export-tree-token" });
 			}
-
+			let shiftPressed = false;
+			checkboxEl.addEventListener("click", (event) => {
+				shiftPressed = (event as MouseEvent).shiftKey;
+			});
 			checkboxEl.addEventListener("change", () => {
 				if (checkboxEl.checked) {
 					selectAncestors(this.selectedNodeIds, ancestorIds);
-					selectNode(this.selectedNodeIds, node.id);
+					if (shiftPressed) {
+						selectSubtree(this.selectedNodeIds, node);
+					} else {
+						selectNode(this.selectedNodeIds, node.id);
+					}
 				} else {
 					deselectSubtree(this.selectedNodeIds, node);
 				}
+				shiftPressed = false;
 				this.renderExportTree();
 				this.debouncedTokenUpdate();
 			});
@@ -689,6 +698,7 @@ export class ExportModal extends Modal {
 
 		return { total, selected };
 	}
+
 
 	/**
 	 * Called when the modal is closed. Clears the content.
