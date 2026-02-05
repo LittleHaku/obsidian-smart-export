@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.8] - 2026-02-05
+
+### Added
+
+- Setting to close the export modal after a successful export
+
 ## [1.0.5] - 2025-11-04
 
 - Removed `obsidian` from the `id` and `description`

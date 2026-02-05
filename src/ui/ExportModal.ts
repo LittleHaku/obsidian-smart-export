@@ -289,6 +289,9 @@ export class ExportModal extends Modal {
 			this.tokenCountEl.setText(tokenText);
 			await navigator.clipboard.writeText(data.output);
 			new Notice("✅ export copied to clipboard! Ready to paste into your AI tool.");
+			if (this.settings.closeModalAfterExport) {
+				this.close();
+			}
 		} else {
 			this.tokenCountEl.setText("❌ export failed");
 		}

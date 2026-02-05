@@ -112,6 +112,7 @@ You can customize the defaults in Settings → Smart Export:
 - **Default Title Depth**: How deep to go with titles only (1-30)
 - **Default Export Format**: Your preferred output format
 - **Auto-select Current Note**: Whether to automatically pick your active note
+- **Close modal after export**: Whether to close the export dialog after copying to clipboard
 
 ## What I use it for
 
