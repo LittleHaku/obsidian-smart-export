@@ -224,6 +224,10 @@ Modern, clean styling for the export modal interface
 	cursor: default;
 }
 
+.smart-export-tree-root--toggle {
+	cursor: pointer;
+}
+
 .smart-export-tree-label-text {
 	display: inline-flex;
 }

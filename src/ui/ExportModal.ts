@@ -617,7 +617,21 @@ export class ExportModal extends Modal {
 		let isSelected = isRoot || (parentSelected && this.selectedNodeIds.has(node.id));
 		if (isRoot) {
 			this.selectedNodeIds.add(node.id);
-			rowEl.createSpan({ text: node.title, cls: "smart-export-tree-label smart-export-tree-root" });
+			const rootLabel = rowEl.createSpan({
+				text: node.title,
+				cls: "smart-export-tree-label smart-export-tree-root",
+			});
+			if (hasChildren) {
+				rootLabel.addClass("smart-export-tree-root--toggle");
+				rootLabel.addEventListener("click", () => {
+					if (this.collapsedNodeIds.has(node.id)) {
+						this.collapsedNodeIds.delete(node.id);
+					} else {
+						this.collapsedNodeIds.add(node.id);
+					}
+					this.renderExportTree();
+				});
+			}
 		} else {
 			const labelEl = rowEl.createEl("label", { cls: "smart-export-tree-label" });
 			const checkboxEl = labelEl.createEl("input", {
