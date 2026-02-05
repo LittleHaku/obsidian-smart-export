@@ -6,6 +6,7 @@ import { ExportNode, SmartExportSettings } from "../types";
 import { XMLExporter } from "../engine/XMLExporter";
 import { LlmMarkdownExporter } from "../engine/LlmMarkdownExporter";
 import { PrintFriendlyMarkdownExporter } from "../engine/PrintFriendlyMarkdownExporter";
+import { deselectSubtree, selectAncestors, selectNode } from "./treeSelection";
 
 /**
  * The main modal for configuring and triggering a smart export.
@@ -517,17 +518,6 @@ export class ExportModal extends Modal {
 		}
 	}
 	/**
-	 * Deselects a node and all its descendants.
-	 * @private
-	 */
-	private deselectSubtree(node: ExportNode) {
-		this.selectedNodeIds.delete(node.id);
-		for (const child of node.children) {
-			this.deselectSubtree(child);
-		}
-	}
-
-	/**
 	 * Renders the export tree visualization.
 	 * @private
 	 */
@@ -640,10 +630,10 @@ export class ExportModal extends Modal {
 
 			checkboxEl.addEventListener("change", () => {
 				if (checkboxEl.checked) {
-					this.selectAncestors(ancestorIds);
-					this.selectedNodeIds.add(node.id);
+					selectAncestors(this.selectedNodeIds, ancestorIds);
+					selectNode(this.selectedNodeIds, node.id);
 				} else {
-					this.deselectSubtree(node);
+					deselectSubtree(this.selectedNodeIds, node);
 				}
 				this.renderExportTree();
 				this.debouncedTokenUpdate();
@@ -663,15 +653,6 @@ export class ExportModal extends Modal {
 		}
 	}
 
-	/**
-	 * Ensures all ancestor nodes are selected.
-	 * @private
-	 */
-	private selectAncestors(ancestorIds: string[]) {
-		for (const id of ancestorIds) {
-			this.selectedNodeIds.add(id);
-		}
-	}
 
 	/**
 	 * Counts total and selected nodes in the tree.
