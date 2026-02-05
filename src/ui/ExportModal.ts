@@ -41,6 +41,10 @@ export class ExportModal extends Modal {
 	private selectedNodeIds: Set<string> = new Set();
 	/** Collapsed node ids for the tree visualization. */
 	private collapsedNodeIds: Set<string> = new Set();
+	/** Whether the current tree is stale and awaiting rebuild. */
+	private treeIsStale = false;
+	/** Whether to apply the default collapsed state on the next tree build. */
+	private shouldApplyDefaultCollapse = true;
 	/** Container element for the tree visualization. */
 	private treeContainerEl: HTMLElement;
 	/** Summary element for selected notes count. */
@@ -341,7 +345,7 @@ export class ExportModal extends Modal {
 		} else {
 			this.selectedFileEl.setText("❌ no file selected");
 		}
-		this.invalidateExportTree();
+		this.invalidateExportTree({ resetSelection: true });
 		this.debouncedTokenUpdate();
 	}
 
@@ -349,12 +353,15 @@ export class ExportModal extends Modal {
 	 * Invalidates the current export tree and selection state.
 	 * @private
 	 */
-	private invalidateExportTree() {
-		this.exportTree = null;
+	private invalidateExportTree(options: { resetSelection?: boolean } = {}) {
+		this.treeIsStale = true;
 		this.exportTreePromise = null;
 		this.missingNotesCount = 0;
-		this.selectedNodeIds.clear();
-		this.collapsedNodeIds.clear();
+		if (options.resetSelection) {
+			this.selectedNodeIds.clear();
+			this.collapsedNodeIds.clear();
+			this.shouldApplyDefaultCollapse = true;
+		}
 		this.treeBuildId += 1;
 		this.renderExportTree();
 	}
@@ -367,7 +374,7 @@ export class ExportModal extends Modal {
 		if (!this.selectedFile) {
 			return null;
 		}
-		if (this.exportTree) {
+		if (this.exportTree && !this.treeIsStale) {
 			return this.exportTree;
 		}
 		if (this.exportTreePromise) {
@@ -408,15 +415,19 @@ export class ExportModal extends Modal {
 		}
 
 		this.exportTree = exportTree;
+		this.treeIsStale = false;
 		this.missingNotesCount = traversal.getMissingNotes().length;
 		this.exportTreePromise = null;
 
+		this.reconcileSelection(exportTree);
+		this.reconcileCollapsed(exportTree);
 		if (this.selectedNodeIds.size === 0) {
 			this.selectAllNodes(exportTree);
 		}
-		if (this.collapsedNodeIds.size === 0) {
+		if (this.shouldApplyDefaultCollapse && this.collapsedNodeIds.size === 0) {
 			this.collapseRootOnly(exportTree);
 		}
+		this.shouldApplyDefaultCollapse = false;
 
 		this.renderExportTree();
 		return exportTree;
@@ -459,6 +470,53 @@ export class ExportModal extends Modal {
 	}
 
 	/**
+	 * Reconciles selection with the current tree after depth changes.
+	 * @private
+	 */
+	private reconcileSelection(node: ExportNode) {
+		const contentIds = this.collectContentNodeIds(node);
+		for (const id of Array.from(this.selectedNodeIds)) {
+			if (!contentIds.has(id)) {
+				this.selectedNodeIds.delete(id);
+			}
+		}
+		if (node.includeContent) {
+			this.selectedNodeIds.add(node.id);
+		}
+	}
+
+	/**
+	 * Reconciles collapsed state with the current tree after depth changes.
+	 * @private
+	 */
+	private reconcileCollapsed(node: ExportNode) {
+		const contentIds = this.collectContentNodeIds(node);
+		for (const id of Array.from(this.collapsedNodeIds)) {
+			if (!contentIds.has(id)) {
+				this.collapsedNodeIds.delete(id);
+			}
+		}
+	}
+
+	/**
+	 * Collects ids for nodes that include content.
+	 * @private
+	 */
+	private collectContentNodeIds(node: ExportNode): Set<string> {
+		const ids = new Set<string>();
+		if (node.includeContent) {
+			ids.add(node.id);
+		}
+		for (const child of node.children) {
+			const childIds = this.collectContentNodeIds(child);
+			for (const id of childIds) {
+				ids.add(id);
+			}
+		}
+		return ids;
+	}
+
+	/**
 	 * Collapses all nodes in the tree by default.
 	 * @private
 	 */
@@ -498,7 +556,7 @@ export class ExportModal extends Modal {
 	private renderExportTree() {
 		if (!this.treeContainerEl) return;
 		this.treeContainerEl.empty();
-		if (this.treeSummaryEl) {
+		if (this.treeSummaryEl && !this.exportTree) {
 			this.treeSummaryEl.setText("");
 		}
 
@@ -535,10 +593,14 @@ export class ExportModal extends Modal {
 			});
 			return;
 		}
-		const counts = this.countTreeNodes(displayTree);
-		this.treeSummaryEl.setText(
-			`Content selected for ${counts.selected} of ${counts.total} notes`
-		);
+		if (this.treeIsStale) {
+			this.treeSummaryEl.setText("Updating note tree...");
+		} else {
+			const counts = this.countTreeNodes(displayTree);
+			this.treeSummaryEl.setText(
+				`Content selected for ${counts.selected} of ${counts.total} notes`
+			);
+		}
 
 		const listEl = this.treeContainerEl.createEl("ul", { cls: "smart-export-tree" });
 		this.renderExportTreeNode(displayTree, listEl, true, true, []);
