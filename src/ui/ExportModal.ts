@@ -226,7 +226,6 @@ export class ExportModal extends Modal {
 				return;
 			}
 			this.collapsedNodeIds.clear();
-			this.expandAllNodes(this.exportTree);
 			this.renderExportTree();
 		});
 		const collapseAllButton = treeControls.createEl("button", {
