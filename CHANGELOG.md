@@ -15,7 +15,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Content-only selection behavior while always including titles
 - Shift-click toggle for subtree content selection
 - Cached traversal to avoid recomputation when switching depths
-- Frontmatter link support for traversal
 
 ## [1.0.9] - 2026-02-05
 
