@@ -576,7 +576,13 @@ export class ExportModal extends Modal {
 	) {
 		const itemEl = containerEl.createEl("li", { cls: "smart-export-tree-item" });
 		const rowEl = itemEl.createDiv({ cls: "smart-export-tree-row" });
-		if (!parentSelected) {
+
+		if (isRoot) {
+			this.selectedNodeIds.add(node.id);
+		}
+		const isSelected = isRoot || this.selectedNodeIds.has(node.id);
+		const isExcluded = !parentSelected || (!isRoot && !isSelected);
+		if (isExcluded) {
 			rowEl.addClass("smart-export-tree-row--disabled");
 		}
 
@@ -603,9 +609,7 @@ export class ExportModal extends Modal {
 			rowEl.createSpan({ cls: "smart-export-tree-toggle-placeholder" });
 		}
 
-		let isSelected = isRoot || this.selectedNodeIds.has(node.id);
 		if (isRoot) {
-			this.selectedNodeIds.add(node.id);
 			const rootLabel = rowEl.createSpan({
 				text: node.title,
 				cls: "smart-export-tree-label smart-export-tree-root",
