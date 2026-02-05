@@ -32,4 +32,6 @@ export interface SmartExportSettings {
 	defaultExportFormat: "xml" | "llm-markdown" | "print-friendly-markdown";
 	/** Whether to automatically select the currently active note as the root for export. */
 	autoSelectCurrentNote: boolean;
+	/** Whether to close the export modal after a successful export. */
+	closeModalAfterExport: boolean;
 }

@@ -7,6 +7,7 @@ const DEFAULT_SETTINGS: SmartExportSettings = {
 	defaultTitleDepth: 6,
 	defaultExportFormat: "xml",
 	autoSelectCurrentNote: true,
+	closeModalAfterExport: false,
 };
 
 /**
@@ -133,6 +134,16 @@ class SmartExportSettingTab extends PluginSettingTab {
 			.addToggle((toggle) =>
 				toggle.setValue(this.plugin.settings.autoSelectCurrentNote).onChange(async (value) => {
 					this.plugin.settings.autoSelectCurrentNote = value;
+					await this.plugin.saveSettings();
+				})
+			);
+
+		new Setting(containerEl)
+			.setName("Close modal after export")
+			.setDesc("Close the export dialog after copying to clipboard")
+			.addToggle((toggle) =>
+				toggle.setValue(this.plugin.settings.closeModalAfterExport).onChange(async (value) => {
+					this.plugin.settings.closeModalAfterExport = value;
 					await this.plugin.saveSettings();
 				})
 			);
