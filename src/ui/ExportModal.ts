@@ -64,6 +64,8 @@ export class ExportModal extends Modal {
 	private treeIsStale = false;
 	/** Whether to apply the default collapsed state on the next tree build. */
 	private shouldApplyDefaultCollapse = true;
+	/** Whether to select all nodes on the next tree build. */
+	private shouldSelectAllOnBuild = false;
 	/** Container element for the tree visualization. */
 	private treeContainerEl: HTMLElement;
 	/** Summary element for selected notes count. */
@@ -380,6 +382,7 @@ export class ExportModal extends Modal {
 			this.selectedNodeIds.clear();
 			this.collapsedNodeIds.clear();
 			this.shouldApplyDefaultCollapse = true;
+			this.shouldSelectAllOnBuild = true;
 		}
 		this.exportTreeCacheKey = null;
 		this.treeBuildId += 1;
@@ -460,8 +463,9 @@ export class ExportModal extends Modal {
 
 			this.reconcileSelection(exportTree);
 			this.reconcileCollapsed(exportTree);
-			if (this.selectedNodeIds.size === 0) {
+			if (this.shouldSelectAllOnBuild || this.selectedNodeIds.size === 0) {
 				this.selectAllNodes(exportTree);
+				this.shouldSelectAllOnBuild = false;
 			}
 			if (this.shouldApplyDefaultCollapse && this.collapsedNodeIds.size === 0) {
 				this.collapseRootOnly(exportTree);
