@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
 	deselectSubtree,
+	enforceAncestorSelection,
 	selectAncestors,
 	selectNode,
 	selectSubtree,
@@ -88,6 +89,21 @@ describe("treeSelection", () => {
 
 		expect(selected.has("root")).toBe(true);
 		expect(selected.has("A")).toBe(true);
+		expect(selected.has("A1")).toBe(false);
+		expect(selected.has("A1a")).toBe(false);
+	});
+
+	it("enforceAncestorSelection removes descendants when parent is deselected", () => {
+		const nodeA1a = createNode("A1a");
+		const nodeA1 = createNode("A1", [nodeA1a]);
+		const nodeA = createNode("A", [nodeA1]);
+		const root = createNode("root", [nodeA]);
+
+		const selected = new Set<string>(["root", "A1", "A1a"]);
+		enforceAncestorSelection(selected, root, true, true);
+
+		expect(selected.has("root")).toBe(true);
+		expect(selected.has("A")).toBe(false);
 		expect(selected.has("A1")).toBe(false);
 		expect(selected.has("A1a")).toBe(false);
 	});

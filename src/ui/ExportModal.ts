@@ -7,7 +7,13 @@ import { XMLExporter } from "../engine/XMLExporter";
 import { LlmMarkdownExporter } from "../engine/LlmMarkdownExporter";
 import { PrintFriendlyMarkdownExporter } from "../engine/PrintFriendlyMarkdownExporter";
 import { applyContentSelection } from "./treeContentSelection";
-import { deselectSubtree, selectAncestors, selectNode, selectSubtree } from "./treeSelection";
+import {
+	deselectSubtree,
+	enforceAncestorSelection,
+	selectAncestors,
+	selectNode,
+	selectSubtree,
+} from "./treeSelection";
 
 /**
  * The main modal for configuring and triggering a smart export.
@@ -35,6 +41,10 @@ export class ExportModal extends Modal {
 	private exportTree: ExportNode | null = null;
 	/** In-flight export tree build promise. */
 	private exportTreePromise: Promise<ExportNode | null> | null = null;
+	/** Cached export trees by depth to avoid recomputation. */
+	private exportTreeCache: Map<string, { tree: ExportNode; missingNotes: number }> = new Map();
+	/** Cache key for the current export tree. */
+	private exportTreeCacheKey: string | null = null;
 	/** Missing notes count from the last traversal. */
 	private missingNotesCount = 0;
 	/** Selected node ids for export. */
@@ -362,6 +372,7 @@ export class ExportModal extends Modal {
 			this.collapsedNodeIds.clear();
 			this.shouldApplyDefaultCollapse = true;
 		}
+		this.exportTreeCacheKey = null;
 		this.treeBuildId += 1;
 		this.renderExportTree();
 	}
@@ -374,11 +385,24 @@ export class ExportModal extends Modal {
 		if (!this.selectedFile) {
 			return null;
 		}
-		if (this.exportTree && !this.treeIsStale) {
+
+		const cacheKey = this.getTreeCacheKey();
+		if (this.exportTree && !this.treeIsStale && this.exportTreeCacheKey === cacheKey) {
 			return this.exportTree;
 		}
 		if (this.exportTreePromise) {
 			return this.exportTreePromise;
+		}
+		const cached = this.exportTreeCache.get(cacheKey);
+		if (cached) {
+			this.exportTree = cached.tree;
+			this.missingNotesCount = cached.missingNotes;
+			this.exportTreeCacheKey = cacheKey;
+			this.treeIsStale = false;
+			this.reconcileSelection(this.exportTree);
+			this.reconcileCollapsed(this.exportTree);
+			this.renderExportTree();
+			return this.exportTree;
 		}
 
 		const currentBuildId = this.treeBuildId;
@@ -418,6 +442,11 @@ export class ExportModal extends Modal {
 		this.treeIsStale = false;
 		this.missingNotesCount = traversal.getMissingNotes().length;
 		this.exportTreePromise = null;
+		this.exportTreeCacheKey = this.getTreeCacheKey();
+		this.exportTreeCache.set(this.exportTreeCacheKey, {
+			tree: exportTree,
+			missingNotes: this.missingNotesCount,
+		});
 
 		this.reconcileSelection(exportTree);
 		this.reconcileCollapsed(exportTree);
@@ -474,15 +503,10 @@ export class ExportModal extends Modal {
 	 * @private
 	 */
 	private reconcileSelection(node: ExportNode) {
-		const contentIds = this.collectContentNodeIds(node);
-		for (const id of Array.from(this.selectedNodeIds)) {
-			if (!contentIds.has(id)) {
-				this.selectedNodeIds.delete(id);
-			}
-		}
 		if (node.includeContent) {
 			this.selectedNodeIds.add(node.id);
 		}
+		enforceAncestorSelection(this.selectedNodeIds, node, true, true);
 	}
 
 	/**
@@ -490,30 +514,23 @@ export class ExportModal extends Modal {
 	 * @private
 	 */
 	private reconcileCollapsed(node: ExportNode) {
-		const contentIds = this.collectContentNodeIds(node);
-		for (const id of Array.from(this.collapsedNodeIds)) {
-			if (!contentIds.has(id)) {
-				this.collapsedNodeIds.delete(id);
-			}
+		if (this.collapsedNodeIds.size === 0 && this.shouldApplyDefaultCollapse) {
+			this.collapseRootOnly(node);
 		}
 	}
 
 	/**
-	 * Collects ids for nodes that include content.
+	 * Ensures no node remains selected if any ancestor is deselected.
 	 * @private
 	 */
-	private collectContentNodeIds(node: ExportNode): Set<string> {
-		const ids = new Set<string>();
-		if (node.includeContent) {
-			ids.add(node.id);
-		}
-		for (const child of node.children) {
-			const childIds = this.collectContentNodeIds(child);
-			for (const id of childIds) {
-				ids.add(id);
-			}
-		}
-		return ids;
+
+	/**
+	 * Builds a cache key for the current tree.
+	 * @private
+	 */
+	private getTreeCacheKey(): string {
+		const rootPath = this.selectedFile?.path ?? "unknown";
+		return `${rootPath}|content:${this.contentDepth}|title:${this.titleDepth}`;
 	}
 
 	/**

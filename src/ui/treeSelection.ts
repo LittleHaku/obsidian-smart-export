@@ -25,3 +25,19 @@ export function deselectSubtree(selectedNodeIds: Set<string>, node: ExportNode) 
 		deselectSubtree(selectedNodeIds, child);
 	}
 }
+
+export function enforceAncestorSelection(
+	selectedNodeIds: Set<string>,
+	node: ExportNode,
+	parentSelected: boolean,
+	isRoot: boolean
+) {
+	const isSelected = isRoot || selectedNodeIds.has(node.id);
+	if (!parentSelected && !isRoot) {
+		selectedNodeIds.delete(node.id);
+	}
+	const nextParentSelected = parentSelected && isSelected;
+	for (const child of node.children) {
+		enforceAncestorSelection(selectedNodeIds, child, nextParentSelected, false);
+	}
+}
