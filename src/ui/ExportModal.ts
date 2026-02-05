@@ -664,6 +664,7 @@ export class ExportModal extends Modal {
 		isRoot: boolean = false,
 		ancestorIds: string[] = []
 	) {
+		const ancestorIdsSnapshot = ancestorIds.slice();
 		const itemEl = containerEl.createEl("li", { cls: "smart-export-tree-item" });
 		const rowEl = itemEl.createDiv({ cls: "smart-export-tree-row" });
 
@@ -756,7 +757,7 @@ export class ExportModal extends Modal {
 				const tokenText = this.formatNodeTokenEstimate(node);
 				labelEl.createSpan({ text: tokenText, cls: "smart-export-tree-token" });
 			}
-			checkboxEl.addEventListener("change", (event) => {
+			checkboxEl.addEventListener("click", (event) => {
 				const shiftPressed = event.shiftKey;
 				if (shiftPressed) {
 					const subtreeCounts = this.countTreeNodes(node);
@@ -764,7 +765,7 @@ export class ExportModal extends Modal {
 					if (allSelected) {
 						deselectSubtree(this.selectedNodeIds, node);
 					} else {
-						selectAncestors(this.selectedNodeIds, ancestorIds);
+						selectAncestors(this.selectedNodeIds, ancestorIdsSnapshot);
 						selectSubtree(this.selectedNodeIds, node);
 					}
 					this.renderExportTree();
@@ -772,7 +773,7 @@ export class ExportModal extends Modal {
 					return;
 				}
 				if (checkboxEl.checked) {
-					selectAncestors(this.selectedNodeIds, ancestorIds);
+					selectAncestors(this.selectedNodeIds, ancestorIdsSnapshot);
 					selectNode(this.selectedNodeIds, node.id);
 				} else {
 					deselectSubtree(this.selectedNodeIds, node);
