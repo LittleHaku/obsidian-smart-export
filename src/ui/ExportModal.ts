@@ -785,12 +785,11 @@ export class ExportModal extends Modal {
 		if (hasChildren) {
 			const childListEl = itemEl.createEl("ul", { cls: "smart-export-tree" });
 			if (!this.collapsedNodeIds.has(node.id)) {
+				ancestorIds.push(node.id);
 				for (const child of node.children) {
-					this.renderExportTreeNode(child, childListEl, isSelected, false, [
-						...ancestorIds,
-						node.id,
-					]);
+					this.renderExportTreeNode(child, childListEl, isSelected, false, ancestorIds);
 				}
+				ancestorIds.pop();
 			}
 		}
 	}
