@@ -34,4 +34,6 @@ export interface SmartExportSettings {
 	autoSelectCurrentNote: boolean;
 	/** Whether to close the export modal after a successful export. */
 	closeModalAfterExport: boolean;
+	/** Whether to show per-note token estimates in the tree visualization. */
+	showTokenEstimatesInTree: boolean;
 }

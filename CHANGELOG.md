@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-02-05
+
+### Added
+
+- Interactive note tree with content selection, bulk actions, and token estimates
+- Content-only selection behavior while always including titles
+- Shift-click toggle for subtree content selection
+- Cached traversal to avoid recomputation when switching depths
+
 ## [1.0.9] - 2026-02-05
 
 ### Added
