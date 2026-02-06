@@ -11,7 +11,7 @@ import {
 import { RootNoteSuggestModal } from "./RootNoteSuggestModal";
 import { BFSTraversal } from "../engine/BFSTraversal";
 import { ObsidianAPI } from "../obsidian-api";
-import { ExportNode, SmartExportSettings } from "../types";
+import { ExportNode, LinkTraversalMode, SmartExportSettings } from "../types";
 import { XMLExporter } from "../engine/XMLExporter";
 import { LlmMarkdownExporter } from "../engine/LlmMarkdownExporter";
 import { PrintFriendlyMarkdownExporter } from "../engine/PrintFriendlyMarkdownExporter";
@@ -39,6 +39,8 @@ export class ExportModal extends Modal {
 	private contentDepth: number;
 	/** The depth for including only note titles. */
 	private titleDepth: number;
+	/** Which link directions are followed when building the tree. */
+	private linkTraversalMode: LinkTraversalMode = "outgoing";
 	/** The selected export format. */
 	private exportFormat: "xml" | "llm-markdown" | "print-friendly-markdown";
 	/** The HTML element that displays the estimated token count. */
@@ -79,6 +81,7 @@ export class ExportModal extends Modal {
 		this.settings = settings;
 		this.contentDepth = settings.defaultContentDepth;
 		this.titleDepth = settings.defaultTitleDepth;
+		this.linkTraversalMode = settings.defaultLinkTraversalMode;
 		this.exportFormat = settings.defaultExportFormat;
 	}
 
@@ -182,6 +185,24 @@ export class ExportModal extends Modal {
 							this.contentDepth = this.titleDepth;
 							contentSlider?.setValue(this.contentDepth);
 						}
+						this.invalidateExportTree();
+						this.debouncedTokenUpdate();
+					});
+			});
+
+		new Setting(depthSection)
+			.setName("Link direction")
+			.setDesc(
+				"Outgoing follows wikilinks in this note. Incoming follows backlinks. Outgoing + incoming helps find possible links between notes."
+			)
+			.addDropdown((dropdown) => {
+				dropdown
+					.addOption("outgoing", "Outgoing (wikilinks in text)")
+					.addOption("incoming", "Incoming (backlinks)")
+					.addOption("both", "Outgoing + incoming")
+					.setValue(this.linkTraversalMode)
+					.onChange((value: LinkTraversalMode) => {
+						this.linkTraversalMode = value;
 						this.invalidateExportTree();
 						this.debouncedTokenUpdate();
 					});
@@ -419,7 +440,12 @@ export class ExportModal extends Modal {
 
 		try {
 			const obsidianAPI = new ObsidianAPI(this.app);
-			const traversal = new BFSTraversal(obsidianAPI, this.contentDepth, this.titleDepth);
+			const traversal = new BFSTraversal(
+				obsidianAPI,
+				this.contentDepth,
+				this.titleDepth,
+				this.linkTraversalMode
+			);
 			const exportTree = await traversal.traverse(this.selectedFile.path);
 
 			if (buildId !== this.treeBuildId) {
@@ -529,7 +555,7 @@ export class ExportModal extends Modal {
 	 */
 	private getTreeCacheKey(): string {
 		const rootPath = this.selectedFile?.path ?? "unknown";
-		return `${rootPath}|content:${this.contentDepth}|title:${this.titleDepth}`;
+		return `${rootPath}|content:${this.contentDepth}|title:${this.titleDepth}|mode:${this.linkTraversalMode}`;
 	}
 
 	/**

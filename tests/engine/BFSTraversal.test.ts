@@ -31,6 +31,33 @@ describe("BFSTraversal", () => {
 	const mockFileLinks: { [key: string]: LinkCache[] } = {};
 	const mockFileFrontmatterLinks: { [key: string]: FrontmatterLinkCache[] } = {};
 
+	const rebuildResolvedLinks = () => {
+		const resolvedLinks: Record<string, Record<string, number>> = {};
+
+		for (const [sourcePath, links] of Object.entries(mockFileLinks)) {
+			for (const link of links) {
+				const targetFile = Object.values(mockFiles).find((file) => file.basename === link.link);
+				if (!targetFile) continue;
+				resolvedLinks[sourcePath] ??= {};
+				resolvedLinks[sourcePath][targetFile.path] =
+					(resolvedLinks[sourcePath][targetFile.path] ?? 0) + 1;
+			}
+		}
+
+		for (const [sourcePath, links] of Object.entries(mockFileFrontmatterLinks)) {
+			for (const link of links) {
+				const targetFile = Object.values(mockFiles).find((file) => file.basename === link.link);
+				if (!targetFile) continue;
+				resolvedLinks[sourcePath] ??= {};
+				resolvedLinks[sourcePath][targetFile.path] =
+					(resolvedLinks[sourcePath][targetFile.path] ?? 0) + 1;
+			}
+		}
+
+		(mockApp.metadataCache as { resolvedLinks: Record<string, Record<string, number>> }).resolvedLinks =
+			resolvedLinks;
+	};
+
 	// Helper function to create LinkCache objects
 	const createLink = (link: string): LinkCache => ({
 		link,
@@ -45,6 +72,16 @@ describe("BFSTraversal", () => {
 
 	beforeEach(() => {
 		vi.resetAllMocks();
+		for (const collection of [
+			mockFiles as Record<string, unknown>,
+			mockFileContents as Record<string, unknown>,
+			mockFileLinks as Record<string, unknown>,
+			mockFileFrontmatterLinks as Record<string, unknown>,
+		]) {
+			for (const key of Object.keys(collection)) {
+				delete collection[key];
+			}
+		}
 
 		// Setup mock files
 		mockFiles["root.md"] = createMockTFile("root.md", "root");
@@ -80,6 +117,7 @@ describe("BFSTraversal", () => {
 		mockFileFrontmatterLinks["D.md"] = [];
 		mockFileFrontmatterLinks["cycle1.md"] = [];
 		mockFileFrontmatterLinks["cycle2.md"] = [];
+		rebuildResolvedLinks();
 
 		// Mock App object behavior
 		mockApp.vault.getAbstractFileByPath = vi.fn((path: string) => mockFiles[path]);
@@ -164,6 +202,7 @@ describe("BFSTraversal", () => {
 		mockFileContents["fm-root.md"] = "No links in body.";
 		mockFileLinks["fm-root.md"] = [];
 		mockFileFrontmatterLinks["fm-root.md"] = [createFrontmatterLink("A", "related")];
+		rebuildResolvedLinks();
 
 		const rootNode = await bfsTraversal.traverse("fm-root.md");
 
@@ -181,6 +220,7 @@ describe("BFSTraversal", () => {
 			createLink("missing2"),
 			createLink("A"),
 		];
+		rebuildResolvedLinks();
 
 		const rootNode = await bfsTraversal.traverse("multi-missing.md");
 
@@ -213,6 +253,7 @@ describe("BFSTraversal", () => {
 		mockFileLinks["child1.md"] = [createLink("grandchild")];
 		mockFileLinks["child2.md"] = [];
 		mockFileLinks["grandchild.md"] = [];
+		rebuildResolvedLinks();
 
 		const rootNode = await bfsTraversal.traverse("parent.md");
 
@@ -225,5 +266,25 @@ describe("BFSTraversal", () => {
 		expect(rootNode?.children[1].title).toBe("child2");
 		expect(rootNode?.children[0].children.length).toBe(1);
 		expect(rootNode?.children[0].children[0].title).toBe("grandchild");
+	});
+
+	it("should traverse incoming backlinks when mode is incoming", async () => {
+		const traversal = new BFSTraversal(obsidianAPI, 1, 2, "incoming");
+		const rootNode = await traversal.traverse("A.md");
+
+		expect(rootNode).not.toBeNull();
+		expect(rootNode?.title).toBe("A");
+		expect(rootNode?.children.map((child) => child.title)).toEqual(["D", "root"]);
+		expect(traversal.getMissingNotes()).toHaveLength(0);
+	});
+
+	it("should traverse outgoing and incoming links without duplicates when mode is both", async () => {
+		const traversal = new BFSTraversal(obsidianAPI, 1, 1, "both");
+		const rootNode = await traversal.traverse("A.md");
+
+		expect(rootNode).not.toBeNull();
+		expect(rootNode?.title).toBe("A");
+		expect(rootNode?.children.map((child) => child.title)).toEqual(["C", "D", "root"]);
+		expect(new Set(rootNode?.children.map((child) => child.id)).size).toBe(3);
 	});
 });
