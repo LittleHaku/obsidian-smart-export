@@ -752,7 +752,13 @@ export class ExportModal extends Modal {
 			setTooltip(labelEl, "Shift-click to toggle content for all notes in this branch.");
 
 			checkboxEl.checked = isSelected;
-			labelEl.createSpan({ text: node.title, cls: "smart-export-tree-label-text" });
+			const labelTextSpan = labelEl.createSpan({
+				text: node.title,
+				cls: "smart-export-tree-label-text",
+			});
+			const labelId = this.getDomSafeId(`smart-export-tree-label-${node.id}`);
+			labelTextSpan.id = labelId;
+			checkboxEl.setAttribute("aria-labelledby", labelId);
 			if (this.settings.showTokenEstimatesInTree) {
 				const tokenText = this.formatNodeTokenEstimate(node);
 				labelEl.createSpan({ text: tokenText, cls: "smart-export-tree-token" });
@@ -804,6 +810,14 @@ export class ExportModal extends Modal {
 		const text = node.title + (content ? `\n${content}` : "");
 		const tokens = this.estimateTokens(text);
 		return `~${tokens.toLocaleString()} tokens`;
+	}
+
+	/**
+	 * Creates a DOM-safe id from an arbitrary string.
+	 * @private
+	 */
+	private getDomSafeId(value: string): string {
+		return value.replace(/[^a-zA-Z0-9_-]+/g, "-");
 	}
 
 	/**
