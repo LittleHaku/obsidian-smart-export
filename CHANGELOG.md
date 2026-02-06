@@ -18,6 +18,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Improved traversal performance by loading note content with bounded concurrency instead of sequential reads
 - Reduced token estimation overhead in the export modal by estimating directly from the export tree without serializing full output on each update
 - Reduced tree rerender overhead by caching the content-only display tree and per-node token labels
+- Improved tree interaction performance by updating selection/collapse UI in place instead of rebuilding the full tree on each click
+- Added lazy child rendering for collapsed branches so deep trees do less DOM work
 - Optimized exporter internals for large trees by replacing `queue.shift()` loops with head-index queues
 - Improved print-friendly export string construction by using chunked joins instead of repeated string concatenation
 

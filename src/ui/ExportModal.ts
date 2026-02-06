@@ -85,6 +85,18 @@ export class ExportModal extends Modal {
 	private cachedDisplayTreeSource: ExportNode | null = null;
 	/** Per-node token label cache to avoid recomputing large string lengths on rerender. */
 	private nodeTokenEstimateCache: WeakMap<ExportNode, string> = new WeakMap();
+	/** Currently rendered content-only tree root. */
+	private renderedDisplayTree: ExportNode | null = null;
+	/** Row elements by node id for in-place UI updates. */
+	private renderedRowElements: Map<string, HTMLElement> = new Map();
+	/** Checkbox elements by node id for in-place selection updates. */
+	private renderedCheckboxElements: Map<string, HTMLInputElement> = new Map();
+	/** Toggle button elements by node id for in-place collapse updates. */
+	private renderedToggleElements: Map<string, HTMLButtonElement> = new Map();
+	/** Child list elements by node id for lazy rendering expanded branches. */
+	private renderedChildListElements: Map<string, HTMLElement> = new Map();
+	/** Ancestor id snapshots by node id. */
+	private renderedAncestorIds: Map<string, string[]> = new Map();
 
 	constructor(app: App, settings: SmartExportSettings) {
 		super(app);
@@ -263,7 +275,12 @@ export class ExportModal extends Modal {
 				return;
 			}
 			this.collapsedNodeIds.clear();
-			this.renderExportTree();
+			if (!this.renderedDisplayTree) {
+				this.renderExportTree();
+				return;
+			}
+			this.expandAllNodes(this.renderedDisplayTree);
+			this.updateCollapseUI(this.renderedDisplayTree);
 		});
 		const collapseAllButton = treeControls.createEl("button", {
 			text: "Collapse all",
@@ -276,7 +293,11 @@ export class ExportModal extends Modal {
 			}
 			this.collapsedNodeIds.clear();
 			this.collapseAllNodes(this.exportTree);
-			this.renderExportTree();
+			if (!this.renderedDisplayTree) {
+				this.renderExportTree();
+				return;
+			}
+			this.updateCollapseUI(this.renderedDisplayTree);
 		});
 		this.treeSummaryEl = treeSection.createDiv({ cls: "smart-export-tree-summary" });
 		this.treeContainerEl = treeSection.createDiv({ cls: "smart-export-tree-container" });
@@ -459,6 +480,7 @@ export class ExportModal extends Modal {
 		this.missingNotesCount = 0;
 		this.cachedDisplayTree = null;
 		this.cachedDisplayTreeSource = null;
+		this.clearRenderedTreeState();
 		if (options.resetSelection) {
 			this.selectedNodeIds.clear();
 			this.knownContentNodeIds.clear();
@@ -750,6 +772,120 @@ export class ExportModal extends Modal {
 			this.expandAllNodes(child);
 		}
 	}
+
+	private clearRenderedTreeState() {
+		this.renderedDisplayTree = null;
+		this.renderedRowElements.clear();
+		this.renderedCheckboxElements.clear();
+		this.renderedToggleElements.clear();
+		this.renderedChildListElements.clear();
+		this.renderedAncestorIds.clear();
+	}
+
+	private getNodeParentSelectedState(nodeId: string): boolean {
+		const ancestorIds = this.renderedAncestorIds.get(nodeId) ?? [];
+		for (const ancestorId of ancestorIds) {
+			if (!this.selectedNodeIds.has(ancestorId)) {
+				return false;
+			}
+		}
+		return true;
+	}
+
+	private renderNodeChildrenIfNeeded(node: ExportNode) {
+		if (node.children.length === 0) {
+			return;
+		}
+
+		const childListEl = this.renderedChildListElements.get(node.id);
+		if (!childListEl || childListEl.childElementCount > 0) {
+			return;
+		}
+
+		const childAncestorIds = [...(this.renderedAncestorIds.get(node.id) ?? []), node.id];
+		const parentSelected =
+			this.getNodeParentSelectedState(node.id) && this.selectedNodeIds.has(node.id);
+		for (const child of node.children) {
+			this.renderExportTreeNode(child, childListEl, parentSelected, false, childAncestorIds);
+		}
+	}
+
+	private updateCollapseUI(node: ExportNode) {
+		const hasChildren = node.children.length > 0;
+		if (hasChildren) {
+			const isCollapsed = this.collapsedNodeIds.has(node.id);
+			const toggleEl = this.renderedToggleElements.get(node.id);
+			if (toggleEl) {
+				toggleEl.setText(isCollapsed ? "▸" : "▾");
+				toggleEl.setAttr("aria-label", isCollapsed ? "Expand note" : "Collapse note");
+			}
+
+			const childListEl = this.renderedChildListElements.get(node.id);
+			if (childListEl) {
+				if (!isCollapsed) {
+					this.renderNodeChildrenIfNeeded(node);
+				}
+				if (isCollapsed) {
+					childListEl.addClass("smart-export-tree--collapsed");
+				} else {
+					childListEl.removeClass("smart-export-tree--collapsed");
+				}
+			}
+		}
+
+		if (this.collapsedNodeIds.has(node.id)) {
+			return;
+		}
+
+		for (const child of node.children) {
+			this.updateCollapseUI(child);
+		}
+	}
+
+	private refreshRenderedSelectionUI() {
+		if (!this.renderedDisplayTree) {
+			return;
+		}
+
+		this.selectedNodeIds.add(this.renderedDisplayTree.id);
+		this.refreshRenderedSelectionNode(this.renderedDisplayTree, true, true);
+		this.updateTreeSummary(this.renderedDisplayTree);
+	}
+
+	private refreshRenderedSelectionNode(node: ExportNode, parentSelected: boolean, isRoot: boolean) {
+		const isSelected = isRoot || this.selectedNodeIds.has(node.id);
+		const isExcluded = !parentSelected || (!isRoot && !isSelected);
+
+		const rowEl = this.renderedRowElements.get(node.id);
+		if (rowEl) {
+			if (isExcluded) {
+				rowEl.addClass("smart-export-tree-row--disabled");
+			} else {
+				rowEl.removeClass("smart-export-tree-row--disabled");
+			}
+		}
+
+		const checkboxEl = this.renderedCheckboxElements.get(node.id);
+		if (checkboxEl) {
+			checkboxEl.checked = isSelected;
+		}
+
+		const nextParentSelected = isSelected;
+		for (const child of node.children) {
+			this.refreshRenderedSelectionNode(child, nextParentSelected, false);
+		}
+	}
+
+	private updateTreeSummary(displayTree: ExportNode) {
+		if (this.treeIsStale) {
+			this.treeSummaryEl.setText("Updating note tree...");
+			return;
+		}
+
+		const counts = this.countTreeNodes(displayTree);
+		this.treeSummaryEl.setText(`Content selected for ${counts.selected} of ${counts.total} notes`);
+	}
+
 	/**
 	 * Renders the export tree visualization.
 	 * @private
@@ -757,6 +893,7 @@ export class ExportModal extends Modal {
 	private renderExportTree() {
 		if (!this.treeContainerEl) return;
 		this.treeContainerEl.empty();
+		this.clearRenderedTreeState();
 		if (this.treeSummaryEl && !this.exportTree) {
 			this.treeSummaryEl.setText("");
 		}
@@ -794,14 +931,8 @@ export class ExportModal extends Modal {
 			});
 			return;
 		}
-		if (this.treeIsStale) {
-			this.treeSummaryEl.setText("Updating note tree...");
-		} else {
-			const counts = this.countTreeNodes(displayTree);
-			this.treeSummaryEl.setText(
-				`Content selected for ${counts.selected} of ${counts.total} notes`
-			);
-		}
+		this.renderedDisplayTree = displayTree;
+		this.updateTreeSummary(displayTree);
 
 		const listEl = this.treeContainerEl.createEl("ul", { cls: "smart-export-tree" });
 		this.renderExportTreeNode(displayTree, listEl, true, true, []);
@@ -819,8 +950,11 @@ export class ExportModal extends Modal {
 		ancestorIds: string[] = []
 	) {
 		const ancestorIdsSnapshot = ancestorIds.slice();
+		this.renderedAncestorIds.set(node.id, ancestorIdsSnapshot);
+
 		const itemEl = containerEl.createEl("li", { cls: "smart-export-tree-item" });
 		const rowEl = itemEl.createDiv({ cls: "smart-export-tree-row" });
+		this.renderedRowElements.set(node.id, rowEl);
 
 		if (isRoot) {
 			this.selectedNodeIds.add(node.id);
@@ -829,6 +963,8 @@ export class ExportModal extends Modal {
 		const isExcluded = !parentSelected || (!isRoot && !isSelected);
 		if (isExcluded) {
 			rowEl.addClass("smart-export-tree-row--disabled");
+		} else {
+			rowEl.removeClass("smart-export-tree-row--disabled");
 		}
 
 		const hasChildren = node.children.length > 0;
@@ -839,6 +975,7 @@ export class ExportModal extends Modal {
 				text: isCollapsed ? "▸" : "▾",
 				cls: "smart-export-tree-toggle",
 			});
+			this.renderedToggleElements.set(node.id, toggleEl);
 			toggleEl.setAttr("aria-label", isCollapsed ? "Expand note" : "Collapse note");
 			toggleEl.addEventListener("click", (event) => {
 				event.preventDefault();
@@ -848,7 +985,7 @@ export class ExportModal extends Modal {
 				} else {
 					this.collapsedNodeIds.add(node.id);
 				}
-				this.renderExportTree();
+				this.updateCollapseUI(node);
 			});
 		} else {
 			rowEl.createSpan({ cls: "smart-export-tree-toggle-placeholder" });
@@ -875,31 +1012,33 @@ export class ExportModal extends Modal {
 					if (!this.exportTree) {
 						return;
 					}
-					const shiftPressed = event.shiftKey;
-					if (shiftPressed) {
-						const counts = this.countTreeNodes(this.exportTree);
+
+					if (event.shiftKey) {
+						const activeTree = this.renderedDisplayTree ?? this.exportTree;
+						const counts = this.countTreeNodes(activeTree);
 						const allSelected = counts.selected === counts.total;
 						this.selectedNodeIds.clear();
 						if (!allSelected) {
 							this.userDeselectedNodeIds.clear();
-							this.selectAllNodes(this.exportTree);
+							this.selectAllNodes(activeTree);
 						} else {
 							this.selectedNodeIds.add(node.id);
 							this.userDeselectedNodeIds.clear();
-							for (const child of this.exportTree.children) {
+							for (const child of activeTree.children) {
 								this.markUserDeselectedSubtree(child);
 							}
 						}
-						this.renderExportTree();
+						this.refreshRenderedSelectionUI();
 						this.debouncedTokenUpdate();
 						return;
 					}
+
 					if (this.collapsedNodeIds.has(node.id)) {
 						this.collapsedNodeIds.delete(node.id);
 					} else {
 						this.collapsedNodeIds.add(node.id);
 					}
-					this.renderExportTree();
+					this.updateCollapseUI(node);
 				});
 			}
 		} else {
@@ -908,6 +1047,7 @@ export class ExportModal extends Modal {
 				type: "checkbox",
 				cls: "smart-export-tree-checkbox",
 			});
+			this.renderedCheckboxElements.set(node.id, checkboxEl);
 			setTooltip(labelEl, "Shift-click to toggle content for all notes in this branch.");
 
 			checkboxEl.checked = isSelected;
@@ -923,8 +1063,7 @@ export class ExportModal extends Modal {
 				labelEl.createSpan({ text: tokenText, cls: "smart-export-tree-token" });
 			}
 			checkboxEl.addEventListener("click", (event) => {
-				const shiftPressed = event.shiftKey;
-				if (shiftPressed) {
+				if (event.shiftKey) {
 					const subtreeCounts = this.countTreeNodes(node);
 					const allSelected = subtreeCounts.selected === subtreeCounts.total;
 					if (allSelected) {
@@ -936,10 +1075,11 @@ export class ExportModal extends Modal {
 						this.clearUserDeselectedAncestors(ancestorIdsSnapshot);
 						this.clearUserDeselectedSubtree(node);
 					}
-					this.renderExportTree();
+					this.refreshRenderedSelectionUI();
 					this.debouncedTokenUpdate();
 					return;
 				}
+
 				if (checkboxEl.checked) {
 					selectAncestors(this.selectedNodeIds, ancestorIdsSnapshot);
 					selectNode(this.selectedNodeIds, node.id);
@@ -949,26 +1089,27 @@ export class ExportModal extends Modal {
 					deselectSubtree(this.selectedNodeIds, node);
 					this.markUserDeselectedSubtree(node);
 				}
-				this.renderExportTree();
+				this.refreshRenderedSelectionUI();
 				this.debouncedTokenUpdate();
 			});
 		}
 
 		if (hasChildren) {
 			const childListEl = itemEl.createEl("ul", { cls: "smart-export-tree" });
-			if (!this.collapsedNodeIds.has(node.id)) {
-				ancestorIds.push(node.id);
+			this.renderedChildListElements.set(node.id, childListEl);
+			if (isCollapsed) {
+				childListEl.addClass("smart-export-tree--collapsed");
+			} else {
+				const childAncestorIds = [...ancestorIdsSnapshot, node.id];
 				for (const child of node.children) {
-					this.renderExportTreeNode(child, childListEl, isSelected, false, ancestorIds);
+					this.renderExportTreeNode(child, childListEl, isSelected, false, childAncestorIds);
 				}
-				ancestorIds.pop();
 			}
 		}
 	}
 
 	/**
 	 * Formats an approximate token estimate for a single node.
-	 * @private
 	 */
 	private formatNodeTokenEstimate(node: ExportNode): string {
 		const cached = this.nodeTokenEstimateCache.get(node);
@@ -1068,5 +1209,6 @@ export class ExportModal extends Modal {
 		contentEl.empty();
 		contentEl.removeClass("smart-export-modal");
 		this.modalEl.removeClass("smart-export-modal-shell");
+		this.clearRenderedTreeState();
 	}
 }

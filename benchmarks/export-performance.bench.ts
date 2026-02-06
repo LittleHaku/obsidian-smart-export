@@ -131,9 +131,7 @@ function countNodes(root: ExportNode): { total: number; withContent: number } {
 function median(values: number[]): number {
 	const sorted = [...values].sort((a, b) => a - b);
 	const middle = Math.floor(sorted.length / 2);
-	return sorted.length % 2 === 0
-		? (sorted[middle - 1] + sorted[middle]) / 2
-		: sorted[middle];
+	return sorted.length % 2 === 0 ? (sorted[middle - 1] + sorted[middle]) / 2 : sorted[middle];
 }
 
 async function measureAsyncRuns(runs: number, task: () => Promise<void>): Promise<number[]> {
@@ -157,87 +155,83 @@ function measureSyncRuns(runs: number, task: () => void): number[] {
 }
 
 describe("Performance benchmarks", () => {
-	it(
-		"benchmarks traversal and exporter throughput on a 1k+ note synthetic graph",
-		async () => {
-			const branchingFactor = 4;
-			const traversalDepth = 5;
-			const contentDepth = 3;
-			const perReadDelayMs = 5;
-			const traversalRuns = 5;
-			const exporterRuns = 30;
-			const fixture = createSyntheticGraphFixture(
-				branchingFactor,
-				traversalDepth,
-				400,
-				perReadDelayMs
-			);
-			const obsidianAPI = new ObsidianAPI(fixture.app);
-			let lastTree: ExportNode | null = null;
-			const traversalDurations = await measureAsyncRuns(traversalRuns, async () => {
-				const traversal = new BFSTraversal(obsidianAPI, contentDepth, traversalDepth, "outgoing");
-				lastTree = await traversal.traverse(fixture.rootPath);
-			});
+	it("benchmarks traversal and exporter throughput on a 1k+ note synthetic graph", async () => {
+		const branchingFactor = 4;
+		const traversalDepth = 5;
+		const contentDepth = 3;
+		const perReadDelayMs = 5;
+		const traversalRuns = 5;
+		const exporterRuns = 30;
+		const fixture = createSyntheticGraphFixture(
+			branchingFactor,
+			traversalDepth,
+			400,
+			perReadDelayMs
+		);
+		const obsidianAPI = new ObsidianAPI(fixture.app);
+		let lastTree: ExportNode | null = null;
+		const traversalDurations = await measureAsyncRuns(traversalRuns, async () => {
+			const traversal = new BFSTraversal(obsidianAPI, contentDepth, traversalDepth, "outgoing");
+			lastTree = await traversal.traverse(fixture.rootPath);
+		});
 
-			expect(lastTree).not.toBeNull();
-			const rootTree = lastTree as ExportNode;
-			const nodeCounts = countNodes(rootTree);
-			const traversalMedian = median(traversalDurations);
-			const expectedSerialReadCostMs = nodeCounts.withContent * perReadDelayMs;
-			const estimatedSpeedup = expectedSerialReadCostMs / traversalMedian;
+		expect(lastTree).not.toBeNull();
+		const rootTree = lastTree as ExportNode;
+		const nodeCounts = countNodes(rootTree);
+		const traversalMedian = median(traversalDurations);
+		const expectedSerialReadCostMs = nodeCounts.withContent * perReadDelayMs;
+		const estimatedSpeedup = expectedSerialReadCostMs / traversalMedian;
 
-			const xmlExporter = new XMLExporter();
-			const llmExporter = new LlmMarkdownExporter();
-			const printExporter = new PrintFriendlyMarkdownExporter();
+		const xmlExporter = new XMLExporter();
+		const llmExporter = new LlmMarkdownExporter();
+		const printExporter = new PrintFriendlyMarkdownExporter();
 
-			let xmlLength = 0;
-			let llmLength = 0;
-			let printLength = 0;
-			const xmlDurations = measureSyncRuns(exporterRuns, () => {
-				xmlLength = xmlExporter.export(rootTree, "benchmark-vault", 0).length;
-			});
-			const llmDurations = measureSyncRuns(exporterRuns, () => {
-				llmLength = llmExporter.export(rootTree, "benchmark-vault", 0).length;
-			});
-			const printDurations = measureSyncRuns(exporterRuns, () => {
-				printLength = printExporter.export(rootTree).length;
-			});
+		let xmlLength = 0;
+		let llmLength = 0;
+		let printLength = 0;
+		const xmlDurations = measureSyncRuns(exporterRuns, () => {
+			xmlLength = xmlExporter.export(rootTree, "benchmark-vault", 0).length;
+		});
+		const llmDurations = measureSyncRuns(exporterRuns, () => {
+			llmLength = llmExporter.export(rootTree, "benchmark-vault", 0).length;
+		});
+		const printDurations = measureSyncRuns(exporterRuns, () => {
+			printLength = printExporter.export(rootTree).length;
+		});
 
-			const reportLines = [
-				"Smart Export benchmark (synthetic graph)",
-				`- Nodes traversed: ${nodeCounts.total.toLocaleString()}`,
-				`- Nodes with content reads: ${nodeCounts.withContent.toLocaleString()}`,
-				`- BFS traversal median (${traversalRuns} runs): ${traversalMedian.toFixed(2)} ms`,
-				`- Estimated serial read cost: ${expectedSerialReadCostMs.toFixed(2)} ms`,
-				`- Estimated traversal speedup vs serial reads: ${estimatedSpeedup.toFixed(2)}x`,
-				`- XML export median (${exporterRuns} runs): ${median(xmlDurations).toFixed(2)} ms (len ${xmlLength.toLocaleString()})`,
-				`- LLM Markdown export median (${exporterRuns} runs): ${median(llmDurations).toFixed(2)} ms (len ${llmLength.toLocaleString()})`,
-				`- Print-friendly export median (${exporterRuns} runs): ${median(printDurations).toFixed(2)} ms (len ${printLength.toLocaleString()})`,
-			];
-			writeFileSync(
-				"benchmarks/latest-report.json",
-				`${JSON.stringify(
-					{
-						nodesTraversed: nodeCounts.total,
-						nodesWithContentReads: nodeCounts.withContent,
-						traversalRuns,
-						traversalMedianMs: Number(traversalMedian.toFixed(2)),
-						estimatedSerialReadCostMs: Number(expectedSerialReadCostMs.toFixed(2)),
-						estimatedTraversalSpeedup: Number(estimatedSpeedup.toFixed(2)),
-						exporterRuns,
-						xmlMedianMs: Number(median(xmlDurations).toFixed(2)),
-						xmlLength,
-						llmMedianMs: Number(median(llmDurations).toFixed(2)),
-						llmLength,
-						printMedianMs: Number(median(printDurations).toFixed(2)),
-						printLength,
-					},
-					null,
-					2
-				)}\n`
-			);
-			process.stdout.write(`${reportLines.join("\n")}\n`);
-		},
-		30_000
-	);
+		const reportLines = [
+			"Smart Export benchmark (synthetic graph)",
+			`- Nodes traversed: ${nodeCounts.total.toLocaleString()}`,
+			`- Nodes with content reads: ${nodeCounts.withContent.toLocaleString()}`,
+			`- BFS traversal median (${traversalRuns} runs): ${traversalMedian.toFixed(2)} ms`,
+			`- Estimated serial read cost: ${expectedSerialReadCostMs.toFixed(2)} ms`,
+			`- Estimated traversal speedup vs serial reads: ${estimatedSpeedup.toFixed(2)}x`,
+			`- XML export median (${exporterRuns} runs): ${median(xmlDurations).toFixed(2)} ms (len ${xmlLength.toLocaleString()})`,
+			`- LLM Markdown export median (${exporterRuns} runs): ${median(llmDurations).toFixed(2)} ms (len ${llmLength.toLocaleString()})`,
+			`- Print-friendly export median (${exporterRuns} runs): ${median(printDurations).toFixed(2)} ms (len ${printLength.toLocaleString()})`,
+		];
+		writeFileSync(
+			"benchmarks/latest-report.json",
+			`${JSON.stringify(
+				{
+					nodesTraversed: nodeCounts.total,
+					nodesWithContentReads: nodeCounts.withContent,
+					traversalRuns,
+					traversalMedianMs: Number(traversalMedian.toFixed(2)),
+					estimatedSerialReadCostMs: Number(expectedSerialReadCostMs.toFixed(2)),
+					estimatedTraversalSpeedup: Number(estimatedSpeedup.toFixed(2)),
+					exporterRuns,
+					xmlMedianMs: Number(median(xmlDurations).toFixed(2)),
+					xmlLength,
+					llmMedianMs: Number(median(llmDurations).toFixed(2)),
+					llmLength,
+					printMedianMs: Number(median(printDurations).toFixed(2)),
+					printLength,
+				},
+				null,
+				2
+			)}\n`
+		);
+		process.stdout.write(`${reportLines.join("\n")}\n`);
+	}, 30_000);
 });
