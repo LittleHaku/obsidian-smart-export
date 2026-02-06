@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.3] - 2026-02-06
+
+### Added
+
+- Added a default hotkey (Ctrl/Cmd+Shift+C) to open the export modal
+
+### Changed
+
+- Documented the new hotkey in the README
+
 ## [1.1.2] - 2026-02-06
 
 ### Changed

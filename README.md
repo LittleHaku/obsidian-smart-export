@@ -56,7 +56,7 @@ This is the recommended way to beta test plugins, as it keeps everything up to d
 
 ## How to use it
 
-1. **Open the export dialog**: Click the 🧠 brain icon or use Cmd/Ctrl+P → "Smart Export"
+1. **Open the export dialog**: Click the 🧠 brain icon, use Cmd/Ctrl+P → "Open export", or press Cmd/Ctrl+Shift+C
 2. **Pick your starting note**: It'll default to your current note, or you can choose any note
 3. **Set your depths**: I recommend starting with Content Depth: 3, Title Depth: 6
 4. **Choose your format**: XML for structured data, Markdown for readability

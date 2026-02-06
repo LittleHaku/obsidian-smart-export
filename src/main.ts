@@ -36,6 +36,7 @@ export default class SmartExportPlugin extends Plugin {
 		this.addCommand({
 			id: "open-export-modal",
 			name: "Open export",
+			hotkeys: [{ modifiers: ["Mod", "Shift"], key: "c" }],
 			callback: () => {
 				new ExportModal(this.app, this.settings).open();
 			},
