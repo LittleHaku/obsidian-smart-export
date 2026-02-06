@@ -92,7 +92,7 @@ export class ExportModal extends Modal {
 
 		// Header section with title and description
 		const headerEl = contentEl.createDiv({ cls: "smart-export-header" });
-		headerEl.createEl("h1", {
+		headerEl.createDiv({
 			text: "Smart export",
 			cls: "smart-export-title",
 		});
@@ -103,7 +103,7 @@ export class ExportModal extends Modal {
 
 		// Root note selection section
 		const rootSection = contentEl.createDiv({ cls: "smart-export-section" });
-		rootSection.createEl("h3", { text: "📝 root note", cls: "smart-export-section-title" });
+		rootSection.createDiv({ text: "📝 Root note", cls: "smart-export-section-title" });
 
 		new Setting(rootSection)
 			.setName("Starting point")
@@ -118,7 +118,7 @@ export class ExportModal extends Modal {
 			});
 
 		this.selectedFileEl = rootSection.createEl("div", {
-			text: "❌ no file selected",
+			text: "❌ No file selected",
 			cls: "smart-export-selected-file",
 		});
 
@@ -133,7 +133,10 @@ export class ExportModal extends Modal {
 
 		// Depth configuration section
 		const depthSection = contentEl.createDiv({ cls: "smart-export-section" });
-		depthSection.createEl("h3", { text: "🌊 traversal depth", cls: "smart-export-section-title" });
+		depthSection.createDiv({
+			text: "🌊 Traversal depth",
+			cls: "smart-export-section-title",
+		});
 
 		const depthInfo = depthSection.createDiv({ cls: "smart-export-info-box" });
 		depthInfo.createEl("span", { text: "💡 " });
@@ -147,7 +150,7 @@ export class ExportModal extends Modal {
 
 		new Setting(depthSection)
 			.setName("Content depth")
-			.setDesc("📄 levels of linked notes to include full content (text, images, etc.)")
+			.setDesc("📄 Levels of linked notes to include full content (text, images, etc.)")
 			.addSlider((slider) => {
 				contentSlider = slider;
 				slider
@@ -167,7 +170,7 @@ export class ExportModal extends Modal {
 
 		new Setting(depthSection)
 			.setName("Title depth")
-			.setDesc("🏷️ additional levels to include titles only (for context and navigation)")
+			.setDesc("🏷️ Additional levels to include titles only (for context and navigation)")
 			.addSlider((slider) => {
 				titleSlider = slider;
 				slider
@@ -187,7 +190,10 @@ export class ExportModal extends Modal {
 
 		// Export configuration section
 		const exportSection = contentEl.createDiv({ cls: "smart-export-section" });
-		exportSection.createEl("h3", { text: "📤 export settings", cls: "smart-export-section-title" });
+		exportSection.createDiv({
+			text: "📤 Export settings",
+			cls: "smart-export-section-title",
+		});
 
 		new Setting(exportSection)
 			.setName("Output format")
@@ -196,7 +202,7 @@ export class ExportModal extends Modal {
 				dropdown
 					.addOption("xml", "📋 XML - structured format with metadata")
 					.addOption("llm-markdown", "🤖 Markdown for AI tools - optimized for model input")
-					.addOption("print-friendly-markdown", "🖨️ print-friendly - clean, readable format")
+					.addOption("print-friendly-markdown", "🖨️ Print-friendly - clean, readable format")
 					.setValue(this.exportFormat)
 					.onChange((value: "xml" | "llm-markdown" | "print-friendly-markdown") => {
 						this.exportFormat = value;
@@ -206,7 +212,7 @@ export class ExportModal extends Modal {
 
 		// Notes visualization section
 		const treeSection = contentEl.createDiv({ cls: "smart-export-section" });
-		treeSection.createEl("h3", { text: "🌳 notes to export", cls: "smart-export-section-title" });
+		treeSection.createDiv({ text: "🌳 Notes to export", cls: "smart-export-section-title" });
 		treeSection.createDiv({
 			cls: "smart-export-section-description",
 			text: "Pick which notes to include content for. The root note is always included. Titles are always included up to the title depth.",
@@ -256,7 +262,7 @@ export class ExportModal extends Modal {
 
 		const tokenInfo = exportActionSection.createDiv({ cls: "smart-export-token-info" });
 		tokenInfo.createEl("span", {
-			text: "📊 token estimates help you stay within common AI context limits (~128k, ~200k)",
+			text: "📊 Token estimates help you stay within common AI context limits (~128k, ~200k)",
 		});
 
 		new Setting(exportActionSection)
@@ -264,7 +270,7 @@ export class ExportModal extends Modal {
 			.setDesc("Generate your smart export and copy it to clipboard")
 			.addButton((button) => {
 				button
-					.setButtonText("🚀 export to clipboard")
+					.setButtonText("🚀 Export to clipboard")
 					.setCta()
 					.onClick(() => {
 						void this.onExport();
@@ -282,10 +288,10 @@ export class ExportModal extends Modal {
 			return;
 		}
 
-		this.tokenCountEl.setText("🔄 calculating tokens...");
+			this.tokenCountEl.setText("🔄 Calculating tokens...");
 		const exportTree = await this.ensureExportTree();
 		if (!exportTree) {
-			this.tokenCountEl.setText("❌ token count: error");
+			this.tokenCountEl.setText("❌ Token count: error");
 			return;
 		}
 		const adjustedTree = applyContentSelection(exportTree, this.selectedNodeIds);
@@ -304,10 +310,10 @@ export class ExportModal extends Modal {
 			return;
 		}
 
-		this.tokenCountEl.setText("🚀 exporting...");
+		this.tokenCountEl.setText("🚀 Exporting...");
 		const exportTree = await this.ensureExportTree();
 		if (!exportTree) {
-			this.tokenCountEl.setText("❌ export failed");
+			this.tokenCountEl.setText("❌ Export failed");
 			new Notice("Failed to generate export. See console for details.");
 			return;
 		}
@@ -316,7 +322,7 @@ export class ExportModal extends Modal {
 		const tokenCount = this.estimateTokens(output);
 		this.tokenCountEl.setText(this.formatTokenCountMessage(tokenCount));
 		await navigator.clipboard.writeText(output);
-		new Notice("✅ export copied to clipboard! Ready to paste into your AI tool.");
+		new Notice("✅ Export copied to clipboard! Ready to paste into your AI tool.");
 		if (this.settings.closeModalAfterExport) {
 			this.close();
 		}
@@ -342,7 +348,7 @@ export class ExportModal extends Modal {
 		if (this.selectedFile) {
 			this.selectedFileEl.setText(`✅ Selected: ${this.selectedFile.basename}`);
 		} else {
-			this.selectedFileEl.setText("❌ no file selected");
+			this.selectedFileEl.setText("❌ No file selected");
 		}
 		this.invalidateExportTree({ resetSelection: true });
 		this.debouncedTokenUpdate();
