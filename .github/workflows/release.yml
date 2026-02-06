@@ -47,12 +47,31 @@ jobs:
           cp main.js manifest.json styles.css README.md ${{ env.PLUGIN_NAME }}
           zip -r ${{ env.PLUGIN_NAME }}-${{ github.ref_name }}.zip ${{ env.PLUGIN_NAME }}
 
+      - name: Generate release notes
+        run: |
+          VERSION="${{ github.ref_name }}"
+          VERSION="${VERSION#v}"
+          if ! grep -q "^## \\[${VERSION}\\]" CHANGELOG.md; then
+            {
+              echo "## ${VERSION}"
+              echo ""
+              echo "Release notes not found in CHANGELOG.md."
+            } > release-notes.md
+          else
+            awk -v ver="${VERSION}" '
+              $0 ~ "^## \\[" ver "\\]" {found=1}
+              found && $0 ~ "^## \\[" && $0 !~ "^## \\[" ver "\\]" {exit}
+              found {print}
+            ' CHANGELOG.md > release-notes.md
+          fi
+
       - name: Release
         id: release
         uses: softprops/action-gh-release@v2
         with:
           prerelease: ${{ steps.status.outputs.prerelease }}
           token: ${{ secrets.GITHUB_TOKEN }}
+          body_path: release-notes.md
           files: |
             ${{ env.PLUGIN_NAME }}-${{ github.ref_name }}.zip
             main.js
