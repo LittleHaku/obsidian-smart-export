@@ -48,9 +48,11 @@ jobs:
           zip -r ${{ env.PLUGIN_NAME }}-${{ github.ref_name }}.zip ${{ env.PLUGIN_NAME }}
 
       - name: Generate release notes
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          VERSION="${{ github.ref_name }}"
-          VERSION="${VERSION#v}"
+          TAG="${{ github.ref_name }}"
+          VERSION="${TAG#v}"
           if ! grep -q "^## \\[${VERSION}\\]" CHANGELOG.md; then
             {
               echo "## ${VERSION}"
@@ -63,6 +65,40 @@ jobs:
               found && $0 ~ "^## \\[" && $0 !~ "^## \\[" ver "\\]" {exit}
               found {print}
             ' CHANGELOG.md > release-notes.md
+          fi
+
+          git fetch --tags --force
+          if [[ "$TAG" == v* ]]; then
+            TAG_FILTER='^v'
+          else
+            TAG_FILTER='^[0-9]'
+          fi
+          PREV_TAG=$(git tag --list | grep -E "$TAG_FILTER" | sort -V | awk -v tag="$TAG" '$0==tag {print prev} {prev=$0}')
+
+          if [[ -n "$PREV_TAG" ]]; then
+            NOTES_JSON=$(curl -s -X POST \
+              -H "Authorization: Bearer $GITHUB_TOKEN" \
+              -H "Accept: application/vnd.github+json" \
+              "https://api.github.com/repos/${{ github.repository }}/releases/generate-notes" \
+              -d "{\"tag_name\":\"${TAG}\",\"previous_tag_name\":\"${PREV_TAG}\"}")
+          else
+            NOTES_JSON=$(curl -s -X POST \
+              -H "Authorization: Bearer $GITHUB_TOKEN" \
+              -H "Accept: application/vnd.github+json" \
+              "https://api.github.com/repos/${{ github.repository }}/releases/generate-notes" \
+              -d "{\"tag_name\":\"${TAG}\"}")
+          fi
+
+          NOTES_BODY=$(python - <<'PY'
+          import json, sys
+          data = json.load(sys.stdin)
+          print((data.get("body") or "").strip())
+          PY
+          <<<"$NOTES_JSON")
+
+          if [[ -n "$NOTES_BODY" ]]; then
+            echo "" >> release-notes.md
+            echo "$NOTES_BODY" >> release-notes.md
           fi
 
       - name: Release
