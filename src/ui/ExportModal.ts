@@ -92,18 +92,18 @@ export class ExportModal extends Modal {
 
 		// Header section with title and description
 		const headerEl = contentEl.createDiv({ cls: "smart-export-header" });
-		headerEl.createEl("h1", {
+		headerEl.createDiv({
 			text: "Smart export",
 			cls: "smart-export-title",
 		});
 		headerEl.createEl("p", {
-			text: "Export interconnected notes by following wikilinks to a configurable depth for readable summaries and AI-ready context.",
+			text: "Export interconnected notes by following wikilinks to a configurable depth for readable summaries and sharing.",
 			cls: "smart-export-description",
 		});
 
 		// Root note selection section
 		const rootSection = contentEl.createDiv({ cls: "smart-export-section" });
-		rootSection.createEl("h3", { text: "📝 root note", cls: "smart-export-section-title" });
+		rootSection.createDiv({ text: "📝 Root note", cls: "smart-export-section-title" });
 
 		new Setting(rootSection)
 			.setName("Starting point")
@@ -118,7 +118,7 @@ export class ExportModal extends Modal {
 			});
 
 		this.selectedFileEl = rootSection.createEl("div", {
-			text: "❌ no file selected",
+			text: "No file selected",
 			cls: "smart-export-selected-file",
 		});
 
@@ -133,10 +133,12 @@ export class ExportModal extends Modal {
 
 		// Depth configuration section
 		const depthSection = contentEl.createDiv({ cls: "smart-export-section" });
-		depthSection.createEl("h3", { text: "🌊 traversal depth", cls: "smart-export-section-title" });
+		depthSection.createDiv({
+			text: "🌊 Traversal depth",
+			cls: "smart-export-section-title",
+		});
 
 		const depthInfo = depthSection.createDiv({ cls: "smart-export-info-box" });
-		depthInfo.createEl("span", { text: "💡 " });
 		depthInfo.createEl("strong", { text: "How it works: " });
 		depthInfo.createEl("span", {
 			text: "Content depth includes full note text, title depth adds linked note titles only. Title depth must be ≥ content depth.",
@@ -147,7 +149,7 @@ export class ExportModal extends Modal {
 
 		new Setting(depthSection)
 			.setName("Content depth")
-			.setDesc("📄 levels of linked notes to include full content (text, images, etc.)")
+			.setDesc("Levels of linked notes to include full content (text, images, etc.)")
 			.addSlider((slider) => {
 				contentSlider = slider;
 				slider
@@ -167,7 +169,7 @@ export class ExportModal extends Modal {
 
 		new Setting(depthSection)
 			.setName("Title depth")
-			.setDesc("🏷️ additional levels to include titles only (for context and navigation)")
+			.setDesc("Additional levels to include titles only (for context and navigation)")
 			.addSlider((slider) => {
 				titleSlider = slider;
 				slider
@@ -187,16 +189,19 @@ export class ExportModal extends Modal {
 
 		// Export configuration section
 		const exportSection = contentEl.createDiv({ cls: "smart-export-section" });
-		exportSection.createEl("h3", { text: "📤 export settings", cls: "smart-export-section-title" });
+		exportSection.createDiv({
+			text: "Export settings",
+			cls: "smart-export-section-title",
+		});
 
 		new Setting(exportSection)
 			.setName("Output format")
 			.setDesc("Choose the format optimized for your workflow")
 			.addDropdown((dropdown) => {
 				dropdown
-					.addOption("xml", "📋 XML - structured format with metadata")
-					.addOption("llm-markdown", "🤖 Markdown for AI tools - optimized for model input")
-					.addOption("print-friendly-markdown", "🖨️ print-friendly - clean, readable format")
+					.addOption("xml", "XML - structured format with metadata")
+					.addOption("llm-markdown", "Markdown - optimized for model input")
+					.addOption("print-friendly-markdown", "Print-friendly - clean, readable format")
 					.setValue(this.exportFormat)
 					.onChange((value: "xml" | "llm-markdown" | "print-friendly-markdown") => {
 						this.exportFormat = value;
@@ -206,7 +211,7 @@ export class ExportModal extends Modal {
 
 		// Notes visualization section
 		const treeSection = contentEl.createDiv({ cls: "smart-export-section" });
-		treeSection.createEl("h3", { text: "🌳 notes to export", cls: "smart-export-section-title" });
+		treeSection.createDiv({ text: "🌳 Notes to export", cls: "smart-export-section-title" });
 		treeSection.createDiv({
 			cls: "smart-export-section-description",
 			text: "Pick which notes to include content for. The root note is always included. Titles are always included up to the title depth.",
@@ -250,21 +255,21 @@ export class ExportModal extends Modal {
 		const exportActionSection = contentEl.createDiv({ cls: "smart-export-action-section" });
 
 		this.tokenCountEl = exportActionSection.createEl("div", {
-			text: "Token count: not available",
+			text: "Token estimate: not available",
 			cls: "smart-export-token-count",
 		});
 
 		const tokenInfo = exportActionSection.createDiv({ cls: "smart-export-token-info" });
 		tokenInfo.createEl("span", {
-			text: "📊 token estimates help you stay within common AI context limits (~128k, ~200k)",
+			text: "Token estimates help you stay within common context limits (~128k, ~200k).",
 		});
 
 		new Setting(exportActionSection)
 			.setName("Ready to export?")
-			.setDesc("Generate your smart export and copy it to clipboard")
+			.setDesc("Generate the export and copy it to clipboard")
 			.addButton((button) => {
 				button
-					.setButtonText("🚀 export to clipboard")
+					.setButtonText("Export to clipboard")
 					.setCta()
 					.onClick(() => {
 						void this.onExport();
@@ -278,14 +283,14 @@ export class ExportModal extends Modal {
 	 */
 	private async calculateAndDisplayTokens() {
 		if (!this.selectedFile) {
-			this.tokenCountEl.setText("Token count: not available");
+			this.tokenCountEl.setText("Token estimate: not available");
 			return;
 		}
 
-		this.tokenCountEl.setText("🔄 calculating tokens...");
+		this.tokenCountEl.setText("Calculating token estimate...");
 		const exportTree = await this.ensureExportTree();
 		if (!exportTree) {
-			this.tokenCountEl.setText("❌ token count: error");
+			this.tokenCountEl.setText("Token estimate: error");
 			return;
 		}
 		const adjustedTree = applyContentSelection(exportTree, this.selectedNodeIds);
@@ -304,10 +309,10 @@ export class ExportModal extends Modal {
 			return;
 		}
 
-		this.tokenCountEl.setText("🚀 exporting...");
+		this.tokenCountEl.setText("Exporting...");
 		const exportTree = await this.ensureExportTree();
 		if (!exportTree) {
-			this.tokenCountEl.setText("❌ export failed");
+			this.tokenCountEl.setText("Export failed");
 			new Notice("Failed to generate export. See console for details.");
 			return;
 		}
@@ -316,7 +321,7 @@ export class ExportModal extends Modal {
 		const tokenCount = this.estimateTokens(output);
 		this.tokenCountEl.setText(this.formatTokenCountMessage(tokenCount));
 		await navigator.clipboard.writeText(output);
-		new Notice("✅ export copied to clipboard! Ready to paste into your AI tool.");
+		new Notice("Export copied to clipboard.");
 		if (this.settings.closeModalAfterExport) {
 			this.close();
 		}
@@ -340,9 +345,9 @@ export class ExportModal extends Modal {
 	 */
 	private updateSelectedFile() {
 		if (this.selectedFile) {
-			this.selectedFileEl.setText(`✅ Selected: ${this.selectedFile.basename}`);
+			this.selectedFileEl.setText(`Selected: ${this.selectedFile.basename}`);
 		} else {
-			this.selectedFileEl.setText("❌ no file selected");
+			this.selectedFileEl.setText("No file selected");
 		}
 		this.invalidateExportTree({ resetSelection: true });
 		this.debouncedTokenUpdate();
@@ -795,14 +800,14 @@ export class ExportModal extends Modal {
 	 * @private
 	 */
 	private formatTokenCountMessage(tokenCount: number): string {
-		let tokenText = `📊 ~${tokenCount.toLocaleString()} tokens`;
+		let tokenText = `Estimated tokens: ~${tokenCount.toLocaleString()}`;
 
 		if (tokenCount > 200000) {
-			tokenText += " ⚠️ exceeds most AI limits";
+			tokenText += " — exceeds most context limits";
 		} else if (tokenCount > 128000) {
-			tokenText += " ⚠️ may exceed common AI limits";
+			tokenText += " — may exceed common context limits";
 		} else if (tokenCount > 100000) {
-			tokenText += " ⚡ large export";
+			tokenText += " — large export";
 		}
 
 		return tokenText;

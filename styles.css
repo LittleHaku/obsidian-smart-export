@@ -14,17 +14,17 @@ Modern, clean styling for the export modal interface
 
 /* Header Section */
 .smart-export-header {
-	text-align: center;
-	padding: 0 0 24px 0;
-	border-bottom: 1px solid var(--background-modifier-border);
-	margin-bottom: 24px;
+	text-align: left;
+	padding: 0 0 16px 0;
+	margin-bottom: 20px;
 }
 
 .smart-export-title {
 	color: var(--text-normal);
-	margin: 0 0 8px 0;
-	font-size: 1.5em;
+	margin: 0 0 6px 0;
+	font-size: 1.25em;
 	font-weight: 600;
+	letter-spacing: -0.01em;
 }
 
 .smart-export-description {
@@ -32,27 +32,27 @@ Modern, clean styling for the export modal interface
 	margin: 0;
 	font-size: var(--font-ui-medium);
 	line-height: 1.4;
-	max-width: 500px;
-	margin: 0 auto;
+	max-width: 640px;
 }
 
 /* Section Organization */
 .smart-export-section {
-	margin-bottom: 32px;
-	padding: 16px;
-	background: var(--background-primary-alt);
-	border-radius: 8px;
-	border: 1px solid var(--background-modifier-border);
+	margin: 20px 0;
+	padding: 0;
+	background: transparent;
+	border: none;
 }
 
+
 .smart-export-section-title {
-	margin: 0 0 16px 0;
-	color: var(--text-normal);
-	font-size: 1.1em;
-	font-weight: 500;
+	margin: 0 0 12px 0;
+	color: var(--text-muted);
+	font-size: var(--font-ui-large);
+	font-weight: 600;
+	letter-spacing: 0.02em;
 	display: flex;
 	align-items: center;
-	gap: 8px;
+	gap: 6px;
 }
 
 .smart-export-section-description {
@@ -64,13 +64,13 @@ Modern, clean styling for the export modal interface
 
 /* Info Boxes */
 .smart-export-info-box {
-	background: var(--background-secondary);
-	padding: 12px;
+	background: transparent;
+	padding: 10px 12px;
 	border-radius: 6px;
 	margin: 0 0 16px 0;
 	font-size: var(--font-ui-small);
 	line-height: 1.4;
-	border-left: 3px solid var(--interactive-accent);
+	border: 1px solid var(--background-modifier-border);
 }
 
 .smart-export-info-box strong {
@@ -81,47 +81,46 @@ Modern, clean styling for the export modal interface
 .smart-export-selected-file {
 	font-size: var(--font-ui-medium);
 	color: var(--text-muted);
-	margin: 8px 0 0 0;
-	padding: 8px 12px;
-	background: var(--background-secondary);
-	border-radius: 4px;
+	margin: 10px 0 0 0;
+	padding: 8px 10px;
+	background: var(--background-primary);
+	border-radius: 6px;
 	border: 1px solid var(--background-modifier-border);
 }
 
 /* Export Action Section */
 .smart-export-action-section {
-	background: var(--background-primary-alt);
-	padding: 20px;
-	border-radius: 8px;
-	border: 1px solid var(--background-modifier-border);
-	text-align: center;
+	background: transparent;
+	padding: 0;
+	border: none;
+	text-align: left;
 }
 
 /* Token Count Display */
 .smart-export-token-count {
 	font-size: var(--font-ui-large);
-	font-weight: 500;
+	font-weight: 600;
 	color: var(--text-normal);
-	margin: 0 0 12px 0;
-	padding: 12px;
-	background: var(--background-secondary);
-	border-radius: 6px;
-	border: 1px solid var(--background-modifier-border);
+	margin: 0 0 8px 0;
+	padding: 0;
+	background: transparent;
+	border-radius: 0;
+	border: none;
 }
 
 .smart-export-token-info {
 	color: var(--text-muted);
 	font-size: var(--font-ui-small);
-	margin: 0 0 16px 0;
+	margin: 0 0 12px 0;
 	line-height: 1.4;
 }
 
 /* Tree Visualization */
 .smart-export-tree-container {
-	background: var(--background-secondary);
+	background: var(--background-primary);
 	border: 1px solid var(--background-modifier-border);
-	border-radius: 6px;
-	padding: 12px;
+	border-radius: 8px;
+	padding: 10px 12px;
 	max-height: 320px;
 	overflow: auto;
 }
@@ -140,10 +139,10 @@ Modern, clean styling for the export modal interface
 
 .smart-export-tree-control {
 	border: 1px solid var(--background-modifier-border);
-	background: var(--background-primary);
+	background: transparent;
 	color: var(--text-normal);
 	border-radius: 6px;
-	padding: 6px 12px;
+	padding: 6px 10px;
 	font-size: var(--font-ui-small);
 	cursor: pointer;
 }
@@ -248,11 +247,11 @@ Modern, clean styling for the export modal interface
 /* Setting Enhancements */
 .smart-export-modal .setting-item {
 	border: none;
-	padding: 12px 0;
+	padding: 10px 0;
 }
 
 .smart-export-modal .setting-item:not(:last-child) {
-	border-bottom: 1px solid var(--background-modifier-border-hover);
+	border-bottom: none;
 }
 
 .smart-export-modal .setting-item-name {
@@ -279,7 +278,7 @@ Modern, clean styling for the export modal interface
 	background: var(--interactive-accent) !important;
 	color: var(--text-on-accent) !important;
 	border: none !important;
-	padding: 10px 20px !important;
+	padding: 8px 16px !important;
 	border-radius: 6px !important;
 	font-weight: 500 !important;
 	font-size: var(--font-ui-medium) !important;
@@ -298,12 +297,12 @@ Modern, clean styling for the export modal interface
 /* Responsive adjustments */
 @media (max-width: 600px) {
 	.smart-export-section {
-		margin-bottom: 24px;
-		padding: 12px;
+		margin: 16px 0;
+		padding: 0;
 	}
 
 	.smart-export-title {
-		font-size: 1.3em;
+		font-size: 1.15em;
 	}
 
 	.smart-export-description {
