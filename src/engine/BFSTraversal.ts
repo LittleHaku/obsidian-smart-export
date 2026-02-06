@@ -173,10 +173,7 @@ export class BFSTraversal {
 		const nodesToRead: ExportNode[] = [];
 		const stack: ExportNode[] = [rootNode];
 		while (stack.length > 0) {
-			const node = stack.pop();
-			if (!node) {
-				continue;
-			}
+			const node = stack.pop()!;
 
 			if (node.includeContent) {
 				nodesToRead.push(node);

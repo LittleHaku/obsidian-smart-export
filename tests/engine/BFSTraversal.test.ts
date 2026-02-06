@@ -288,4 +288,29 @@ describe("BFSTraversal", () => {
 		expect(rootNode?.children.map((child) => child.title)).toEqual(["C", "D", "root"]);
 		expect(new Set(rootNode?.children.map((child) => child.id)).size).toBe(3);
 	});
+
+	it("should deduplicate repeated outgoing links to the same file", async () => {
+		mockFileLinks["root.md"] = [createLink("A"), createLink("A"), createLink("B")];
+		rebuildResolvedLinks();
+
+		const traversal = new BFSTraversal(obsidianAPI, 1, 1, "outgoing");
+		const rootNode = await traversal.traverse("root.md");
+
+		expect(rootNode).not.toBeNull();
+		expect(rootNode?.children.map((child) => child.title)).toEqual(["A", "B"]);
+		expect(new Set(rootNode?.children.map((child) => child.id)).size).toBe(2);
+	});
+
+	it("should skip content reads when no nodes are content-eligible", async () => {
+		const traversal = new BFSTraversal(obsidianAPI, -1, 2);
+		const rootNode = await traversal.traverse("root.md");
+
+		expect(rootNode).not.toBeNull();
+		expect(rootNode?.includeContent).toBe(false);
+		expect(rootNode?.content).toBeUndefined();
+		const cachedReadCalls = (
+			mockApp.vault as unknown as { cachedRead: { mock: { calls: unknown[] } } }
+		).cachedRead.mock.calls.length;
+		expect(cachedReadCalls).toBe(0);
+	});
 });
