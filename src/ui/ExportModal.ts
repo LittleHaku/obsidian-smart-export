@@ -287,7 +287,7 @@ export class ExportModal extends Modal {
 			return;
 		}
 
-			this.tokenCountEl.setText("Calculating token estimate...");
+		this.tokenCountEl.setText("Calculating token estimate...");
 		const exportTree = await this.ensureExportTree();
 		if (!exportTree) {
 			this.tokenCountEl.setText("Token estimate: error");
