@@ -55,7 +55,10 @@ export default class SmartExportPlugin extends Plugin {
 	async loadSettings() {
 		const storedSettings = (await this.loadData()) as Partial<SmartExportSettings> | null;
 		this.settings = { ...DEFAULT_SETTINGS, ...(storedSettings ?? {}) };
-		this.settings.defaultContentDepth = Math.min(20, Math.max(1, this.settings.defaultContentDepth));
+		this.settings.defaultContentDepth = Math.min(
+			20,
+			Math.max(1, this.settings.defaultContentDepth)
+		);
 		this.settings.defaultTitleDepth = Math.min(20, Math.max(1, this.settings.defaultTitleDepth));
 		if (this.settings.defaultTitleDepth < this.settings.defaultContentDepth) {
 			this.settings.defaultTitleDepth = this.settings.defaultContentDepth;

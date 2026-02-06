@@ -61,6 +61,10 @@ export class ExportModal extends Modal {
 	private missingNotesCount = 0;
 	/** Selected node ids for export. */
 	private selectedNodeIds: Set<string> = new Set();
+	/** Nodes that have ever been content-eligible in this modal session. */
+	private knownContentNodeIds: Set<string> = new Set();
+	/** Nodes explicitly deselected by the user and preserved across depth changes. */
+	private userDeselectedNodeIds: Set<string> = new Set();
 	/** Collapsed node ids for the tree visualization. */
 	private collapsedNodeIds: Set<string> = new Set();
 	/** Whether the current tree is stale and awaiting rebuild. */
@@ -384,6 +388,8 @@ export class ExportModal extends Modal {
 		this.missingNotesCount = 0;
 		if (options.resetSelection) {
 			this.selectedNodeIds.clear();
+			this.knownContentNodeIds.clear();
+			this.userDeselectedNodeIds.clear();
 			this.collapsedNodeIds.clear();
 			this.shouldApplyDefaultCollapse = true;
 			this.shouldSelectAllOnBuild = true;
@@ -533,10 +539,38 @@ export class ExportModal extends Modal {
 	 * @private
 	 */
 	private reconcileSelection(node: ExportNode) {
-		if (node.includeContent) {
-			this.selectedNodeIds.add(node.id);
-		}
+		this.reconcileNodeSelection(node, true, true);
 		enforceAncestorSelection(this.selectedNodeIds, node, true);
+	}
+
+	/**
+	 * Reconciles a node and its descendants while auto-selecting only newly content-eligible nodes.
+	 * @private
+	 */
+	private reconcileNodeSelection(node: ExportNode, parentSelected: boolean, isRoot: boolean) {
+		if (!node.includeContent) {
+			this.selectedNodeIds.delete(node.id);
+			this.knownContentNodeIds.delete(node.id);
+		} else {
+			const wasKnown = this.knownContentNodeIds.has(node.id);
+			if (!parentSelected) {
+				this.selectedNodeIds.delete(node.id);
+			} else if (isRoot) {
+				this.selectedNodeIds.add(node.id);
+				this.userDeselectedNodeIds.delete(node.id);
+			} else if (this.userDeselectedNodeIds.has(node.id)) {
+				this.selectedNodeIds.delete(node.id);
+			} else if (!wasKnown) {
+				// New content-eligible nodes default to selected.
+				this.selectedNodeIds.add(node.id);
+			}
+			this.knownContentNodeIds.add(node.id);
+		}
+
+		const nodeSelected = node.includeContent && this.selectedNodeIds.has(node.id);
+		for (const child of node.children) {
+			this.reconcileNodeSelection(child, nodeSelected, false);
+		}
 	}
 
 	/**
@@ -546,6 +580,40 @@ export class ExportModal extends Modal {
 	private reconcileCollapsed(node: ExportNode) {
 		if (this.collapsedNodeIds.size === 0 && this.shouldApplyDefaultCollapse) {
 			this.collapseRootOnly(node);
+		}
+	}
+
+	/**
+	 * Marks a node and its descendants as explicitly deselected by the user.
+	 * @private
+	 */
+	private markUserDeselectedSubtree(node: ExportNode) {
+		if (node.includeContent) {
+			this.userDeselectedNodeIds.add(node.id);
+		}
+		for (const child of node.children) {
+			this.markUserDeselectedSubtree(child);
+		}
+	}
+
+	/**
+	 * Clears explicit user deselection for a node and its descendants.
+	 * @private
+	 */
+	private clearUserDeselectedSubtree(node: ExportNode) {
+		this.userDeselectedNodeIds.delete(node.id);
+		for (const child of node.children) {
+			this.clearUserDeselectedSubtree(child);
+		}
+	}
+
+	/**
+	 * Clears explicit user deselection for specific ancestor ids.
+	 * @private
+	 */
+	private clearUserDeselectedAncestors(ancestorIds: string[]) {
+		for (const id of ancestorIds) {
+			this.userDeselectedNodeIds.delete(id);
 		}
 	}
 
@@ -736,9 +804,14 @@ export class ExportModal extends Modal {
 						const allSelected = counts.selected === counts.total;
 						this.selectedNodeIds.clear();
 						if (!allSelected) {
+							this.userDeselectedNodeIds.clear();
 							this.selectAllNodes(this.exportTree);
 						} else {
 							this.selectedNodeIds.add(node.id);
+							this.userDeselectedNodeIds.clear();
+							for (const child of this.exportTree.children) {
+								this.markUserDeselectedSubtree(child);
+							}
 						}
 						this.renderExportTree();
 						this.debouncedTokenUpdate();
@@ -779,9 +852,12 @@ export class ExportModal extends Modal {
 					const allSelected = subtreeCounts.selected === subtreeCounts.total;
 					if (allSelected) {
 						deselectSubtree(this.selectedNodeIds, node);
+						this.markUserDeselectedSubtree(node);
 					} else {
 						selectAncestors(this.selectedNodeIds, ancestorIdsSnapshot);
 						selectSubtree(this.selectedNodeIds, node);
+						this.clearUserDeselectedAncestors(ancestorIdsSnapshot);
+						this.clearUserDeselectedSubtree(node);
 					}
 					this.renderExportTree();
 					this.debouncedTokenUpdate();
@@ -790,8 +866,11 @@ export class ExportModal extends Modal {
 				if (checkboxEl.checked) {
 					selectAncestors(this.selectedNodeIds, ancestorIdsSnapshot);
 					selectNode(this.selectedNodeIds, node.id);
+					this.clearUserDeselectedAncestors(ancestorIdsSnapshot);
+					this.userDeselectedNodeIds.delete(node.id);
 				} else {
 					deselectSubtree(this.selectedNodeIds, node);
+					this.markUserDeselectedSubtree(node);
 				}
 				this.renderExportTree();
 				this.debouncedTokenUpdate();

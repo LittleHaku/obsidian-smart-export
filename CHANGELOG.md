@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.4] - 2026-02-06
+
+### Fixed
+
+- Newly visible notes are now selected by default when increasing traversal depth
+- Manual note deselections are now preserved across depth shrink/expand cycles
+- Depth-based selection reconciliation now avoids re-selecting notes explicitly deselected by the user
+
 ## [1.2.3] - 2026-02-06
 
 ### Changed
