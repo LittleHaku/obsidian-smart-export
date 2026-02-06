@@ -24,3 +24,6 @@ data.json
 
 # Test coverage reports
 coverage/
+
+# Benchmark output
+benchmarks/latest-report.json

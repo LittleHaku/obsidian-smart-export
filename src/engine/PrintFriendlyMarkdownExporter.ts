@@ -11,7 +11,9 @@ export class PrintFriendlyMarkdownExporter {
 	 * @returns A string containing the Markdown representation of the note tree.
 	 */
 	public export(rootNode: ExportNode): string {
-		return this.buildNode(rootNode, 0);
+		const chunks: string[] = [];
+		this.buildNode(rootNode, 0, chunks);
+		return chunks.join("");
 	}
 
 	/**
@@ -21,19 +23,16 @@ export class PrintFriendlyMarkdownExporter {
 	 * @param depth The current depth in the tree, used for heading levels.
 	 * @returns A formatted markdown string.
 	 */
-	private buildNode(node: ExportNode, depth: number): string {
-		let output = "";
+	private buildNode(node: ExportNode, depth: number, chunks: string[]) {
 		const prefix = "#".repeat(depth + 1);
-		output += `${prefix} ${node.title}\n\n`;
+		chunks.push(`${prefix} ${node.title}\n\n`);
 
 		if (node.content && node.includeContent) {
-			output += `${node.content}\n\n`;
+			chunks.push(`${node.content}\n\n`);
 		}
 
 		for (const child of node.children) {
-			output += this.buildNode(child, depth + 1);
+			this.buildNode(child, depth + 1, chunks);
 		}
-
-		return output;
 	}
 }

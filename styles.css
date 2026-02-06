@@ -175,6 +175,10 @@ Modern, clean styling for the export modal interface
 	min-width: 100%;
 }
 
+.smart-export-tree--collapsed {
+	display: none;
+}
+
 .smart-export-tree-item {
 	margin: 6px 0;
 }

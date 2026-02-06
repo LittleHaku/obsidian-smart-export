@@ -189,6 +189,14 @@ pnpm run dev
 
 Install the community plugin `Hot Reload` so that the plugin updates as you make changes. Remember to have `pnpm run dev` running.
 
+### Benchmark (optional)
+
+```bash
+pnpm benchmark
+```
+
+Runs a synthetic large-vault benchmark and writes a report to `benchmarks/latest-report.json`.
+
 ## License
 
 MIT License - see the [LICENSE](LICENSE) file for details.
