@@ -818,6 +818,8 @@ export class ExportModal extends Modal {
 			if (toggleEl) {
 				toggleEl.setText(isCollapsed ? "▸" : "▾");
 				toggleEl.setAttr("aria-label", isCollapsed ? "Expand note" : "Collapse note");
+				toggleEl.setAttr("aria-controls", this.getNodeChildrenListId(node.id));
+				toggleEl.setAttr("aria-expanded", (!isCollapsed).toString());
 			}
 
 			const childListEl = this.renderedChildListElements.get(node.id);
@@ -971,12 +973,15 @@ export class ExportModal extends Modal {
 		const isCollapsed = this.collapsedNodeIds.has(node.id);
 
 		if (hasChildren) {
+			const childListId = this.getNodeChildrenListId(node.id);
 			const toggleEl = rowEl.createEl("button", {
 				text: isCollapsed ? "▸" : "▾",
 				cls: "smart-export-tree-toggle",
 			});
 			this.renderedToggleElements.set(node.id, toggleEl);
 			toggleEl.setAttr("aria-label", isCollapsed ? "Expand note" : "Collapse note");
+			toggleEl.setAttr("aria-controls", childListId);
+			toggleEl.setAttr("aria-expanded", (!isCollapsed).toString());
 			toggleEl.addEventListener("click", (event) => {
 				event.preventDefault();
 				event.stopPropagation();
@@ -1095,6 +1100,7 @@ export class ExportModal extends Modal {
 
 		if (hasChildren) {
 			const childListEl = itemEl.createEl("ul", { cls: "smart-export-tree" });
+			childListEl.id = this.getNodeChildrenListId(node.id);
 			this.renderedChildListElements.set(node.id, childListEl);
 			if (isCollapsed) {
 				childListEl.addClass("smart-export-tree--collapsed");
@@ -1148,6 +1154,10 @@ export class ExportModal extends Modal {
 	 */
 	private getDomSafeId(value: string): string {
 		return value.replace(/[^a-zA-Z0-9_-]+/g, "-");
+	}
+
+	private getNodeChildrenListId(nodeId: string): string {
+		return this.getDomSafeId(`smart-export-tree-children-${nodeId}`);
 	}
 
 	private getContentDisplayTree(node: ExportNode): ExportNode | null {
