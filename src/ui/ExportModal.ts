@@ -291,18 +291,7 @@ export class ExportModal extends Modal {
 		const adjustedTree = applyContentSelection(exportTree, this.selectedNodeIds);
 		const output = this.buildExportOutput(adjustedTree);
 		const tokenCount = this.estimateTokens(output);
-		let tokenText = `📊 ~${tokenCount.toLocaleString()} tokens`;
-
-		// Add context warnings for common LLMs
-		if (tokenCount > 200000) {
-			tokenText += " ⚠️ exceeds most AI limits";
-		} else if (tokenCount > 128000) {
-			tokenText += " ⚠️ may exceed common AI limits";
-		} else if (tokenCount > 100000) {
-			tokenText += " ⚡ large export";
-		}
-
-		this.tokenCountEl.setText(tokenText);
+		this.tokenCountEl.setText(this.formatTokenCountMessage(tokenCount));
 	}
 
 	/**
@@ -325,18 +314,7 @@ export class ExportModal extends Modal {
 		const adjustedTree = applyContentSelection(exportTree, this.selectedNodeIds);
 		const output = this.buildExportOutput(adjustedTree);
 		const tokenCount = this.estimateTokens(output);
-		let tokenText = `📊 ~${tokenCount.toLocaleString()} tokens`;
-
-		// Add context warnings for common LLMs
-		if (tokenCount > 200000) {
-			tokenText += " ⚠️ exceeds most AI limits";
-		} else if (tokenCount > 128000) {
-			tokenText += " ⚠️ may exceed common AI limits";
-		} else if (tokenCount > 100000) {
-			tokenText += " ⚡ large export";
-		}
-
-		this.tokenCountEl.setText(tokenText);
+		this.tokenCountEl.setText(this.formatTokenCountMessage(tokenCount));
 		await navigator.clipboard.writeText(output);
 		new Notice("✅ export copied to clipboard! Ready to paste into your AI tool.");
 		if (this.settings.closeModalAfterExport) {
@@ -810,6 +788,24 @@ export class ExportModal extends Modal {
 		const text = node.title + (content ? `\n${content}` : "");
 		const tokens = this.estimateTokens(text);
 		return `~${tokens.toLocaleString()} tokens`;
+	}
+
+	/**
+	 * Formats the token count message with warning thresholds.
+	 * @private
+	 */
+	private formatTokenCountMessage(tokenCount: number): string {
+		let tokenText = `📊 ~${tokenCount.toLocaleString()} tokens`;
+
+		if (tokenCount > 200000) {
+			tokenText += " ⚠️ exceeds most AI limits";
+		} else if (tokenCount > 128000) {
+			tokenText += " ⚠️ may exceed common AI limits";
+		} else if (tokenCount > 100000) {
+			tokenText += " ⚡ large export";
+		}
+
+		return tokenText;
 	}
 
 	/**
