@@ -54,8 +54,9 @@ describe("BFSTraversal", () => {
 			}
 		}
 
-		(mockApp.metadataCache as { resolvedLinks: Record<string, Record<string, number>> }).resolvedLinks =
-			resolvedLinks;
+		(
+			mockApp.metadataCache as { resolvedLinks: Record<string, Record<string, number>> }
+		).resolvedLinks = resolvedLinks;
 	};
 
 	// Helper function to create LinkCache objects
