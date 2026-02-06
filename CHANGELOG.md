@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.1] - 2026-02-06
+
+### Changed
+
+- Updated traversal depth help text to be clearer for non-technical users
+- Kept depth guidance in the modal info box while removing confusing comparison wording
+- Added a matching emoji to the "Export settings" section title in the export modal
+
 ## [1.2.0] - 2026-02-06
 
 ### Added

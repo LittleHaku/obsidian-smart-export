@@ -140,11 +140,10 @@ export class ExportModal extends Modal {
 			text: "🌊 Traversal depth",
 			cls: "smart-export-section-title",
 		});
-
 		const depthInfo = depthSection.createDiv({ cls: "smart-export-info-box" });
-		depthInfo.createEl("strong", { text: "How it works: " });
+		depthInfo.createEl("strong", { text: "How depth works: " });
 		depthInfo.createEl("span", {
-			text: "Content depth includes full note text, title depth adds linked note titles only. Title depth must be ≥ content depth.",
+			text: "Think of depth as how many link steps away from your starting note you want to go. Content depth includes the full text of those notes. Title depth can go farther and includes only note names for extra context.",
 		});
 
 		let contentSlider: SliderComponent | null = null;
@@ -211,7 +210,7 @@ export class ExportModal extends Modal {
 		// Export configuration section
 		const exportSection = contentEl.createDiv({ cls: "smart-export-section" });
 		exportSection.createDiv({
-			text: "Export settings",
+			text: "⚙️ Export settings",
 			cls: "smart-export-section-title",
 		});
 
