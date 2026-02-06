@@ -79,6 +79,12 @@ export class ExportModal extends Modal {
 	private treeSummaryEl: HTMLElement;
 	/** Incremented on each tree invalidation to discard stale builds. */
 	private treeBuildId = 0;
+	/** Cached content-only display tree for the current export tree object. */
+	private cachedDisplayTree: ExportNode | null = null;
+	/** Source tree object tied to cachedDisplayTree. */
+	private cachedDisplayTreeSource: ExportNode | null = null;
+	/** Per-node token label cache to avoid recomputing large string lengths on rerender. */
+	private nodeTokenEstimateCache: WeakMap<ExportNode, string> = new WeakMap();
 
 	constructor(app: App, settings: SmartExportSettings) {
 		super(app);
@@ -318,9 +324,7 @@ export class ExportModal extends Modal {
 			this.tokenCountEl.setText("Token estimate: error");
 			return;
 		}
-		const adjustedTree = applyContentSelection(exportTree, this.selectedNodeIds);
-		const output = this.buildExportOutput(adjustedTree);
-		const tokenCount = this.estimateTokens(output);
+		const tokenCount = this.estimateExportTokens(exportTree);
 		this.tokenCountEl.setText(this.formatTokenCountMessage(tokenCount));
 	}
 
@@ -361,7 +365,74 @@ export class ExportModal extends Modal {
 	 */
 	private estimateTokens(text: string): number {
 		// Rough approximation: 1 token ≈ 4 characters for English
-		return Math.ceil(text.length / 4);
+		return this.estimateTokensFromCharacterCount(text.length);
+	}
+
+	private estimateTokensFromCharacterCount(characterCount: number): number {
+		return Math.ceil(characterCount / 4);
+	}
+
+	private estimateExportTokens(rootNode: ExportNode): number {
+		const characterCount = this.estimateExportCharacterCount(rootNode);
+		return this.estimateTokensFromCharacterCount(characterCount);
+	}
+
+	private estimateExportCharacterCount(rootNode: ExportNode): number {
+		const notes = this.flattenExportTree(rootNode);
+		let maxDepth = 0;
+		let titleChars = 0;
+		let selectedContentChars = 0;
+
+		for (const note of notes) {
+			maxDepth = Math.max(maxDepth, note.depth);
+			titleChars += note.title.length;
+			if (note.includeContent && this.selectedNodeIds.has(note.id)) {
+				selectedContentChars += note.content?.length ?? 0;
+			}
+		}
+
+		const vaultPathLength = this.app.vault.getName().length;
+		const metadataChars =
+			240 +
+			vaultPathLength +
+			rootNode.title.length +
+			String(notes.length).length +
+			String(this.missingNotesCount).length +
+			String(maxDepth).length;
+
+		switch (this.exportFormat) {
+			case "xml":
+				return metadataChars + titleChars * 2 + selectedContentChars + notes.length * 120;
+			case "llm-markdown":
+				return metadataChars + titleChars * 2 + selectedContentChars + notes.length * 80;
+			case "print-friendly-markdown":
+				return notes.reduce((total, note) => {
+					const headingChars = note.depth + 4 + note.title.length;
+					const contentChars =
+						note.includeContent && this.selectedNodeIds.has(note.id)
+							? (note.content?.length ?? 0) + 2
+							: 0;
+					return total + headingChars + contentChars;
+				}, 0);
+			default:
+				return titleChars + selectedContentChars;
+		}
+	}
+
+	private flattenExportTree(rootNode: ExportNode): ExportNode[] {
+		const notes: ExportNode[] = [];
+		const queue: ExportNode[] = [rootNode];
+		let head = 0;
+
+		while (head < queue.length) {
+			const node = queue[head++];
+			notes.push(node);
+			for (const child of node.children) {
+				queue.push(child);
+			}
+		}
+
+		return notes;
 	}
 
 	/**
@@ -386,6 +457,8 @@ export class ExportModal extends Modal {
 		this.treeIsStale = true;
 		this.exportTreePromise = null;
 		this.missingNotesCount = 0;
+		this.cachedDisplayTree = null;
+		this.cachedDisplayTreeSource = null;
 		if (options.resetSelection) {
 			this.selectedNodeIds.clear();
 			this.knownContentNodeIds.clear();
@@ -463,6 +536,8 @@ export class ExportModal extends Modal {
 				this.exportTree = null;
 				this.missingNotesCount = 0;
 				this.exportTreePromise = null;
+				this.cachedDisplayTree = null;
+				this.cachedDisplayTreeSource = null;
 				this.renderExportTree();
 				return null;
 			}
@@ -496,6 +571,8 @@ export class ExportModal extends Modal {
 			this.exportTree = null;
 			this.missingNotesCount = 0;
 			this.exportTreePromise = null;
+			this.cachedDisplayTree = null;
+			this.cachedDisplayTreeSource = null;
 			new Notice("Failed to build export tree. See console for details.");
 			this.renderExportTree();
 			return null;
@@ -709,7 +786,7 @@ export class ExportModal extends Modal {
 		}
 
 		this.selectedNodeIds.add(this.exportTree.id);
-		const displayTree = this.buildContentDisplayTree(this.exportTree);
+		const displayTree = this.getContentDisplayTree(this.exportTree);
 		if (!displayTree) {
 			this.treeContainerEl.createDiv({
 				cls: "smart-export-tree-placeholder",
@@ -894,10 +971,17 @@ export class ExportModal extends Modal {
 	 * @private
 	 */
 	private formatNodeTokenEstimate(node: ExportNode): string {
+		const cached = this.nodeTokenEstimateCache.get(node);
+		if (cached) {
+			return cached;
+		}
+
 		const content = node.includeContent ? (node.content ?? "") : "";
 		const text = node.title + (content ? `\n${content}` : "");
 		const tokens = this.estimateTokens(text);
-		return `~${tokens.toLocaleString()} tokens`;
+		const formatted = `~${tokens.toLocaleString()} tokens`;
+		this.nodeTokenEstimateCache.set(node, formatted);
+		return formatted;
 	}
 
 	/**
@@ -926,6 +1010,16 @@ export class ExportModal extends Modal {
 		return value.replace(/[^a-zA-Z0-9_-]+/g, "-");
 	}
 
+	private getContentDisplayTree(node: ExportNode): ExportNode | null {
+		if (this.cachedDisplayTreeSource === node) {
+			return this.cachedDisplayTree;
+		}
+
+		this.cachedDisplayTreeSource = node;
+		this.cachedDisplayTree = this.buildContentDisplayTree(node);
+		return this.cachedDisplayTree;
+	}
+
 	/**
 	 * Builds a tree that only includes nodes with content at the current depth.
 	 * @private
@@ -935,9 +1029,13 @@ export class ExportModal extends Modal {
 			return null;
 		}
 
-		const children = node.children
-			.map((child) => this.buildContentDisplayTree(child))
-			.filter((child): child is ExportNode => !!child);
+		const children: ExportNode[] = [];
+		for (const child of node.children) {
+			const displayChild = this.buildContentDisplayTree(child);
+			if (displayChild) {
+				children.push(displayChild);
+			}
+		}
 
 		return {
 			...node,

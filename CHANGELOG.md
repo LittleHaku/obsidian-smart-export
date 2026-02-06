@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.5] - 2026-02-06
+
+### Added
+
+- Dedicated benchmark suite for traversal/export throughput on large synthetic note graphs (`pnpm benchmark`)
+
+### Changed
+
+- Improved traversal performance by loading note content with bounded concurrency instead of sequential reads
+- Reduced token estimation overhead in the export modal by estimating directly from the export tree without serializing full output on each update
+- Reduced tree rerender overhead by caching the content-only display tree and per-node token labels
+- Optimized exporter internals for large trees by replacing `queue.shift()` loops with head-index queues
+- Improved print-friendly export string construction by using chunked joins instead of repeated string concatenation
+
+### Performance snapshot
+
+- Benchmark run on synthetic graph (1,365 notes) showed ~57.5ms median traversal with an estimated ~7.4x speedup vs serialized reads
+
 ## [1.2.4] - 2026-02-06
 
 ### Fixed

@@ -1,6 +1,6 @@
 {
 	"name": "smart-export",
-	"version": "1.2.4",
+	"version": "1.2.5",
 	"description": "Plugin that exports linked notes by following wikilinks to a configurable depth, optimized for human-readable and LLM-friendly outputs.",
 	"main": "main.js",
 	"scripts": {
@@ -11,7 +11,8 @@
 		"lint:fix": "eslint . --ext .js,.jsx,.ts,.tsx --fix",
 		"format": "prettier --write '**/*.{js,ts,tsx,md}'",
 		"format:check": "prettier --check '**/*.{js,ts,tsx,md}'",
-		"test": "vitest --coverage"
+		"test": "vitest --coverage",
+		"benchmark": "vitest run --config vitest.benchmark.config.ts"
 	},
 	"keywords": [
 		"obsidian",

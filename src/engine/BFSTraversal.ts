@@ -7,6 +7,7 @@ import { ObsidianAPI } from "../obsidian-api";
  * linked notes from a starting root note.
  */
 export class BFSTraversal {
+	private static readonly CONTENT_READ_CONCURRENCY = 8;
 	private obsidianAPI: ObsidianAPI;
 	private contentDepth: number;
 	private titleDepth: number;
@@ -168,15 +169,54 @@ export class BFSTraversal {
 	 * @private
 	 * @param {ExportNode} node - The starting node to process.
 	 */
-	private async updateNodeContent(node: ExportNode) {
-		if (node.includeContent) {
-			node.content = await this.obsidianAPI.getNoteContent(node.id);
-		} else {
-			delete node.content;
+	private async updateNodeContent(rootNode: ExportNode) {
+		const nodesToRead: ExportNode[] = [];
+		const stack: ExportNode[] = [rootNode];
+		while (stack.length > 0) {
+			const node = stack.pop();
+			if (!node) {
+				continue;
+			}
+
+			if (node.includeContent) {
+				nodesToRead.push(node);
+			} else {
+				delete node.content;
+			}
+
+			for (const child of node.children) {
+				stack.push(child);
+			}
 		}
 
-		for (const child of node.children) {
-			await this.updateNodeContent(child);
+		await this.runWithConcurrency(
+			nodesToRead,
+			BFSTraversal.CONTENT_READ_CONCURRENCY,
+			async (node) => {
+				node.content = await this.obsidianAPI.getNoteContent(node.id);
+			}
+		);
+	}
+
+	private async runWithConcurrency<T>(
+		items: T[],
+		concurrency: number,
+		task: (item: T) => Promise<void>
+	): Promise<void> {
+		if (items.length === 0) {
+			return;
 		}
+
+		const workerCount = Math.min(Math.max(1, concurrency), items.length);
+		let nextIndex = 0;
+
+		const workers = Array.from({ length: workerCount }, async () => {
+			while (nextIndex < items.length) {
+				const currentIndex = nextIndex++;
+				await task(items[currentIndex]);
+			}
+		});
+
+		await Promise.all(workers);
 	}
 }

@@ -35,9 +35,10 @@ export class XMLExporter {
 		const queue: ExportNode[] = [node];
 		const result: ExportNode[] = [];
 		const visited = new Set<string>();
+		let head = 0;
 
-		while (queue.length > 0) {
-			const currentNode = queue.shift();
+		while (head < queue.length) {
+			const currentNode = queue[head++];
 			if (!currentNode || visited.has(currentNode.id)) {
 				continue;
 			}
