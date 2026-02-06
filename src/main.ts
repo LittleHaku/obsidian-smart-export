@@ -55,6 +55,11 @@ export default class SmartExportPlugin extends Plugin {
 	async loadSettings() {
 		const storedSettings = (await this.loadData()) as Partial<SmartExportSettings> | null;
 		this.settings = { ...DEFAULT_SETTINGS, ...(storedSettings ?? {}) };
+		this.settings.defaultContentDepth = Math.min(20, Math.max(1, this.settings.defaultContentDepth));
+		this.settings.defaultTitleDepth = Math.min(20, Math.max(1, this.settings.defaultTitleDepth));
+		if (this.settings.defaultTitleDepth < this.settings.defaultContentDepth) {
+			this.settings.defaultTitleDepth = this.settings.defaultContentDepth;
+		}
 	}
 
 	async saveSettings() {
@@ -96,10 +101,10 @@ class SmartExportSettingTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.setName("Default title depth")
-			.setDesc("Default number of additional levels to include titles only (1-30)")
+			.setDesc("Default number of additional levels to include titles only (1-20)")
 			.addSlider((slider) =>
 				slider
-					.setLimits(1, 30, 1)
+					.setLimits(1, 20, 1)
 					.setValue(this.plugin.settings.defaultTitleDepth)
 					.setDynamicTooltip()
 					.onChange(async (value) => {

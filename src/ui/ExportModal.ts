@@ -176,7 +176,7 @@ export class ExportModal extends Modal {
 			.addSlider((slider) => {
 				titleSlider = slider;
 				slider
-					.setLimits(1, 30, 1)
+					.setLimits(1, 20, 1)
 					.setValue(this.titleDepth)
 					.setDynamicTooltip()
 					.onChange((value) => {

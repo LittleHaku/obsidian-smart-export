@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.3] - 2026-02-06
+
+### Changed
+
+- Made Content depth and Title depth slider ranges consistent to reduce confusion
+- Updated default Title depth settings range to match Content depth (1-20)
+- Added settings normalization so previously saved depth values are clamped to valid ranges
+
 ## [1.2.2] - 2026-02-06
 
 ### Changed
