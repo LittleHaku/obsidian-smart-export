@@ -91,6 +91,7 @@ export class ExportModal extends Modal {
 	onOpen() {
 		const { contentEl } = this;
 		contentEl.empty();
+		this.modalEl.addClass("smart-export-modal-shell");
 		contentEl.addClass("smart-export-modal");
 
 		// Header section with title and description
@@ -889,5 +890,6 @@ export class ExportModal extends Modal {
 		const { contentEl } = this;
 		contentEl.empty();
 		contentEl.removeClass("smart-export-modal");
+		this.modalEl.removeClass("smart-export-modal-shell");
 	}
 }

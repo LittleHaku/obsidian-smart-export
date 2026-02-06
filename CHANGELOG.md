@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.2] - 2026-02-06
+
+### Changed
+
+- Improved export modal usability for large traversals by using a wider responsive modal layout
+- Improved note tree readability at high depths with horizontal scrolling and non-wrapping labels
+- Refined traversal depth helper text in the modal info box for clearer non-technical wording
+
 ## [1.2.1] - 2026-02-06
 
 ### Changed

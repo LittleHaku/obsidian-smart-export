@@ -13,6 +13,15 @@ Modern, clean styling for the export modal interface
 */
 
 /* Header Section */
+.smart-export-modal-shell {
+	width: min(1100px, 92vw);
+	max-width: 92vw;
+}
+
+.smart-export-modal-shell .modal-content {
+	width: 100%;
+}
+
 .smart-export-header {
 	text-align: center;
 	padding: 4px 0 18px 0;
@@ -122,7 +131,8 @@ Modern, clean styling for the export modal interface
 	border-radius: 8px;
 	padding: 10px 12px;
 	max-height: 320px;
-	overflow: auto;
+	overflow-x: auto;
+	overflow-y: auto;
 }
 
 .smart-export-tree-controls {
@@ -161,6 +171,8 @@ Modern, clean styling for the export modal interface
 	list-style: none;
 	margin: 0;
 	padding-left: 16px;
+	width: max-content;
+	min-width: 100%;
 }
 
 .smart-export-tree-item {
@@ -228,6 +240,7 @@ Modern, clean styling for the export modal interface
 .smart-export-tree-root {
 	font-weight: 600;
 	cursor: default;
+	white-space: nowrap;
 }
 
 .smart-export-tree-root--toggle {
@@ -236,6 +249,7 @@ Modern, clean styling for the export modal interface
 
 .smart-export-tree-label-text {
 	display: inline-flex;
+	white-space: nowrap;
 }
 
 .smart-export-tree-token {
@@ -296,6 +310,11 @@ Modern, clean styling for the export modal interface
 
 /* Responsive adjustments */
 @media (max-width: 600px) {
+	.smart-export-modal-shell {
+		width: 96vw;
+		max-width: 96vw;
+	}
+
 	.smart-export-section {
 		margin: 16px 0;
 		padding: 0;
