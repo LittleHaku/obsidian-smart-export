@@ -14,22 +14,22 @@ Modern, clean styling for the export modal interface
 
 /* Header Section */
 .smart-export-header {
-	text-align: left;
-	padding: 0 0 16px 0;
-	margin-bottom: 20px;
+	text-align: center;
+	padding: 4px 0 18px 0;
+	margin-bottom: 24px;
 }
 
 .smart-export-title {
 	color: var(--text-normal);
-	margin: 0 0 6px 0;
-	font-size: 1.25em;
-	font-weight: 600;
-	letter-spacing: -0.01em;
+	margin: 0 0 8px 0;
+	font-size: 1.35em;
+	font-weight: 700;
+	letter-spacing: -0.02em;
 }
 
 .smart-export-description {
 	color: var(--text-muted);
-	margin: 0;
+	margin: 0 auto;
 	font-size: var(--font-ui-medium);
 	line-height: 1.4;
 	max-width: 640px;
@@ -46,10 +46,10 @@ Modern, clean styling for the export modal interface
 
 .smart-export-section-title {
 	margin: 0 0 12px 0;
-	color: var(--text-muted);
-	font-size: var(--font-ui-large);
-	font-weight: 600;
-	letter-spacing: 0.02em;
+	color: var(--text-normal);
+	font-size: calc(var(--font-ui-large) * 1.05);
+	font-weight: 700;
+	letter-spacing: 0.01em;
 	display: flex;
 	align-items: center;
 	gap: 6px;
