@@ -1014,17 +1014,16 @@ export class ExportModal extends Modal {
 					}
 
 					if (event.shiftKey) {
-						const activeTree = this.renderedDisplayTree ?? this.exportTree;
-						const counts = this.countTreeNodes(activeTree);
+						const counts = this.countTreeNodes(this.exportTree);
 						const allSelected = counts.selected === counts.total;
 						this.selectedNodeIds.clear();
 						if (!allSelected) {
 							this.userDeselectedNodeIds.clear();
-							this.selectAllNodes(activeTree);
+							this.selectAllNodes(this.exportTree);
 						} else {
 							this.selectedNodeIds.add(node.id);
 							this.userDeselectedNodeIds.clear();
-							for (const child of activeTree.children) {
+							for (const child of this.exportTree.children) {
 								this.markUserDeselectedSubtree(child);
 							}
 						}
