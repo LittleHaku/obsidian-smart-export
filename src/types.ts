@@ -21,6 +21,11 @@ export interface ExportNode {
 }
 
 /**
+ * Defines which link directions should be traversed when exploring notes.
+ */
+export type LinkTraversalMode = "outgoing" | "incoming" | "both";
+
+/**
  * Defines the settings for the Smart Export plugin.
  */
 export interface SmartExportSettings {
@@ -30,6 +35,8 @@ export interface SmartExportSettings {
 	defaultTitleDepth: number;
 	/** The default format for the exported output. */
 	defaultExportFormat: "xml" | "llm-markdown" | "print-friendly-markdown";
+	/** The default link direction mode used when exploring related notes. */
+	defaultLinkTraversalMode: LinkTraversalMode;
 	/** Whether to automatically select the currently active note as the root for export. */
 	autoSelectCurrentNote: boolean;
 	/** Whether to close the export modal after a successful export. */

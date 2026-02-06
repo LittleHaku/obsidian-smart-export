@@ -3,9 +3,14 @@ import { App, TFile, Reference } from "obsidian";
 /**
  * A wrapper class for the Obsidian API to provide a stable, testable interface
  * for interacting with the vault.
+ *
+ * Note: this wrapper is typically created per export/tree build to ensure fresh
+ * metadata reads. If an instance is reused across multiple operations, call
+ * `invalidateIncomingLinksIndex()` after link/metadata changes.
  */
 export class ObsidianAPI {
 	private app: App;
+	private incomingLinksIndex: Map<string, TFile[]> | null = null;
 
 	/**
 	 * Creates an instance of ObsidianAPI.
@@ -38,6 +43,47 @@ export class ObsidianAPI {
 		if (links.length === 0 && frontmatterLinks.length === 0) return;
 
 		return [...links, ...frontmatterLinks];
+	}
+
+	/**
+	 * Gets files that link to the provided file.
+	 * @param {TFile} file - The destination file.
+	 * @returns {TFile[]} Files that contain resolved links to the destination file.
+	 */
+	public getIncomingLinksForFile(file: TFile): TFile[] {
+		if (!this.incomingLinksIndex) {
+			this.incomingLinksIndex = new Map<string, TFile[]>();
+			const resolvedLinks = this.app.metadataCache.resolvedLinks ?? {};
+
+			for (const [sourcePath, destinations] of Object.entries(resolvedLinks)) {
+				const sourceFile = this.getTFile(sourcePath);
+				if (!sourceFile) continue;
+
+				for (const [destinationPath, count] of Object.entries(destinations)) {
+					if (count <= 0) continue;
+					const incomingFiles = this.incomingLinksIndex.get(destinationPath) ?? [];
+					incomingFiles.push(sourceFile);
+					this.incomingLinksIndex.set(destinationPath, incomingFiles);
+				}
+			}
+
+			for (const incomingFiles of this.incomingLinksIndex.values()) {
+				incomingFiles.sort((a, b) => a.path.localeCompare(b.path));
+			}
+		}
+
+		return [...(this.incomingLinksIndex.get(file.path) ?? [])];
+	}
+
+	/**
+	 * Invalidates the cached incoming links index.
+	 *
+	 * Call this if notes or links are added, removed, or modified and you plan
+	 * to reuse this ObsidianAPI instance. The next call to
+	 * `getIncomingLinksForFile` will rebuild the index.
+	 */
+	public invalidateIncomingLinksIndex(): void {
+		this.incomingLinksIndex = null;
 	}
 
 	/**

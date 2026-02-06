@@ -1,5 +1,5 @@
 import { TFile } from "obsidian";
-import { ExportNode } from "../types";
+import { ExportNode, LinkTraversalMode } from "../types";
 import { ObsidianAPI } from "../obsidian-api";
 
 /**
@@ -10,6 +10,7 @@ export class BFSTraversal {
 	private obsidianAPI: ObsidianAPI;
 	private contentDepth: number;
 	private titleDepth: number;
+	private linkTraversalMode: LinkTraversalMode;
 	private visited: Set<string> = new Set();
 	private missingNotes: Set<string> = new Set();
 
@@ -18,11 +19,18 @@ export class BFSTraversal {
 	 * @param {ObsidianAPI} obsidianAPI - An instance of the ObsidianAPI wrapper.
 	 * @param {number} contentDepth - The maximum depth to include full note content.
 	 * @param {number} titleDepth - The maximum depth to include note titles.
+	 * @param {LinkTraversalMode} linkTraversalMode - Which link directions should be followed.
 	 */
-	constructor(obsidianAPI: ObsidianAPI, contentDepth: number, titleDepth: number) {
+	constructor(
+		obsidianAPI: ObsidianAPI,
+		contentDepth: number,
+		titleDepth: number,
+		linkTraversalMode: LinkTraversalMode = "outgoing"
+	) {
 		this.obsidianAPI = obsidianAPI;
 		this.contentDepth = contentDepth;
 		this.titleDepth = titleDepth;
+		this.linkTraversalMode = linkTraversalMode;
 	}
 
 	/**
@@ -61,24 +69,18 @@ export class BFSTraversal {
 
 			if (depth >= this.titleDepth) continue;
 
-			const links = this.obsidianAPI.getLinksForFile(file);
-			if (!links) continue;
+			const linkedFiles = this.getLinkedFiles(file);
+			for (const linkedFile of linkedFiles) {
+				if (this.visited.has(linkedFile.path)) continue;
 
-			for (const link of links) {
-				const linkedFile = this.obsidianAPI.resolveLink(link.link, file.path);
-				if (linkedFile && !this.visited.has(linkedFile.path)) {
-					this.visited.add(linkedFile.path);
-					const childNode = this.createExportNode(linkedFile, depth + 1);
-					parent.children.push(childNode);
-					queue.push({
-						file: linkedFile,
-						depth: depth + 1,
-						parent: childNode,
-					});
-				} else if (!linkedFile) {
-					// Track missing notes (links that couldn't be resolved)
-					this.missingNotes.add(link.link);
-				}
+				this.visited.add(linkedFile.path);
+				const childNode = this.createExportNode(linkedFile, depth + 1);
+				parent.children.push(childNode);
+				queue.push({
+					file: linkedFile,
+					depth: depth + 1,
+					parent: childNode,
+				});
 			}
 		}
 
@@ -107,6 +109,57 @@ export class BFSTraversal {
 		};
 
 		return node;
+	}
+
+	/**
+	 * Gets linked files based on the configured traversal mode.
+	 * @private
+	 */
+	private getLinkedFiles(file: TFile): TFile[] {
+		const linkedFiles: TFile[] = [];
+		const seenPaths = new Set<string>();
+
+		if (this.linkTraversalMode === "outgoing" || this.linkTraversalMode === "both") {
+			const outgoingFiles = this.getOutgoingLinkedFiles(file);
+			for (const outgoingFile of outgoingFiles) {
+				if (seenPaths.has(outgoingFile.path)) continue;
+				seenPaths.add(outgoingFile.path);
+				linkedFiles.push(outgoingFile);
+			}
+		}
+
+		if (this.linkTraversalMode === "incoming" || this.linkTraversalMode === "both") {
+			const incomingFiles = this.obsidianAPI.getIncomingLinksForFile(file);
+			for (const incomingFile of incomingFiles) {
+				if (seenPaths.has(incomingFile.path)) continue;
+				seenPaths.add(incomingFile.path);
+				linkedFiles.push(incomingFile);
+			}
+		}
+
+		return linkedFiles;
+	}
+
+	/**
+	 * Gets outgoing linked files and tracks unresolved links.
+	 * @private
+	 */
+	private getOutgoingLinkedFiles(file: TFile): TFile[] {
+		const links = this.obsidianAPI.getLinksForFile(file);
+		if (!links) return [];
+
+		const linkedFiles: TFile[] = [];
+		for (const link of links) {
+			const linkedFile = this.obsidianAPI.resolveLink(link.link, file.path);
+			if (linkedFile) {
+				linkedFiles.push(linkedFile);
+			} else {
+				// Track missing notes (links that couldn't be resolved)
+				this.missingNotes.add(link.link);
+			}
+		}
+
+		return linkedFiles;
 	}
 
 	/**

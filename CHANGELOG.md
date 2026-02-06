@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-02-06
+
+### Added
+
+- Link direction traversal modes: outgoing, incoming (backlinks), and outgoing + incoming
+- Backlink discovery support in BFS traversal for exporting notes that are referenced by other notes
+- Default link direction setting in plugin settings
+
+### Changed
+
+- Link direction labels and descriptions now clarify:
+  - Outgoing follows wikilinks in note text
+  - Outgoing + incoming helps find possible links between notes
+- Export modal now initializes link direction from plugin settings
+
 ## [1.1.2] - 2026-02-06
 
 ### Changed

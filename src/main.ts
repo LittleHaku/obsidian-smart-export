@@ -1,11 +1,12 @@
 import { App, Plugin, PluginSettingTab, Setting } from "obsidian";
 import { ExportModal } from "./ui/ExportModal";
-import { SmartExportSettings } from "./types";
+import { LinkTraversalMode, SmartExportSettings } from "./types";
 
 const DEFAULT_SETTINGS: SmartExportSettings = {
 	defaultContentDepth: 3,
 	defaultTitleDepth: 6,
 	defaultExportFormat: "xml",
+	defaultLinkTraversalMode: "outgoing",
 	autoSelectCurrentNote: true,
 	closeModalAfterExport: false,
 	showTokenEstimatesInTree: false,
@@ -123,6 +124,23 @@ class SmartExportSettingTab extends PluginSettingTab {
 					.setValue(this.plugin.settings.defaultExportFormat)
 					.onChange(async (value: "xml" | "llm-markdown" | "print-friendly-markdown") => {
 						this.plugin.settings.defaultExportFormat = value;
+						await this.plugin.saveSettings();
+					})
+			);
+
+		new Setting(containerEl)
+			.setName("Default link direction")
+			.setDesc(
+				"Outgoing follows wikilinks in note text. Incoming follows backlinks. Outgoing + incoming helps find possible links between notes."
+			)
+			.addDropdown((dropdown) =>
+				dropdown
+					.addOption("outgoing", "Outgoing (wikilinks in text)")
+					.addOption("incoming", "Incoming (backlinks)")
+					.addOption("both", "Outgoing + incoming")
+					.setValue(this.plugin.settings.defaultLinkTraversalMode)
+					.onChange(async (value: LinkTraversalMode) => {
+						this.plugin.settings.defaultLinkTraversalMode = value;
 						await this.plugin.saveSettings();
 					})
 			);
