@@ -3,6 +3,10 @@ import { App, TFile, Reference } from "obsidian";
 /**
  * A wrapper class for the Obsidian API to provide a stable, testable interface
  * for interacting with the vault.
+ *
+ * Note: this wrapper is typically created per export/tree build to ensure fresh
+ * metadata reads. If an instance is reused across multiple operations, call
+ * `invalidateIncomingLinksIndex()` after link/metadata changes.
  */
 export class ObsidianAPI {
 	private app: App;
@@ -69,6 +73,17 @@ export class ObsidianAPI {
 		}
 
 		return [...(this.incomingLinksIndex.get(file.path) ?? [])];
+	}
+
+	/**
+	 * Invalidates the cached incoming links index.
+	 *
+	 * Call this if notes or links are added, removed, or modified and you plan
+	 * to reuse this ObsidianAPI instance. The next call to
+	 * `getIncomingLinksForFile` will rebuild the index.
+	 */
+	public invalidateIncomingLinksIndex(): void {
+		this.incomingLinksIndex = null;
 	}
 
 	/**
