@@ -34,9 +34,7 @@ describe("LlmMarkdownExporter", () => {
 			expect(result).toContain("total_notes_exported: 1");
 			expect(result).toContain("missing_notes_count: 0");
 			expect(result).toContain("max_depth_used: 0");
-			expect(result).toMatch(
-				/processing_order:\s*["']?BFS \(Breadth-First Search\)["']?/
-			);
+			expect(result).toMatch(/processing_order:\s*["']?BFS \(Breadth-First Search\)["']?/);
 
 			// Check structure section
 			expect(result).toContain("## Note Structure");
