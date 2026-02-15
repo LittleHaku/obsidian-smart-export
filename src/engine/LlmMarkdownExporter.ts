@@ -1,3 +1,4 @@
+import { stringifyYaml } from "obsidian";
 import { ExportNode } from "../types";
 
 /**
@@ -57,15 +58,17 @@ export class LlmMarkdownExporter {
 		maxDepth: number
 	): string {
 		const timestamp = new Date().toISOString();
-		return `---
-export_timestamp: ${timestamp}
-vault_path: "${vaultPath}"
-starting_note: "${rootNode.title}"
-total_notes_exported: ${totalNotes}
-missing_notes_count: ${missingNotes}
-max_depth_used: ${maxDepth}
-processing_order: BFS (Breadth-First Search)
----`;
+		const metadata = {
+			export_timestamp: timestamp,
+			vault_path: vaultPath,
+			starting_note: rootNode.title,
+			total_notes_exported: totalNotes,
+			missing_notes_count: missingNotes,
+			max_depth_used: maxDepth,
+			processing_order: "BFS (Breadth-First Search)",
+		};
+
+		return `---\n${stringifyYaml(metadata)}---`;
 	}
 
 	private buildNoteStructure(allNotes: ExportNode[]): string {
