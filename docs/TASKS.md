@@ -1,4 +1,4 @@
-# Development Tasks - Obsidian LLM Export Plugin
+# Development Tasks - Smart Export Plugin
 
 > **Note**: This file serves as a development roadmap and implementation guide. It breaks down the PRD into concrete, actionable tasks for systematic development.
 
