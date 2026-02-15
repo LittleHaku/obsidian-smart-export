@@ -1,4 +1,4 @@
-# Obsidian Smart Export
+# Smart Export
 
 [![CI/CD](https://github.com/LittleHaku/obsidian-smart-export/actions/workflows/ci.yml/badge.svg)](https://github.com/LittleHaku/obsidian-smart-export/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/gh/LittleHaku/obsidian-smart-export/branch/main/graph/badge.svg)](https://codecov.io/gh/LittleHaku/obsidian-smart-export/branch/main)
@@ -86,7 +86,7 @@ This is the recommended way to beta test plugins, as it keeps everything up to d
 ### LLM Markdown
 
 ```markdown
-# Obsidian Vault Export
+# Smart Export Vault
 
 **Export Details:**
 

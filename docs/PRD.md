@@ -1,8 +1,8 @@
-# Obsidian LLM Export Plugin - Product Requirements Document
+# Smart Export Plugin - Product Requirements Document
 
 ## Overview
 
-The Obsidian LLM Export Plugin enables users to intelligently export interconnected notes for Large Language Model consumption. Using Breadth-First Search (BFS) traversal of wikilinks, it creates structured XML exports with configurable depth and content granularity, plus optional vault-wide context for enhanced LLM understanding.
+The Smart Export plugin enables users to intelligently export interconnected notes for Large Language Model consumption. Using Breadth-First Search (BFS) traversal of wikilinks, it creates structured XML exports with configurable depth and content granularity, plus optional vault-wide context for enhanced LLM understanding.
 
 ## Core Value Proposition
 
