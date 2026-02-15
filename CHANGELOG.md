@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.6] - 2026-02-15
+
+### Changed
+
+- LLM Markdown exporter now serializes frontmatter via Obsidian `stringifyYaml()` instead of manually constructing YAML
+
 ## [1.2.5] - 2026-02-06
 
 ### Added

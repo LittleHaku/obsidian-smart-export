@@ -29,12 +29,14 @@ describe("LlmMarkdownExporter", () => {
 
 			// Check metadata presence
 			expect(result).toContain("export_timestamp:");
-			expect(result).toContain('vault_path: "TestVault"');
-			expect(result).toContain('starting_note: "Root Note"');
+			expect(result).toMatch(/vault_path:\s*["']?TestVault["']?/);
+			expect(result).toMatch(/starting_note:\s*["']?Root Note["']?/);
 			expect(result).toContain("total_notes_exported: 1");
 			expect(result).toContain("missing_notes_count: 0");
 			expect(result).toContain("max_depth_used: 0");
-			expect(result).toContain("processing_order: BFS (Breadth-First Search)");
+			expect(result).toMatch(
+				/processing_order:\s*["']?BFS \(Breadth-First Search\)["']?/
+			);
 
 			// Check structure section
 			expect(result).toContain("## Note Structure");
@@ -193,7 +195,8 @@ console.log("code block");
 
 			const result = exporter.export(rootNode, "TestVault");
 
-			const timestampRegex = /export_timestamp: (\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z)/;
+			const timestampRegex =
+				/export_timestamp:\s*["']?(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z)["']?/;
 			expect(result).toMatch(timestampRegex);
 		});
 
@@ -204,7 +207,7 @@ console.log("code block");
 
 			const result = exporter.export(rootNode, specialVaultPath);
 
-			expect(result).toContain(`vault_path: "${specialVaultPath}"`);
+			expect(result).toMatch(/vault_path:.*Special.*Vault.*Notes/);
 		});
 
 		it("should include descriptive text in note structure", () => {
@@ -244,7 +247,7 @@ console.log("code block");
 
 			const result = exporter.export(rootNode, "TestVault");
 
-			expect(result).toContain(`starting_note: "${longTitle}"`);
+			expect(result).toContain(longTitle);
 			expect(result).toContain(`Note 1: "${longTitle}"`);
 			expect(result).toContain(`## Note 1: "${longTitle}"`);
 		});
@@ -255,7 +258,7 @@ console.log("code block");
 
 			const result = exporter.export(rootNode, "");
 
-			expect(result).toContain('vault_path: ""');
+			expect(result).toMatch(/vault_path:\s*["']{2}/);
 		});
 
 		it("should handle large number of missing notes", () => {
