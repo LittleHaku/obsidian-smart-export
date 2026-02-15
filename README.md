@@ -86,7 +86,7 @@ This is the recommended way to beta test plugins, as it keeps everything up to d
 ### LLM Markdown
 
 ```markdown
-# Obsidian Vault Export
+# Smart Export Vault
 
 **Export Details:**
 
