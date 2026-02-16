@@ -725,7 +725,7 @@ export class ExportModal extends Modal {
 	 */
 	private getTreeCacheKey(): string {
 		const rootPath = this.selectedFile?.path ?? "unknown";
-		const ignoredTraversalFolders = this.settings.ignoredTraversalFolders.join(",");
+		const ignoredTraversalFolders = JSON.stringify(this.settings.ignoredTraversalFolders);
 		return `${rootPath}|content:${this.contentDepth}|title:${this.titleDepth}|mode:${this.linkTraversalMode}|traversalIgnored:${ignoredTraversalFolders}`;
 	}
 
