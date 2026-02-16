@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.3.0] - 2026-02-16
+
+### Added
+
+- Global folder exclusion setting (`Ignored folders`) to fully exclude notes in selected folders from traversal and export (their links are not followed)
+- Documentation page for excluded folder behavior and matching rules (`docs/exclude-folders.md`)
+
+### Changed
+
+- Simplified folder filtering model to a single exclusion list (removed direction-specific folder filtering complexity)
+- Updated README structure with clearer installation, documentation index, and keyboard shortcut sections
+- Standardized docs naming from "incoming link folder filters" to "excluded folders"
+- Release version format policy: use `X.Y.Z` (no `v` prefix), aligned with Obsidian ecosystem conventions
+
 ## [1.2.7] - 2026-02-15
 
 ### Changed

@@ -279,6 +279,66 @@ describe("BFSTraversal", () => {
 		expect(traversal.getMissingNotes()).toHaveLength(0);
 	});
 
+	it("should exclude notes in ignored traversal folders for outgoing links", async () => {
+		mockFiles["root-folder-test.md"] = createMockTFile("root-folder-test.md", "root-folder-test");
+		mockFiles["keep/visible.md"] = createMockTFile("keep/visible.md", "visible");
+		mockFiles["excluded/hidden.md"] = createMockTFile("excluded/hidden.md", "hidden");
+
+		mockFileContents["root-folder-test.md"] = "[[visible]] [[hidden]]";
+		mockFileContents["keep/visible.md"] = "";
+		mockFileContents["excluded/hidden.md"] = "";
+
+		mockFileLinks["root-folder-test.md"] = [createLink("visible"), createLink("hidden")];
+		mockFileLinks["keep/visible.md"] = [];
+		mockFileLinks["excluded/hidden.md"] = [];
+
+		mockFileFrontmatterLinks["root-folder-test.md"] = [];
+		mockFileFrontmatterLinks["keep/visible.md"] = [];
+		mockFileFrontmatterLinks["excluded/hidden.md"] = [];
+		rebuildResolvedLinks();
+
+		const traversal = new BFSTraversal(obsidianAPI, 1, 1, "outgoing", {
+			ignoredTraversalFolders: ["excluded"],
+		});
+		const rootNode = await traversal.traverse("root-folder-test.md");
+
+		expect(rootNode).not.toBeNull();
+		expect(rootNode?.children.map((child) => child.id)).toEqual(["keep/visible.md"]);
+	});
+
+	it("should exclude notes in ignored traversal folders for incoming links", async () => {
+		mockFiles["target-global-ignore.md"] = createMockTFile(
+			"target-global-ignore.md",
+			"target-global-ignore"
+		);
+		mockFiles["included/source.md"] = createMockTFile("included/source.md", "source");
+		mockFiles["excluded/source-hidden.md"] = createMockTFile(
+			"excluded/source-hidden.md",
+			"source-hidden"
+		);
+
+		mockFileContents["target-global-ignore.md"] = "";
+		mockFileContents["included/source.md"] = "[[target-global-ignore]]";
+		mockFileContents["excluded/source-hidden.md"] = "[[target-global-ignore]]";
+
+		mockFileLinks["target-global-ignore.md"] = [];
+		mockFileLinks["included/source.md"] = [createLink("target-global-ignore")];
+		mockFileLinks["excluded/source-hidden.md"] = [createLink("target-global-ignore")];
+
+		mockFileFrontmatterLinks["target-global-ignore.md"] = [];
+		mockFileFrontmatterLinks["included/source.md"] = [];
+		mockFileFrontmatterLinks["excluded/source-hidden.md"] = [];
+		rebuildResolvedLinks();
+
+		const traversal = new BFSTraversal(obsidianAPI, 1, 1, "incoming", {
+			ignoredTraversalFolders: ["excluded"],
+		});
+		const rootNode = await traversal.traverse("target-global-ignore.md");
+
+		expect(rootNode).not.toBeNull();
+		expect(rootNode?.children.map((child) => child.id)).toEqual(["included/source.md"]);
+	});
+
 	it("should traverse outgoing and incoming links without duplicates when mode is both", async () => {
 		const traversal = new BFSTraversal(obsidianAPI, 1, 1, "both");
 		const rootNode = await traversal.traverse("A.md");

@@ -545,7 +545,10 @@ export class ExportModal extends Modal {
 				obsidianAPI,
 				this.contentDepth,
 				this.titleDepth,
-				this.linkTraversalMode
+				this.linkTraversalMode,
+				{
+					ignoredTraversalFolders: this.settings.ignoredTraversalFolders,
+				}
 			);
 			const exportTree = await traversal.traverse(this.selectedFile.path);
 
@@ -722,7 +725,8 @@ export class ExportModal extends Modal {
 	 */
 	private getTreeCacheKey(): string {
 		const rootPath = this.selectedFile?.path ?? "unknown";
-		return `${rootPath}|content:${this.contentDepth}|title:${this.titleDepth}|mode:${this.linkTraversalMode}`;
+		const ignoredTraversalFolders = this.settings.ignoredTraversalFolders.join(",");
+		return `${rootPath}|content:${this.contentDepth}|title:${this.titleDepth}|mode:${this.linkTraversalMode}|traversalIgnored:${ignoredTraversalFolders}`;
 	}
 
 	/**

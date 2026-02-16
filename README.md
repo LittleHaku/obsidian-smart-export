@@ -40,27 +40,46 @@ The title depth is mainly thought for when working with LLMs, so you can pass th
 
 The plugin estimates how many tokens your export will use and warns you if you're approaching common LLM limits (like GPT-4's 128k or Claude's 200k).
 
-## Getting started
+## 1 Installation
 
-### Installation
+### Community plugins (NOT AVAILABLE YET)
 
-For beta testing and the easiest way to install pre-release plugins, use the [BRAT (Beta Reviewers Auto-update Tool)](https://github.com/TfTHacker/obsidian42-brat) plugin by TfTHacker:
+1. Open **Settings → Community plugins** in Obsidian.
+2. Turn off **Restricted mode**.
+3. Click **Browse**, search for **Smart Export**, then install and enable it.
 
-1. In Obsidian, go to **Settings → Community Plugins → Browse** and search for "BRAT" by TfTHacker. Install and enable it.
-2. Once BRAT is enabled, open its settings and click **Add a new plugin**.
-3. Paste this repository link: `https://github.com/LittleHaku/obsidian-smart-export`
-4. Select the latest version when prompted.
-5. BRAT will handle installation and updates for you.
+### BRAT (Until it's in the community plugins)
 
-This is the recommended way to beta test plugins, as it keeps everything up to date and avoids manual file management.
+For beta testing and pre-release updates, use [BRAT (Beta Reviewers Auto-update Tool)](https://github.com/TfTHacker/obsidian42-brat):
 
-## How to use it
+1. In Obsidian, go to **Settings → Community Plugins → Browse** and install **BRAT**.
+2. Open BRAT settings and click **Add a beta plugin**.
+3. Paste this repository URL: `https://github.com/LittleHaku/obsidian-smart-export`
+4. Select the latest release in BRAT.
 
-1. **Open the export dialog**: Click the 🧠 brain icon or use Cmd/Ctrl+P → "Smart Export"
+## 2 Quick start
+
+1. **Open the export dialog**: Click the 🧠 brain icon or use Cmd/Ctrl+P → "Smart Export: Open export"
 2. **Pick your starting note**: It'll default to your current note, or you can choose any note
-3. **Set your depths**: I recommend starting with Content Depth: 3, Title Depth: 6
+3. **Set your depths**: I recommend starting with Content Depth: 2, Title Depth: 4
 4. **Choose your format**: XML for structured data, Markdown for readability
-5. **Export**: Click "Export to Clipboard" and paste into your favorite LLM
+5. **Export**: Click "Export to Clipboard" and paste into your favorite LLM, or print them to study
+
+## 3 Documentation
+
+- [Excluded folders](docs/exclude-folders.md): Ignore folders so notes inside them are excluded from traversal and export.
+- [Product requirements document](docs/PRD.md): Product goals, architecture direction, and roadmap context.
+- [Development tasks](docs/TASKS.md): Implementation checklist and phased task breakdown.
+- [Contributing guide](CONTRIBUTING.md): Local development workflow and contribution standards.
+
+## 4 Keyboard shortcuts and commands
+
+| Action                  | Default access                                               | Notes                             |
+| ----------------------- | ------------------------------------------------------------ | --------------------------------- |
+| Open Smart Export modal | Command palette (`Cmd/Ctrl+P`) → `Smart Export: Open export` | Core command for exporting        |
+| Open from ribbon        | Click the 🧠 icon in the left ribbon                         | Available after plugin is enabled |
+
+You can assign your own hotkey in **Settings → Hotkeys** by searching for `Smart Export: Open export` (I personally use `Ctrl/Cmd+Shift+C`).
 
 ## Example exports
 
@@ -111,8 +130,12 @@ You can customize the defaults in Settings → Smart Export:
 - **Default Content Depth**: How deep to go with full content (1-20)
 - **Default Title Depth**: How deep to go with titles only (1-30)
 - **Default Export Format**: Your preferred output format
+- **Default Link Direction**: Outgoing, incoming, or both
+- **Ignored folders**: Optional exclusion list (one folder path per line). Notes in these folders are not included in traversal or export, you can exclude your personal notes, journals, or any other noisy folders.
 - **Auto-select Current Note**: Whether to automatically pick your active note
 - **Close modal after export**: Whether to close the export dialog after copying to clipboard
+
+Filter behavior reference: [Excluded folders](docs/exclude-folders.md)
 
 ## What I use it for
 
@@ -137,7 +160,7 @@ When learning something new, I export my notes and ask the LLM to create study g
 ### Token management
 
 - Start with Content Depth 2-3 for most uses
-- Use Title Depth 5-8 to get broader context without overwhelming content
+- Use Title Depth 4-6 to get broader context without overwhelming content
 - Watch the token counter to stay within your LLM's limits
 
 ### Organizing your notes
@@ -213,15 +236,6 @@ If Smart Export helps you work more efficiently, consider supporting its develop
 ### ☕ Support Development
 
 This plugin is free and open-source, but if it saves you time and enhances your workflow, consider [buying me a coffee](https://buymeacoffee.com/littlehaku). Your support helps me continue developing and maintaining this plugin for the Obsidian community.
-
-## What's coming next
-
-I'm working on:
-
-- **Vault context**: Include broader vault information for better LLM understanding
-- **Template system**: Pre-built prompts for common workflows
-- **Export presets**: Save and reuse your favorite configurations
-- **Batch exports**: Export multiple starting notes at once
 
 ---
 

@@ -2,6 +2,14 @@ import { TFile } from "obsidian";
 import { ExportNode, LinkTraversalMode } from "../types";
 import { ObsidianAPI } from "../obsidian-api";
 
+export interface BFSTraversalOptions {
+	/**
+	 * Notes under these folders are fully excluded from traversal.
+	 * This applies to outgoing, incoming, and both traversal modes.
+	 */
+	ignoredTraversalFolders?: string[];
+}
+
 /**
  * Implements a Breadth-First Search (BFS) traversal engine to discover and structure
  * linked notes from a starting root note.
@@ -12,6 +20,7 @@ export class BFSTraversal {
 	private contentDepth: number;
 	private titleDepth: number;
 	private linkTraversalMode: LinkTraversalMode;
+	private ignoredTraversalPrefixes: string[];
 	private visited: Set<string> = new Set();
 	private missingNotes: Set<string> = new Set();
 
@@ -26,12 +35,14 @@ export class BFSTraversal {
 		obsidianAPI: ObsidianAPI,
 		contentDepth: number,
 		titleDepth: number,
-		linkTraversalMode: LinkTraversalMode = "outgoing"
+		linkTraversalMode: LinkTraversalMode = "outgoing",
+		options: BFSTraversalOptions = {}
 	) {
 		this.obsidianAPI = obsidianAPI;
 		this.contentDepth = contentDepth;
 		this.titleDepth = titleDepth;
 		this.linkTraversalMode = linkTraversalMode;
+		this.ignoredTraversalPrefixes = this.normalizeFolderPrefixes(options.ignoredTraversalFolders);
 	}
 
 	/**
@@ -72,6 +83,9 @@ export class BFSTraversal {
 
 			const linkedFiles = this.getLinkedFiles(file);
 			for (const linkedFile of linkedFiles) {
+				// Global folder exclusions are applied before any node is added to the tree.
+				// Excluded notes are not traversed further, so links "from them" are ignored too.
+				if (this.shouldExcludeTraversalFile(linkedFile)) continue;
 				if (this.visited.has(linkedFile.path)) continue;
 
 				this.visited.add(linkedFile.path);
@@ -139,6 +153,46 @@ export class BFSTraversal {
 		}
 
 		return linkedFiles;
+	}
+
+	private shouldExcludeTraversalFile(file: TFile): boolean {
+		if (this.ignoredTraversalPrefixes.length === 0) {
+			return false;
+		}
+
+		return this.pathMatchesFolderPrefixes(file.path, this.ignoredTraversalPrefixes);
+	}
+
+	/**
+	 * Converts folder names to canonical "prefix/" form so matching can use
+	 * a fast `startsWith` check with predictable boundaries.
+	 */
+	private normalizeFolderPrefixes(folders: string[] | undefined): string[] {
+		if (!folders || folders.length === 0) {
+			return [];
+		}
+
+		const normalizedPrefixes: string[] = [];
+		const seen = new Set<string>();
+
+		for (const folder of folders) {
+			const normalized = folder.trim().replace(/\\/g, "/").replace(/^\/+/, "").replace(/\/+$/, "");
+			if (!normalized) continue;
+			const prefix = `${normalized}/`;
+			if (seen.has(prefix)) continue;
+			seen.add(prefix);
+			normalizedPrefixes.push(prefix);
+		}
+
+		return normalizedPrefixes;
+	}
+
+	/**
+	 * Prefix-based folder matching.
+	 * Example: prefix `Archive/` matches `Archive/Note.md` but not `Archive.md`.
+	 */
+	private pathMatchesFolderPrefixes(path: string, prefixes: string[]): boolean {
+		return prefixes.some((prefix) => path.startsWith(prefix));
 	}
 
 	/**

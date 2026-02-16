@@ -2,6 +2,46 @@ import { App, Plugin, PluginSettingTab, Setting } from "obsidian";
 import { ExportModal } from "./ui/ExportModal";
 import { LinkTraversalMode, SmartExportSettings } from "./types";
 
+/**
+ * Normalizes a user-provided folder path so matching is stable across platforms
+ * and resilient to accidental whitespace/slashes.
+ */
+function normalizeFolderFilterPath(folderPath: string): string {
+	return folderPath.trim().replace(/\\/g, "/").replace(/^\/+/, "").replace(/\/+$/, "");
+}
+
+/**
+ * Parses arbitrary persisted values into a clean folder filter list:
+ * - non-array input becomes []
+ * - non-string entries are ignored
+ * - values are normalized and deduplicated
+ */
+function normalizeFolderFilterList(values: unknown): string[] {
+	if (!Array.isArray(values)) {
+		return [];
+	}
+
+	const normalized: string[] = [];
+	const seen = new Set<string>();
+	for (const value of values) {
+		if (typeof value !== "string") continue;
+		const normalizedValue = normalizeFolderFilterPath(value);
+		if (!normalizedValue || seen.has(normalizedValue)) continue;
+		seen.add(normalizedValue);
+		normalized.push(normalizedValue);
+	}
+
+	return normalized;
+}
+
+/**
+ * Converts textarea input (one folder path per line) into a normalized list.
+ */
+function parseFolderFilterText(text: string): string[] {
+	const lines = text.split("\n").map((line) => line.trim());
+	return normalizeFolderFilterList(lines);
+}
+
 const DEFAULT_SETTINGS: SmartExportSettings = {
 	defaultContentDepth: 3,
 	defaultTitleDepth: 6,
@@ -10,6 +50,7 @@ const DEFAULT_SETTINGS: SmartExportSettings = {
 	autoSelectCurrentNote: true,
 	closeModalAfterExport: false,
 	showTokenEstimatesInTree: false,
+	ignoredTraversalFolders: [],
 };
 
 /**
@@ -63,6 +104,9 @@ export default class SmartExportPlugin extends Plugin {
 		if (this.settings.defaultTitleDepth < this.settings.defaultContentDepth) {
 			this.settings.defaultTitleDepth = this.settings.defaultContentDepth;
 		}
+		this.settings.ignoredTraversalFolders = normalizeFolderFilterList(
+			this.settings.ignoredTraversalFolders
+		);
 	}
 
 	async saveSettings() {
@@ -149,6 +193,20 @@ class SmartExportSettingTab extends PluginSettingTab {
 					.setValue(this.plugin.settings.defaultLinkTraversalMode)
 					.onChange(async (value: LinkTraversalMode) => {
 						this.plugin.settings.defaultLinkTraversalMode = value;
+						await this.plugin.saveSettings();
+					})
+			);
+
+		new Setting(containerEl)
+			.setName("Ignored folders")
+			.setDesc(
+				"Optional. One folder path per line. Notes in these folders are excluded from traversal and won't appear in the export tree."
+			)
+			.addTextArea((textArea) =>
+				textArea
+					.setValue(this.plugin.settings.ignoredTraversalFolders.join("\n"))
+					.onChange(async (value) => {
+						this.plugin.settings.ignoredTraversalFolders = parseFolderFilterText(value);
 						await this.plugin.saveSettings();
 					})
 			);
