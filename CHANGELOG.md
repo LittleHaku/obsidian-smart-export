@@ -11,15 +11,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Global folder exclusion setting (`Ignored folders`) to fully exclude notes in selected folders from traversal and export (their links are not followed)
-- Documentation page for excluded folder behavior and matching rules (`docs/exclude-folders.md`)
+- Global folder exclusion setting (`Ignored folders`) to exclude notes from traversal/export across all link modes (outgoing, incoming, both)
+- New folder filter utility module (`src/utils/folderFilters.ts`) for shared path normalization and prefix matching
+- Expanded traversal test coverage for folder exclusions:
+  - outgoing mode
+  - incoming mode
+  - both mode
+  - root note kept even if located in an excluded folder
+- New utility test suite for folder filter normalization and matching (`tests/utils/folderFilters.test.ts`)
+- New release/versioning runbook (`docs/versioning-and-releases.md`)
+- New Obsidian plugin review checklist (`docs/obsidian-plugin-guidelines.md`)
+- New contributor guide file (`AGENTS.md`)
 
 ### Changed
 
 - Simplified folder filtering model to a single exclusion list (removed direction-specific folder filtering complexity)
-- Updated README structure with clearer installation, documentation index, and keyboard shortcut sections
-- Standardized docs naming from "incoming link folder filters" to "excluded folders"
-- Release version format policy: use `X.Y.Z` (no `v` prefix), aligned with Obsidian ecosystem conventions
+- Updated export tree cache key generation to serialize excluded folders with `JSON.stringify(...)` to avoid delimiter-based key collisions
+- Refactored duplicated folder normalization logic to shared utilities used by settings and traversal
+- Improved folder path normalization to collapse repeated internal slashes for consistent matching
+- Updated README structure with numbered sections and reduced duplication (installation, quick start, docs, settings, troubleshooting)
+- Standardized docs naming from "incoming link folder filters" to "excluded folders" (`docs/exclude-folders.md`)
+- Updated contribution/release guidance:
+  - explicit no-`v` version/tag format (`X.Y.Z`)
+  - prerelease tag conventions (`beta` / `alpha` / `canary`)
+  - changelog header must match release tag exactly
 
 ## [1.2.7] - 2026-02-15
 
