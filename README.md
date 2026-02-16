@@ -42,13 +42,7 @@ The plugin estimates how many tokens your export will use and warns you if you'r
 
 ## 1 Installation
 
-### Community plugins (NOT AVAILABLE YET)
-
-1. Open **Settings → Community plugins** in Obsidian.
-2. Turn off **Restricted mode**.
-3. Click **Browse**, search for **Smart Export**, then install and enable it.
-
-### BRAT (Until it's in the community plugins)
+### BRAT (current installation method)
 
 For beta testing and pre-release updates, use [BRAT (Beta Reviewers Auto-update Tool)](https://github.com/TfTHacker/obsidian42-brat):
 
@@ -56,6 +50,12 @@ For beta testing and pre-release updates, use [BRAT (Beta Reviewers Auto-update 
 2. Open BRAT settings and click **Add a beta plugin**.
 3. Paste this repository URL: `https://github.com/LittleHaku/obsidian-smart-export`
 4. Select the latest release in BRAT.
+
+### Community plugins (when available)
+
+1. Open **Settings → Community plugins** in Obsidian.
+2. Turn off **Restricted mode**.
+3. Click **Browse**, search for **Smart Export**, then install and enable it.
 
 ## 2 Quick start
 
