@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- New startup lifecycle documentation page with phase-based flow and Mermaid diagram (`docs/startup-process.md`)
+
+### Changed
+
+- Folder filter path normalization now uses Obsidian `normalizePath()` for vault-consistent behavior (including slash normalization and Unicode-safe path cleanup)
+- Expanded folder filter tests to cover NBSP normalization and blank-input handling
+- Added explicit docs scope guidance in `AGENTS.md` to keep architecture documentation proportional to plugin complexity
+
 ## [1.3.0-beta.1] - 2026-02-16
 
 ### Added
