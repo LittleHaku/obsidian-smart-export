@@ -7,17 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Added
-
-- New startup lifecycle documentation page with phase-based flow and Mermaid diagram (`docs/startup-process.md`)
-
-### Changed
-
-- Folder filter path normalization now uses Obsidian `normalizePath()` for vault-consistent behavior (including slash normalization and Unicode-safe path cleanup)
-- Expanded folder filter tests to cover NBSP normalization and blank-input handling
-- Added explicit docs scope guidance in `AGENTS.md` to keep architecture documentation proportional to plugin complexity
-
-## [1.3.0-beta.1] - 2026-02-16
+## [1.3.0] - 2026-02-16
 
 ### Added
 
@@ -32,15 +22,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - New release/versioning runbook (`docs/versioning-and-releases.md`)
 - New Obsidian plugin review checklist (`docs/obsidian-plugin-guidelines.md`)
 - New contributor guide file (`AGENTS.md`)
+- New startup lifecycle documentation page with phase-based flow and Mermaid diagram (`docs/startup-process.md`)
 
 ### Changed
 
 - Simplified folder filtering model to a single exclusion list (removed direction-specific folder filtering complexity)
 - Updated export tree cache key generation to serialize excluded folders with `JSON.stringify(...)` to avoid delimiter-based key collisions
 - Refactored duplicated folder normalization logic to shared utilities used by settings and traversal
-- Improved folder path normalization to collapse repeated internal slashes for consistent matching
+- Folder filter path normalization now uses Obsidian `normalizePath()` for vault-consistent behavior (including slash normalization and Unicode-safe path cleanup)
 - Updated README structure with numbered sections and reduced duplication (installation, quick start, docs, settings, troubleshooting)
 - Standardized docs naming from "incoming link folder filters" to "excluded folders" (`docs/exclude-folders.md`)
+- Expanded folder filter tests to cover NBSP normalization and blank-input handling
+- Added explicit docs scope guidance in `AGENTS.md` to keep architecture documentation proportional to plugin complexity
 - Updated contribution/release guidance:
   - explicit no-`v` version/tag format (`X.Y.Z`)
   - prerelease tag conventions (`beta` / `alpha` / `canary`)
