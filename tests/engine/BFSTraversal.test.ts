@@ -339,6 +339,56 @@ describe("BFSTraversal", () => {
 		expect(rootNode?.children.map((child) => child.id)).toEqual(["included/source.md"]);
 	});
 
+	it("should exclude notes in ignored traversal folders when mode is both", async () => {
+		mockFiles["both/target.md"] = createMockTFile("both/target.md", "both-target");
+		mockFiles["included/both-keep-out.md"] = createMockTFile(
+			"included/both-keep-out.md",
+			"both-keep-out"
+		);
+		mockFiles["excluded/both-drop-out.md"] = createMockTFile(
+			"excluded/both-drop-out.md",
+			"both-drop-out"
+		);
+		mockFiles["included/both-keep-in.md"] = createMockTFile(
+			"included/both-keep-in.md",
+			"both-keep-in"
+		);
+		mockFiles["excluded/both-drop-in.md"] = createMockTFile(
+			"excluded/both-drop-in.md",
+			"both-drop-in"
+		);
+
+		mockFileContents["both/target.md"] = "[[both-keep-out]] [[both-drop-out]]";
+		mockFileContents["included/both-keep-out.md"] = "[[both-target]]";
+		mockFileContents["excluded/both-drop-out.md"] = "[[both-target]]";
+		mockFileContents["included/both-keep-in.md"] = "[[both-target]]";
+		mockFileContents["excluded/both-drop-in.md"] = "[[both-target]]";
+
+		mockFileLinks["both/target.md"] = [createLink("both-keep-out"), createLink("both-drop-out")];
+		mockFileLinks["included/both-keep-out.md"] = [createLink("both-target")];
+		mockFileLinks["excluded/both-drop-out.md"] = [createLink("both-target")];
+		mockFileLinks["included/both-keep-in.md"] = [createLink("both-target")];
+		mockFileLinks["excluded/both-drop-in.md"] = [createLink("both-target")];
+
+		mockFileFrontmatterLinks["both/target.md"] = [];
+		mockFileFrontmatterLinks["included/both-keep-out.md"] = [];
+		mockFileFrontmatterLinks["excluded/both-drop-out.md"] = [];
+		mockFileFrontmatterLinks["included/both-keep-in.md"] = [];
+		mockFileFrontmatterLinks["excluded/both-drop-in.md"] = [];
+		rebuildResolvedLinks();
+
+		const traversal = new BFSTraversal(obsidianAPI, 1, 1, "both", {
+			ignoredTraversalFolders: ["excluded"],
+		});
+		const rootNode = await traversal.traverse("both/target.md");
+
+		expect(rootNode).not.toBeNull();
+		expect(rootNode?.children.map((child) => child.id)).toEqual([
+			"included/both-keep-out.md",
+			"included/both-keep-in.md",
+		]);
+	});
+
 	it("should traverse outgoing and incoming links without duplicates when mode is both", async () => {
 		const traversal = new BFSTraversal(obsidianAPI, 1, 1, "both");
 		const rootNode = await traversal.traverse("A.md");
