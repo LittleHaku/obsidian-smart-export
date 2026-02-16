@@ -3,7 +3,12 @@
  * and resilient to accidental whitespace/slashes.
  */
 export function normalizeFolderFilterPath(folderPath: string): string {
-	return folderPath.trim().replace(/\\/g, "/").replace(/^\/+/, "").replace(/\/+$/, "");
+	return folderPath
+		.trim()
+		.replace(/\\/g, "/")
+		.replace(/\/+/g, "/")
+		.replace(/^\/+/, "")
+		.replace(/\/+$/, "");
 }
 
 /**
