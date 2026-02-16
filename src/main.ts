@@ -1,4 +1,4 @@
-import { App, Plugin, PluginSettingTab, Setting } from "obsidian";
+import { App, Plugin, PluginSettingTab, Setting, debounce } from "obsidian";
 import { ExportModal } from "./ui/ExportModal";
 import { LinkTraversalMode, SmartExportSettings } from "./types";
 import { normalizeFolderFilterList } from "./utils/folderFilters";
@@ -93,6 +93,13 @@ class SmartExportSettingTab extends PluginSettingTab {
 
 	display(): void {
 		const { containerEl } = this;
+		const debouncedSaveIgnoredFolders = debounce(
+			() => {
+				void this.plugin.saveSettings();
+			},
+			300,
+			true
+		);
 
 		containerEl.empty();
 
@@ -174,9 +181,9 @@ class SmartExportSettingTab extends PluginSettingTab {
 			.addTextArea((textArea) =>
 				textArea
 					.setValue(this.plugin.settings.ignoredTraversalFolders.join("\n"))
-					.onChange(async (value) => {
+					.onChange((value) => {
 						this.plugin.settings.ignoredTraversalFolders = parseFolderFilterText(value);
-						await this.plugin.saveSettings();
+						debouncedSaveIgnoredFolders();
 					})
 			);
 
