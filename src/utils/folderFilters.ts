@@ -1,14 +1,17 @@
+import { normalizePath } from "obsidian";
+
 /**
  * Normalizes a user-provided folder path so matching is stable across platforms
- * and resilient to accidental whitespace/slashes.
+ * and resilient to accidental whitespace/slashes. Uses Obsidian's normalizePath
+ * to stay aligned with vault path normalization rules.
  */
 export function normalizeFolderFilterPath(folderPath: string): string {
-	return folderPath
-		.trim()
-		.replace(/\\/g, "/")
-		.replace(/\/+/g, "/")
-		.replace(/^\/+/, "")
-		.replace(/\/+$/, "");
+	const trimmed = folderPath.trim();
+	if (!trimmed) {
+		return "";
+	}
+
+	return normalizePath(trimmed);
 }
 
 /**

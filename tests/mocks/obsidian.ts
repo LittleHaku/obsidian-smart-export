@@ -8,6 +8,15 @@ export class LinkCache {}
 export class Position {}
 export class Loc {}
 
+export function normalizePath(path: string): string {
+	return path
+		.replace(/\u00A0/g, " ")
+		.normalize()
+		.replace(/[\\/]+/g, "/")
+		.replace(/^\/+/, "")
+		.replace(/\/+$/, "");
+}
+
 function isRecord(value: unknown): value is Record<string, unknown> {
 	return value !== null && typeof value === "object" && !Array.isArray(value);
 }

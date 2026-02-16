@@ -10,6 +10,8 @@ describe("folderFilters", () => {
 	it("normalizes a folder path", () => {
 		expect(normalizeFolderFilterPath("  \\Research\\AI/  ")).toBe("Research/AI");
 		expect(normalizeFolderFilterPath("  //Research///AI//  ")).toBe("Research/AI");
+		expect(normalizeFolderFilterPath("\u00A0Research\\AI")).toBe("Research/AI");
+		expect(normalizeFolderFilterPath("   ")).toBe("");
 	});
 
 	it("returns an empty list when input is not an array", () => {
