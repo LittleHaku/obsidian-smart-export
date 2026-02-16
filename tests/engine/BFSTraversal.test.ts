@@ -389,6 +389,37 @@ describe("BFSTraversal", () => {
 		]);
 	});
 
+	it("should keep the selected root note even when its folder is ignored", async () => {
+		mockFiles["excluded/root-in-ignored.md"] = createMockTFile(
+			"excluded/root-in-ignored.md",
+			"root-in-ignored"
+		);
+		mockFiles["included/child.md"] = createMockTFile("included/child.md", "child");
+		mockFiles["excluded/other.md"] = createMockTFile("excluded/other.md", "other");
+
+		mockFileContents["excluded/root-in-ignored.md"] = "[[child]] [[other]]";
+		mockFileContents["included/child.md"] = "";
+		mockFileContents["excluded/other.md"] = "";
+
+		mockFileLinks["excluded/root-in-ignored.md"] = [createLink("child"), createLink("other")];
+		mockFileLinks["included/child.md"] = [];
+		mockFileLinks["excluded/other.md"] = [];
+
+		mockFileFrontmatterLinks["excluded/root-in-ignored.md"] = [];
+		mockFileFrontmatterLinks["included/child.md"] = [];
+		mockFileFrontmatterLinks["excluded/other.md"] = [];
+		rebuildResolvedLinks();
+
+		const traversal = new BFSTraversal(obsidianAPI, 1, 1, "outgoing", {
+			ignoredTraversalFolders: ["excluded"],
+		});
+		const rootNode = await traversal.traverse("excluded/root-in-ignored.md");
+
+		expect(rootNode).not.toBeNull();
+		expect(rootNode?.id).toBe("excluded/root-in-ignored.md");
+		expect(rootNode?.children.map((child) => child.id)).toEqual(["included/child.md"]);
+	});
+
 	it("should traverse outgoing and incoming links without duplicates when mode is both", async () => {
 		const traversal = new BFSTraversal(obsidianAPI, 1, 1, "both");
 		const rootNode = await traversal.traverse("A.md");
