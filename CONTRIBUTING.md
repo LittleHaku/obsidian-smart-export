@@ -128,7 +128,6 @@ refactor: improve token calculation performance
 
 ```bash
 pnpm test              # Run tests with coverage
-pnpm run test:watch    # Watch mode for development
 ```
 
 ## Testing Guidelines
