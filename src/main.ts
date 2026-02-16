@@ -1,38 +1,7 @@
 import { App, Plugin, PluginSettingTab, Setting } from "obsidian";
 import { ExportModal } from "./ui/ExportModal";
 import { LinkTraversalMode, SmartExportSettings } from "./types";
-
-/**
- * Normalizes a user-provided folder path so matching is stable across platforms
- * and resilient to accidental whitespace/slashes.
- */
-function normalizeFolderFilterPath(folderPath: string): string {
-	return folderPath.trim().replace(/\\/g, "/").replace(/^\/+/, "").replace(/\/+$/, "");
-}
-
-/**
- * Parses arbitrary persisted values into a clean folder filter list:
- * - non-array input becomes []
- * - non-string entries are ignored
- * - values are normalized and deduplicated
- */
-function normalizeFolderFilterList(values: unknown): string[] {
-	if (!Array.isArray(values)) {
-		return [];
-	}
-
-	const normalized: string[] = [];
-	const seen = new Set<string>();
-	for (const value of values) {
-		if (typeof value !== "string") continue;
-		const normalizedValue = normalizeFolderFilterPath(value);
-		if (!normalizedValue || seen.has(normalizedValue)) continue;
-		seen.add(normalizedValue);
-		normalized.push(normalizedValue);
-	}
-
-	return normalized;
-}
+import { normalizeFolderFilterList } from "./utils/folderFilters";
 
 /**
  * Converts textarea input (one folder path per line) into a normalized list.

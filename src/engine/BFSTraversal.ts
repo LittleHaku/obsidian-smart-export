@@ -1,6 +1,7 @@
 import { TFile } from "obsidian";
 import { ExportNode, LinkTraversalMode } from "../types";
 import { ObsidianAPI } from "../obsidian-api";
+import { buildFolderPrefixes, pathMatchesFolderPrefixes } from "../utils/folderFilters";
 
 export interface BFSTraversalOptions {
 	/**
@@ -42,7 +43,7 @@ export class BFSTraversal {
 		this.contentDepth = contentDepth;
 		this.titleDepth = titleDepth;
 		this.linkTraversalMode = linkTraversalMode;
-		this.ignoredTraversalPrefixes = this.normalizeFolderPrefixes(options.ignoredTraversalFolders);
+		this.ignoredTraversalPrefixes = buildFolderPrefixes(options.ignoredTraversalFolders);
 	}
 
 	/**
@@ -160,39 +161,7 @@ export class BFSTraversal {
 			return false;
 		}
 
-		return this.pathMatchesFolderPrefixes(file.path, this.ignoredTraversalPrefixes);
-	}
-
-	/**
-	 * Converts folder names to canonical "prefix/" form so matching can use
-	 * a fast `startsWith` check with predictable boundaries.
-	 */
-	private normalizeFolderPrefixes(folders: string[] | undefined): string[] {
-		if (!folders || folders.length === 0) {
-			return [];
-		}
-
-		const normalizedPrefixes: string[] = [];
-		const seen = new Set<string>();
-
-		for (const folder of folders) {
-			const normalized = folder.trim().replace(/\\/g, "/").replace(/^\/+/, "").replace(/\/+$/, "");
-			if (!normalized) continue;
-			const prefix = `${normalized}/`;
-			if (seen.has(prefix)) continue;
-			seen.add(prefix);
-			normalizedPrefixes.push(prefix);
-		}
-
-		return normalizedPrefixes;
-	}
-
-	/**
-	 * Prefix-based folder matching.
-	 * Example: prefix `Archive/` matches `Archive/Note.md` but not `Archive.md`.
-	 */
-	private pathMatchesFolderPrefixes(path: string, prefixes: string[]): boolean {
-		return prefixes.some((prefix) => path.startsWith(prefix));
+		return pathMatchesFolderPrefixes(file.path, this.ignoredTraversalPrefixes);
 	}
 
 	/**
