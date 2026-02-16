@@ -1,6 +1,15 @@
-import { App, Plugin, PluginSettingTab, Setting } from "obsidian";
+import { App, Plugin, PluginSettingTab, Setting, debounce } from "obsidian";
 import { ExportModal } from "./ui/ExportModal";
 import { LinkTraversalMode, SmartExportSettings } from "./types";
+import { normalizeFolderFilterList } from "./utils/folderFilters";
+
+/**
+ * Converts textarea input (one folder path per line) into a normalized list.
+ */
+function parseFolderFilterText(text: string): string[] {
+	const lines = text.split("\n").map((line) => line.trim());
+	return normalizeFolderFilterList(lines);
+}
 
 const DEFAULT_SETTINGS: SmartExportSettings = {
 	defaultContentDepth: 3,
@@ -10,6 +19,7 @@ const DEFAULT_SETTINGS: SmartExportSettings = {
 	autoSelectCurrentNote: true,
 	closeModalAfterExport: false,
 	showTokenEstimatesInTree: false,
+	ignoredTraversalFolders: [],
 };
 
 /**
@@ -63,6 +73,9 @@ export default class SmartExportPlugin extends Plugin {
 		if (this.settings.defaultTitleDepth < this.settings.defaultContentDepth) {
 			this.settings.defaultTitleDepth = this.settings.defaultContentDepth;
 		}
+		this.settings.ignoredTraversalFolders = normalizeFolderFilterList(
+			this.settings.ignoredTraversalFolders
+		);
 	}
 
 	async saveSettings() {
@@ -80,6 +93,13 @@ class SmartExportSettingTab extends PluginSettingTab {
 
 	display(): void {
 		const { containerEl } = this;
+		const debouncedSaveIgnoredFolders = debounce(
+			() => {
+				void this.plugin.saveSettings();
+			},
+			300,
+			true
+		);
 
 		containerEl.empty();
 
@@ -150,6 +170,20 @@ class SmartExportSettingTab extends PluginSettingTab {
 					.onChange(async (value: LinkTraversalMode) => {
 						this.plugin.settings.defaultLinkTraversalMode = value;
 						await this.plugin.saveSettings();
+					})
+			);
+
+		new Setting(containerEl)
+			.setName("Ignored folders")
+			.setDesc(
+				"Optional. One folder path per line. Notes in these folders are excluded from traversal and won't appear in the export tree."
+			)
+			.addTextArea((textArea) =>
+				textArea
+					.setValue(this.plugin.settings.ignoredTraversalFolders.join("\n"))
+					.onChange((value) => {
+						this.plugin.settings.ignoredTraversalFolders = parseFolderFilterText(value);
+						debouncedSaveIgnoredFolders();
 					})
 			);
 

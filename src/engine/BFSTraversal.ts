@@ -1,6 +1,15 @@
 import { TFile } from "obsidian";
 import { ExportNode, LinkTraversalMode } from "../types";
 import { ObsidianAPI } from "../obsidian-api";
+import { buildFolderPrefixes, pathMatchesFolderPrefixes } from "../utils/folderFilters";
+
+export interface BFSTraversalOptions {
+	/**
+	 * Notes under these folders are fully excluded from traversal.
+	 * This applies to outgoing, incoming, and both traversal modes.
+	 */
+	ignoredTraversalFolders?: string[];
+}
 
 /**
  * Implements a Breadth-First Search (BFS) traversal engine to discover and structure
@@ -12,6 +21,7 @@ export class BFSTraversal {
 	private contentDepth: number;
 	private titleDepth: number;
 	private linkTraversalMode: LinkTraversalMode;
+	private ignoredTraversalPrefixes: string[];
 	private visited: Set<string> = new Set();
 	private missingNotes: Set<string> = new Set();
 
@@ -26,12 +36,14 @@ export class BFSTraversal {
 		obsidianAPI: ObsidianAPI,
 		contentDepth: number,
 		titleDepth: number,
-		linkTraversalMode: LinkTraversalMode = "outgoing"
+		linkTraversalMode: LinkTraversalMode = "outgoing",
+		options: BFSTraversalOptions = {}
 	) {
 		this.obsidianAPI = obsidianAPI;
 		this.contentDepth = contentDepth;
 		this.titleDepth = titleDepth;
 		this.linkTraversalMode = linkTraversalMode;
+		this.ignoredTraversalPrefixes = buildFolderPrefixes(options.ignoredTraversalFolders);
 	}
 
 	/**
@@ -72,6 +84,9 @@ export class BFSTraversal {
 
 			const linkedFiles = this.getLinkedFiles(file);
 			for (const linkedFile of linkedFiles) {
+				// Global folder exclusions are applied before any node is added to the tree.
+				// Excluded notes are not traversed further, so links "from them" are ignored too.
+				if (this.shouldExcludeTraversalFile(linkedFile)) continue;
 				if (this.visited.has(linkedFile.path)) continue;
 
 				this.visited.add(linkedFile.path);
@@ -139,6 +154,14 @@ export class BFSTraversal {
 		}
 
 		return linkedFiles;
+	}
+
+	private shouldExcludeTraversalFile(file: TFile): boolean {
+		if (this.ignoredTraversalPrefixes.length === 0) {
+			return false;
+		}
+
+		return pathMatchesFolderPrefixes(file.path, this.ignoredTraversalPrefixes);
 	}
 
 	/**

@@ -128,7 +128,6 @@ refactor: improve token calculation performance
 
 ```bash
 pnpm test              # Run tests with coverage
-pnpm run test:watch    # Watch mode for development
 ```
 
 ## Testing Guidelines
@@ -164,6 +163,45 @@ When testing UI changes, ensure you've covered:
 - **Inline comments** for complex logic and algorithms
 - **README updates** for new features and changes
 - **CHANGELOG entries** for all user-facing changes
+
+## Versioning and Releases
+
+### Version format
+
+Use semantic versions without `v` prefix:
+
+- Stable: `X.Y.Z` (example: `1.3.0`)
+- Prerelease: `X.Y.Z-beta.N`, `X.Y.Z-alpha.N`, `X.Y.Z-canary.N`
+
+Do not use tags like `v1.3.0`.
+
+### Tag behavior
+
+Releases are created from pushed git tags.
+
+- Tags containing `beta`, `alpha`, or `canary` are published as prereleases
+- Other version tags are published as stable releases
+
+### Changelog matching rule
+
+`CHANGELOG.md` section headers must match the tag exactly.
+
+Examples:
+
+- Tag `1.3.0-beta.1` requires `## [1.3.0-beta.1]`
+- Tag `1.3.0` requires `## [1.3.0]`
+
+### Prerelease flow (BRAT testing)
+
+Use prerelease tags when you want testers to validate a PR-branch build before final release:
+
+```bash
+pnpm version 1.3.0-beta.1 --no-git-tag-version
+git tag -a 1.3.0-beta.1 -m "1.3.0 beta 1"
+git push origin 1.3.0-beta.1
+```
+
+For full details, see `docs/versioning-and-releases.md`.
 
 ### User Documentation
 
