@@ -68,6 +68,7 @@ For beta testing and pre-release updates, use [BRAT (Beta Reviewers Auto-update 
 ## 3 Documentation
 
 - [Excluded folders](docs/exclude-folders.md): Ignore folders so notes inside them are excluded from traversal and export.
+- [Versioning and releases](docs/versioning-and-releases.md): Stable vs prerelease tags, no-`v` version format, changelog matching, and BRAT prerelease flow.
 - [Product requirements document](docs/PRD.md): Product goals, architecture direction, and roadmap context.
 - [Development tasks](docs/TASKS.md): Implementation checklist and phased task breakdown.
 - [Contributing guide](CONTRIBUTING.md): Local development workflow and contribution standards.
