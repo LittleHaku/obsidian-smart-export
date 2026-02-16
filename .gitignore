@@ -27,6 +27,3 @@ coverage/
 
 # Benchmark output
 benchmarks/latest-report.json
-
-# Ignore local user AI rules
-AGENTS.md
