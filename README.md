@@ -221,10 +221,6 @@ pnpm benchmark
 
 Runs a synthetic large-vault benchmark and writes a report to `benchmarks/latest-report.json`.
 
-## License
-
-MIT License - see the [LICENSE](LICENSE) file for details.
-
 ## Support
 
 If Smart Export helps you work more efficiently, consider supporting its development:
@@ -237,6 +233,14 @@ If Smart Export helps you work more efficiently, consider supporting its develop
 ### ☕ Support Development
 
 This plugin is free and open-source, but if it saves you time and enhances your workflow, consider [buying me a coffee](https://buymeacoffee.com/littlehaku). Your support helps me continue developing and maintaining this plugin for the Obsidian community.
+
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=LittleHaku/obsidian-smart-export&type=date&legend=top-left)](https://www.star-history.com/#LittleHaku/obsidian-smart-export&type=date&legend=top-left)
+
+## License
+
+MIT License - see the [LICENSE](LICENSE) file for details.
 
 ---
 
