@@ -7,202 +7,113 @@
 [![Downloads](https://img.shields.io/github/downloads/LittleHaku/obsidian-smart-export/total)](https://github.com/LittleHaku/obsidian-smart-export/releases)
 [![Buy Me a Coffee](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-support%20me-orange?logo=buy-me-a-coffee&logoColor=white&style=flat)](https://buymeacoffee.com/littlehaku)
 
-Obsidian plugin that lets you export your notes by following the wikilinks until a certain depth. It is optimized for human readable exports and LLM exports.
-
-Ever found yourself manually copying notes from Obsidian to paste into ChatGPT or Claude? I built this plugin to solve that exact problem.
-
-If not, did you ever want to review all your notes on a certain topic and got lost in all your wikilinks? This plugin also solves that.
-
-Smart Export automatically finds all the notes connected to your starting point and exports them in a format that both humans and LLMs can actually work with. No more copy-pasting individual notes or losing the connections between your ideas. And no more having to export dozens of notes to then be able to haven them all in a PDF.
-
-## What it does
-
-### Smart note discovery
-
-The plugin follows your wikilinks to find related notes, just like you would when exploring your vault. It uses a breadth-first search, so it gathers all the notes that are linked from your root note, then does the same for all the gathered ones until a certain depth.
-
-### Flexible depth control
-
-You can control how deep it goes in two ways:
-
-- **Content depth**: How many levels of notes to include with full content
-- **Title depth**: A different depth that only will include the note titles.
-
-The title depth is mainly thought for when working with LLMs, so you can pass them your notes until a given depth but then the title of more notes so that they know that they exist without filling the LLM's context.
-
-### Multiple export formats
-
-- **XML**
-- **LLM Markdown**
-- **Print-friendly**
-
-### Token awareness
-
-The plugin estimates how many tokens your export will use and warns you if you're approaching common LLM limits (like GPT-4's 128k or Claude's 200k).
+Smart Export follows links from a root note, builds a note tree, and exports it in formats that work well for both humans and LLMs.
 
 ## 1 Installation
 
-### BRAT (current installation method)
+### 1.1 BRAT (current installation method)
 
-For beta testing and pre-release updates, use [BRAT (Beta Reviewers Auto-update Tool)](https://github.com/TfTHacker/obsidian42-brat):
+Use [BRAT (Beta Reviewers Auto-update Tool)](https://github.com/TfTHacker/obsidian42-brat):
 
-1. In Obsidian, go to **Settings → Community Plugins → Browse** and install **BRAT**.
+1. In Obsidian, open **Settings → Community plugins → Browse** and install **BRAT**.
 2. Open BRAT settings and click **Add a beta plugin**.
-3. Paste this repository URL: `https://github.com/LittleHaku/obsidian-smart-export`
-4. Select the latest release in BRAT.
+3. Paste: `https://github.com/LittleHaku/obsidian-smart-export`
+4. Select the latest release.
 
-### Community plugins (when available)
+### 1.2 Community plugins (when available)
 
-1. Open **Settings → Community plugins** in Obsidian.
+1. Open **Settings → Community plugins**.
 2. Turn off **Restricted mode**.
 3. Click **Browse**, search for **Smart Export**, then install and enable it.
 
-## 2 Quick start
+## 2 Quick Start
 
-1. **Open the export dialog**: Click the 🧠 brain icon or use Cmd/Ctrl+P → "Smart Export: Open export"
-2. **Pick your starting note**: It'll default to your current note, or you can choose any note
-3. **Set your depths**: I recommend starting with Content Depth: 2, Title Depth: 4
-4. **Choose your format**: XML for structured data, Markdown for readability
-5. **Export**: Click "Export to Clipboard" and paste into your favorite LLM, or print them to study
+1. Open command palette (`Cmd/Ctrl+P`) and run `Smart Export: Open export` (or click the ribbon icon).
+2. Select a root note.
+3. Set depth values (recommended start: content `2`, title `4`).
+4. Choose output format.
+5. Click **Export to clipboard**.
 
-## 3 Documentation
+## 3 Features
 
-- [Excluded folders](docs/exclude-folders.md): Ignore folders so notes inside them are excluded from traversal and export.
-- [Versioning and releases](docs/versioning-and-releases.md): Stable vs prerelease tags, no-`v` version format, changelog matching, and BRAT prerelease flow.
-- [Product requirements document](docs/PRD.md): Product goals, architecture direction, and roadmap context.
-- [Development tasks](docs/TASKS.md): Implementation checklist and phased task breakdown.
-- [Contributing guide](CONTRIBUTING.md): Local development workflow and contribution standards.
+- Smart note discovery using breadth-first traversal.
+- Link direction modes: outgoing, incoming, or both.
+- Dual depth controls:
+  - content depth (full content)
+  - title depth (title-only context)
+- Folder exclusion (`Ignored folders`) for traversal.
+- Output formats: XML, LLM Markdown, Print-friendly Markdown.
+- Token estimate display before export.
 
-## 4 Keyboard shortcuts and commands
+## 4 Settings
 
-| Action                  | Default access                                               | Notes                             |
-| ----------------------- | ------------------------------------------------------------ | --------------------------------- |
-| Open Smart Export modal | Command palette (`Cmd/Ctrl+P`) → `Smart Export: Open export` | Core command for exporting        |
-| Open from ribbon        | Click the 🧠 icon in the left ribbon                         | Available after plugin is enabled |
+Settings location: **Obsidian → Settings → Smart Export**
 
-You can assign your own hotkey in **Settings → Hotkeys** by searching for `Smart Export: Open export` (I personally use `Ctrl/Cmd+Shift+C`).
+- **Default content depth**: `1-20`
+- **Default title depth**: `1-20`
+- **Default export format**
+- **Default link direction**
+- **Ignored folders**: one folder path per line; excluded from traversal/export
+- **Auto-select current note**
+- **Close modal after export**
+- **Show per-note token estimates**
 
-## Example exports
+Folder exclusion details: [Excluded folders](docs/exclude-folders.md)
 
-### XML format
+## 5 Keyboard Shortcut
+
+- Primary command: `Smart Export: Open export`
+- Assign your own shortcut in **Settings → Hotkeys**.
+
+## 6 Documentation
+
+- [Excluded folders](docs/exclude-folders.md)
+- [Versioning and releases](docs/versioning-and-releases.md)
+- [Product requirements document](docs/PRD.md)
+- [Development tasks](docs/TASKS.md)
+- [Contributing guide](CONTRIBUTING.md)
+
+## 7 Example Output
+
+### 7.1 XML (excerpt)
 
 ```xml
 <obsidian_export>
   <metadata>
-    <export_timestamp>2025-01-25T10:30:00.000Z</export_timestamp>
     <starting_note>Machine Learning</starting_note>
     <total_notes_exported>5</total_notes_exported>
-    <missing_notes_count>0</missing_notes_count>
   </metadata>
-  <note_contents>
-    <note id="1" name="Machine Learning">
-      <![CDATA[# Machine Learning
-      Content with [[wikilinks]] preserved...]]>
-    </note>
-  </note_contents>
 </obsidian_export>
 ```
 
-### LLM Markdown
+### 7.2 LLM Markdown (excerpt)
 
 ```markdown
 # Smart Export Vault
 
-**Export Details:**
-
 - Starting Note: Machine Learning
 - Total Notes: 5
-- Export Depth: Content (3), Titles (6)
-- Generated: 2025-01-25T10:30:00.000Z
-
-## Note Contents
-
-### 1. Machine Learning
-
-# Machine Learning
-
-Content with [[wikilinks]] preserved...
 ```
 
-## Settings
+## 8 Troubleshooting
 
-You can customize the defaults in Settings → Smart Export:
+### 8.1 Empty export or missing notes
 
-- **Default Content Depth**: How deep to go with full content (1-20)
-- **Default Title Depth**: How deep to go with titles only (1-30)
-- **Default Export Format**: Your preferred output format
-- **Default Link Direction**: Outgoing, incoming, or both
-- **Ignored folders**: Optional exclusion list (one folder path per line). Notes in these folders are not included in traversal or export, you can exclude your personal notes, journals, or any other noisy folders.
-- **Auto-select Current Note**: Whether to automatically pick your active note
-- **Close modal after export**: Whether to close the export dialog after copying to clipboard
+- Ensure the root note exists.
+- Ensure links resolve to real notes.
+- Check that excluded folders are not filtering expected notes.
 
-Filter behavior reference: [Excluded folders](docs/exclude-folders.md)
+### 8.2 Export too large
 
-## What I use it for
+- Lower content/title depth.
+- Switch to Print-friendly Markdown.
+- Start from a more specific root note.
 
-### Research analysis
+## 9 Contributing
 
-I'll export a cluster of notes about a topic and ask the LLM to identify themes, connections, and gaps in my thinking.
+See [CONTRIBUTING.md](CONTRIBUTING.md).
 
-### Writing help
-
-When I'm writing about something, I export my research notes and ask the LLM to help me structure the content or identify missing pieces.
-
-### Knowledge discovery
-
-Sometimes I'll export a broad set of notes and ask the LLM to suggest new connections or research directions I haven't explored yet.
-
-### Study assistance
-
-When learning something new, I export my notes and ask the LLM to create study guides or explain concepts in different ways.
-
-## Tips for best results
-
-### Token management
-
-- Start with Content Depth 2-3 for most uses
-- Use Title Depth 4-6 to get broader context without overwhelming content
-- Watch the token counter to stay within your LLM's limits
-
-### Organizing your notes
-
-- Use descriptive note titles (they show up in title-only levels)
-- Create hub notes that link to related concepts
-- Keep your wikilinks clean and consistent
-
-### Export strategies
-
-- **Deep dive**: High content depth (4-6) for comprehensive analysis
-- **Broad overview**: Low content depth (1-2), high title depth (8-12) for big picture
-- **Balanced**: Medium depths (3/6) for most research and writing
-
-## Common issues
-
-**"No notes found" or empty export?**
-
-- Make sure your starting note has wikilinks to other notes
-- Check that the linked notes actually exist in your vault
-- Verify the note names match your wikilinks exactly
-
-**Token count too high?**
-
-- Reduce your Content Depth or Title Depth
-- Pick a more specific starting note with fewer connections
-- Try the Print-Friendly format for smaller exports
-
-**Missing links reported?**
-
-- Check the export output for the list of missing notes
-- Fix any broken wikilinks in your vault
-- Make sure you're using exact note names in your links
-
-## Contributing
-
-I'd love your help improving this plugin! Check out the [Contributing Guidelines](CONTRIBUTING.md) for details on how to get started.
-
-### Development setup
-
-Clone the repo inside your vault `/.obsidian/plugins/`. I recommend using a dev vault just in case you mess something up.
+Quick setup:
 
 ```bash
 git clone https://github.com/LittleHaku/obsidian-smart-export.git
@@ -211,37 +122,18 @@ pnpm install
 pnpm run dev
 ```
 
-Install the community plugin `Hot Reload` so that the plugin updates as you make changes. Remember to have `pnpm run dev` running.
-
-### Benchmark (optional)
+Benchmark:
 
 ```bash
 pnpm benchmark
 ```
 
-Runs a synthetic large-vault benchmark and writes a report to `benchmarks/latest-report.json`.
+## 10 Support
 
-## Support
+- Star the repo.
+- Report bugs and request features in [GitHub Issues](https://github.com/LittleHaku/obsidian-smart-export/issues).
+- Support development: [Buy me a coffee](https://buymeacoffee.com/littlehaku).
 
-If Smart Export helps you work more efficiently, consider supporting its development:
+## 11 License
 
-- ⭐ **Star this repository** to show your support
-- 🐛 **Report bugs** to help improve the plugin
-- 💡 **Share ideas** for new features
-- ☕ **Buy me a coffee** to support continued development
-
-### ☕ Support Development
-
-This plugin is free and open-source, but if it saves you time and enhances your workflow, consider [buying me a coffee](https://buymeacoffee.com/littlehaku). Your support helps me continue developing and maintaining this plugin for the Obsidian community.
-
-## Star History
-
-[![Star History Chart](https://api.star-history.com/svg?repos=LittleHaku/obsidian-smart-export&type=date&legend=top-left)](https://www.star-history.com/#LittleHaku/obsidian-smart-export&type=date&legend=top-left)
-
-## License
-
-MIT License - see the [LICENSE](LICENSE) file for details.
-
----
-
-**Built for the Obsidian community with ❤️**
+MIT License. See [LICENSE](LICENSE).
