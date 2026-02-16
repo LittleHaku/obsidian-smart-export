@@ -43,6 +43,6 @@ export interface SmartExportSettings {
 	closeModalAfterExport: boolean;
 	/** Whether to show per-note token estimates in the tree visualization. */
 	showTokenEstimatesInTree: boolean;
-	/** Blacklist of folders excluded from traversal in all link directions. */
+	/** Folders excluded from traversal in all link directions. */
 	ignoredTraversalFolders: string[];
 }
