@@ -1,14 +1,10 @@
 import { App, Notice, Plugin, PluginSettingTab, Setting, TFile, debounce } from "obsidian";
 import { BFSTraversal } from "./engine/BFSTraversal";
-import { LlmMarkdownExporter } from "./engine/LlmMarkdownExporter";
-import { PrintFriendlyMarkdownExporter } from "./engine/PrintFriendlyMarkdownExporter";
-import { XMLExporter } from "./engine/XMLExporter";
+import { buildExportOutput, normalizeExportFormat } from "./engine/exportOutput";
 import { ObsidianAPI } from "./obsidian-api";
 import { ExportModal } from "./ui/ExportModal";
-import { ExportNode, LinkTraversalMode, SmartExportSettings } from "./types";
+import { LinkTraversalMode, SmartExportSettings } from "./types";
 import { normalizeFolderFilterList } from "./utils/folderFilters";
-
-const VALID_EXPORT_FORMATS = new Set(["xml", "llm-markdown", "print-friendly-markdown"]);
 
 /**
  * Converts textarea input (one folder path per line) into a normalized list.
@@ -16,13 +12,6 @@ const VALID_EXPORT_FORMATS = new Set(["xml", "llm-markdown", "print-friendly-mar
 function parseFolderFilterText(text: string): string[] {
 	const lines = text.split("\n").map((line) => line.trim());
 	return normalizeFolderFilterList(lines);
-}
-
-function normalizeExportFormat(value: unknown): SmartExportSettings["defaultExportFormat"] {
-	if (typeof value === "string" && VALID_EXPORT_FORMATS.has(value)) {
-		return value as SmartExportSettings["defaultExportFormat"];
-	}
-	return "xml";
 }
 
 const DEFAULT_SETTINGS: SmartExportSettings = {
@@ -142,33 +131,20 @@ export default class SmartExportPlugin extends Plugin {
 				return;
 			}
 
-			const output = this.buildExportOutput(exportTree, traversal.getMissingNotes().length);
+			const output = buildExportOutput({
+				rootNode: exportTree,
+				vaultPath: this.app.vault.getName(),
+				format: this.settings.defaultExportFormat,
+				missingNotesCount: traversal.getMissingNotes().length,
+				onInvalidFormat: () => {
+					new Notice("Unknown export format in settings; falling back to XML.");
+				},
+			});
 			await navigator.clipboard.writeText(output);
 			new Notice("Quick export copied to clipboard.");
 		} catch (error) {
 			console.error("Quick export failed", error);
 			new Notice("Quick export failed. See console for details.");
-		}
-	}
-
-	/**
-	 * Builds export output using the default format selected in settings.
-	 */
-	private buildExportOutput(rootNode: ExportNode, missingNotesCount: number): string {
-		const vaultPath = this.app.vault.getName();
-		const rawExportFormat = this.settings.defaultExportFormat;
-		const exportFormat = normalizeExportFormat(rawExportFormat);
-		if (rawExportFormat !== exportFormat) {
-			new Notice("Unknown export format in settings; falling back to XML.");
-		}
-
-		switch (exportFormat) {
-			case "xml":
-				return new XMLExporter().export(rootNode, vaultPath, missingNotesCount);
-			case "llm-markdown":
-				return new LlmMarkdownExporter().export(rootNode, vaultPath, missingNotesCount);
-			case "print-friendly-markdown":
-				return new PrintFriendlyMarkdownExporter().export(rootNode);
 		}
 	}
 }
