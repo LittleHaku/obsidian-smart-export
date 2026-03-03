@@ -1,24 +1,11 @@
 import { stringifyYaml } from "obsidian";
 import { ExportNode } from "../types";
+import {
+	DEFAULT_BUILTIN_LLM_TEMPLATE_CONTENT,
+	DEFAULT_NOTE_STRUCTURE_DESCRIPTION,
+} from "../constants/llmMarkdownTemplates";
 
 const DEFAULT_PROCESSING_ORDER = "BFS (Breadth-First Search)";
-const DEFAULT_NOTE_STRUCTURE_DESCRIPTION = `This export contains a knowledge graph of interconnected Obsidian notes.
-Notes are presented in breadth-first order starting from the root note.
-Links between notes are preserved as [[wiki-style links]].
-Missing notes (referenced but not found) are listed separately.`;
-const DEFAULT_LLM_MARKDOWN_TEMPLATE = `{{metadata_yaml}}
-
-## Note Structure
-
-**Description**:
-${DEFAULT_NOTE_STRUCTURE_DESCRIPTION}
-
-**Included Notes**:
-{{included_notes}}
-
-## Note Contents
-
-{{note_contents}}`;
 const TEMPLATE_PLACEHOLDER_REGEX = /{{\s*([a-z0-9_]+)\s*}}/g;
 
 interface LlmMarkdownMetadata {
@@ -62,7 +49,7 @@ export class LlmMarkdownExporter {
 		const templateSource =
 			typeof template === "string" && template.trim().length > 0
 				? template
-				: DEFAULT_LLM_MARKDOWN_TEMPLATE;
+				: DEFAULT_BUILTIN_LLM_TEMPLATE_CONTENT;
 
 		return this.renderTemplate(templateSource, context);
 	}

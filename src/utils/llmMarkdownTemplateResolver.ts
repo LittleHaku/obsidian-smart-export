@@ -1,51 +1,17 @@
 import { App, normalizePath } from "obsidian";
+import {
+	BUILTIN_LLM_TEMPLATES,
+	BuiltinLlmTemplate,
+	COMPACT_BUILTIN_LLM_TEMPLATE_ID,
+	DEFAULT_BUILTIN_LLM_TEMPLATE_ID,
+	getBuiltinLlmTemplate,
+} from "../constants/llmMarkdownTemplates";
 
 export const LLM_MARKDOWN_TEMPLATE_DIRECTORY = "smart-templates";
 export const LLM_MARKDOWN_TEMPLATE_FILE = "llm-markdown.md";
-export const DEFAULT_BUILTIN_LLM_TEMPLATE_ID = "builtin:default";
-export const COMPACT_BUILTIN_LLM_TEMPLATE_ID = "builtin:compact";
+export { COMPACT_BUILTIN_LLM_TEMPLATE_ID, DEFAULT_BUILTIN_LLM_TEMPLATE_ID };
 
 const USER_TEMPLATE_ID_PREFIX = "user:";
-
-interface BuiltinLlmTemplate {
-	id: string;
-	label: string;
-	content: string;
-}
-
-const BUILTIN_LLM_TEMPLATES: BuiltinLlmTemplate[] = [
-	{
-		id: DEFAULT_BUILTIN_LLM_TEMPLATE_ID,
-		label: "LLM-ready",
-		content: `{{metadata_yaml}}
-
-## Note Structure
-
-**Description**:
-This export contains a knowledge graph of interconnected Obsidian notes.
-Notes are presented in breadth-first order starting from the root note.
-Links between notes are preserved as [[wiki-style links]].
-Missing notes (referenced but not found) are listed separately.
-
-**Included Notes**:
-{{included_notes}}
-
-## Note Contents
-
-{{note_contents}}`,
-	},
-	{
-		id: COMPACT_BUILTIN_LLM_TEMPLATE_ID,
-		label: "Compact",
-		content: `{{metadata_yaml}}
-
-## Included notes
-{{included_notes}}
-
-## Note contents
-{{note_contents}}`,
-	},
-];
 
 export interface LlmMarkdownTemplateOption {
 	id: string;
@@ -95,7 +61,7 @@ function getTemplateLabelFromPath(path: string): string {
 }
 
 function findBuiltinTemplate(templateId: string): BuiltinLlmTemplate | null {
-	return BUILTIN_LLM_TEMPLATES.find((template) => template.id === templateId) ?? null;
+	return getBuiltinLlmTemplate(templateId);
 }
 
 async function tryReadTemplate(app: App, path: string): Promise<string | null> {
