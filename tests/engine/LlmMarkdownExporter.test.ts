@@ -317,6 +317,21 @@ Missing: {{missing_notes}}
 			expect(result).toContain("## Note Structure");
 			expect(result).toContain("## Note Contents");
 		});
+
+		it("renders note structure description placeholder", () => {
+			const rootNode = createMockExportNode("Root", "root.md", 0, "Root content");
+			const exporter = new LlmMarkdownExporter();
+
+			const result = exporter.export(
+				rootNode,
+				"TestVault",
+				0,
+				"Desc:\n{{note_structure_description}}"
+			);
+
+			expect(result).toContain("This export contains a knowledge graph");
+			expect(result).toContain("[[wiki-style links]]");
+		});
 	});
 
 	describe("Output Format Structure", () => {

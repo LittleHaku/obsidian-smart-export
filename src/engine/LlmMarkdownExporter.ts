@@ -2,15 +2,16 @@ import { stringifyYaml } from "obsidian";
 import { ExportNode } from "../types";
 
 const DEFAULT_PROCESSING_ORDER = "BFS (Breadth-First Search)";
+const DEFAULT_NOTE_STRUCTURE_DESCRIPTION = `This export contains a knowledge graph of interconnected Obsidian notes.
+Notes are presented in breadth-first order starting from the root note.
+Links between notes are preserved as [[wiki-style links]].
+Missing notes (referenced but not found) are listed separately.`;
 const DEFAULT_LLM_MARKDOWN_TEMPLATE = `{{metadata_yaml}}
 
 ## Note Structure
 
 **Description**:
-This export contains a knowledge graph of interconnected Obsidian notes.
-Notes are presented in breadth-first order starting from the root note.
-Links between notes are preserved as [[wiki-style links]].
-Missing notes (referenced but not found) are listed separately.
+${DEFAULT_NOTE_STRUCTURE_DESCRIPTION}
 
 **Included Notes**:
 {{included_notes}}
@@ -113,8 +114,8 @@ export class LlmMarkdownExporter {
 		return allNotes.map((note, index) => `- Note ${index + 1}: "${note.title}"`).join("\n");
 	}
 
-	private buildNoteStructureSection(includedNotes: string): string {
-		return `## Note Structure\n\n**Included Notes**:\n${includedNotes}`;
+	private buildNoteStructureSection(noteStructureDescription: string, includedNotes: string): string {
+		return `## Note Structure\n\n**Description**:\n${noteStructureDescription}\n\n**Included Notes**:\n${includedNotes}`;
 	}
 
 	private buildNoteContentsBlocks(allNotes: ExportNode[]): string {
@@ -138,8 +139,12 @@ export class LlmMarkdownExporter {
 			maxDepth
 		);
 		const metadataYaml = this.buildMetadataYaml(metadata);
+		const noteStructureDescription = DEFAULT_NOTE_STRUCTURE_DESCRIPTION;
 		const includedNotes = this.buildIncludedNotes(allNotes);
-		const noteStructureSection = this.buildNoteStructureSection(includedNotes);
+		const noteStructureSection = this.buildNoteStructureSection(
+			noteStructureDescription,
+			includedNotes
+		);
 		const noteContents = this.buildNoteContentsBlocks(allNotes);
 		const noteContentsSection = `## Note Contents\n\n${noteContents}`;
 
@@ -155,7 +160,7 @@ export class LlmMarkdownExporter {
 			max_depth: String(metadata.max_depth_used),
 			processing_order: metadata.processing_order,
 			metadata_yaml: metadataYaml,
-			note_structure_description: "",
+			note_structure_description: noteStructureDescription,
 			included_notes: includedNotes,
 			note_structure_section: noteStructureSection,
 			note_contents: noteContents,
