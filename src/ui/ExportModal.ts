@@ -376,7 +376,18 @@ export class ExportModal extends Modal {
 		});
 		const tokenCount = this.estimateTokens(output);
 		this.tokenCountEl.setText(this.formatTokenCountMessage(tokenCount));
-		await navigator.clipboard.writeText(output);
+		if (!navigator.clipboard?.writeText) {
+			new Notice("Clipboard is not available in this environment.");
+			return;
+		}
+		try {
+			await navigator.clipboard.writeText(output);
+		} catch (error) {
+			console.error("Failed to copy export to clipboard", error);
+			this.tokenCountEl.setText(this.formatTokenCountMessage(tokenCount));
+			new Notice("Failed to copy export to clipboard.");
+			return;
+		}
 		new Notice("Export copied to clipboard.");
 		if (this.settings.closeModalAfterExport) {
 			this.close();
