@@ -417,7 +417,7 @@ class SmartExportSettingTab extends PluginSettingTab {
 
 		const templateDirectoryDesc = document.createDocumentFragment();
 		templateDirectoryDesc.append(
-			"Vault-relative folder for custom Markdown templates. Smart Export prefers llm-markdown.md and then falls back to the first .md file in that folder. "
+			"Vault-relative folder for custom Markdown templates. Every .md file in this folder is available as a custom template option. "
 		);
 		const templateDocsLink = document.createElement("a");
 		templateDocsLink.href = TEMPLATE_DOCS_URL;
