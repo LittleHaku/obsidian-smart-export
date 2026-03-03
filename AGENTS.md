@@ -52,6 +52,16 @@
   - `docs/obsidian-plugin-guidelines.md`
 - Add new architecture docs only when introducing a new subsystem or non-trivial lifecycle that cannot be explained by updating existing docs.
 
+## Obsidian Plugin Compliance
+
+- Treat `docs/obsidian-plugin-guidelines.md` as a required pre-PR checklist for plugin behavior, UI, settings, manifest, and release changes.
+- Follow current official Obsidian guidance captured in that checklist (`Plugin guidelines`, `Developer policies`, and `Submission requirements`).
+- Ensure README disclosures exist when applicable: network use, account/paywall requirements, external file access, ads, telemetry/privacy policy, or closed-source components.
+- Keep `manifest.json` values intentional and valid (`id`, `version`, `minAppVersion`, `isDesktopOnly`, concise `description`).
+- Update `versions.json` only when `minAppVersion` changes.
+- Keep release tags equal to `manifest.json` version (`X.Y.Z`) and publish release assets `main.js`, `manifest.json`, and optional `styles.css`.
+- Do not commit `main.js` to source control; ship it as a release artifact.
+
 ## Commit & Pull Request Guidelines
 
 - Use Conventional Commits (e.g., `feat:`, `fix:`, `docs:`, `test:`).
