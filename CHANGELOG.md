@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.5.0-beta.1] - 2026-03-03
+
 ### Added
 
 - Directory-based custom Markdown template loading from a vault folder (default `smart-templates`)
@@ -20,6 +22,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - LLM Markdown export now supports selecting among multiple templates and falls back safely to built-in `default`
+- Built-in LLM Markdown templates are now centralized in shared constants so resolver and exporter use the same source of truth
+- Export format dispatch is now explicit and exhaustive to prevent silent fallback behavior for future formats
+- Template ids are now normalized with trimming across settings load, modal selection, and resolver lookup
+- Template docs URL is centralized in shared constants to keep settings and modal links in sync
+- Template option listing now avoids unnecessary template file reads while building dropdown options
+- Documentation now clarifies explicit-template resolution behavior for modal/quick export flows and no-template fallback behavior
+
+### Fixed
+
+- `{{note_structure_description}}` is now populated with the expected default description content instead of an empty string
 
 ## [1.4.0] - 2026-03-03
 
