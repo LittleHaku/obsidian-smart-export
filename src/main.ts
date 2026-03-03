@@ -8,12 +8,21 @@ import { ExportModal } from "./ui/ExportModal";
 import { ExportNode, LinkTraversalMode, SmartExportSettings } from "./types";
 import { normalizeFolderFilterList } from "./utils/folderFilters";
 
+const VALID_EXPORT_FORMATS = new Set(["xml", "llm-markdown", "print-friendly-markdown"]);
+
 /**
  * Converts textarea input (one folder path per line) into a normalized list.
  */
 function parseFolderFilterText(text: string): string[] {
 	const lines = text.split("\n").map((line) => line.trim());
 	return normalizeFolderFilterList(lines);
+}
+
+function normalizeExportFormat(value: unknown): SmartExportSettings["defaultExportFormat"] {
+	if (typeof value === "string" && VALID_EXPORT_FORMATS.has(value)) {
+		return value as SmartExportSettings["defaultExportFormat"];
+	}
+	return "xml";
 }
 
 const DEFAULT_SETTINGS: SmartExportSettings = {
@@ -97,6 +106,10 @@ export default class SmartExportPlugin extends Plugin {
 		this.settings.ignoredTraversalFolders = normalizeFolderFilterList(
 			this.settings.ignoredTraversalFolders
 		);
+		this.settings.defaultExportFormat = normalizeExportFormat(
+			(storedSettings as { defaultExportFormat?: unknown } | null)?.defaultExportFormat ??
+				this.settings.defaultExportFormat
+		);
 	}
 
 	async saveSettings() {
@@ -143,16 +156,19 @@ export default class SmartExportPlugin extends Plugin {
 	 */
 	private buildExportOutput(rootNode: ExportNode, missingNotesCount: number): string {
 		const vaultPath = this.app.vault.getName();
+		const rawExportFormat = this.settings.defaultExportFormat;
+		const exportFormat = normalizeExportFormat(rawExportFormat);
+		if (rawExportFormat !== exportFormat) {
+			new Notice("Unknown export format in settings; falling back to XML.");
+		}
 
-		switch (this.settings.defaultExportFormat) {
+		switch (exportFormat) {
 			case "xml":
 				return new XMLExporter().export(rootNode, vaultPath, missingNotesCount);
 			case "llm-markdown":
 				return new LlmMarkdownExporter().export(rootNode, vaultPath, missingNotesCount);
 			case "print-friendly-markdown":
 				return new PrintFriendlyMarkdownExporter().export(rootNode);
-			default:
-				return "";
 		}
 	}
 }
