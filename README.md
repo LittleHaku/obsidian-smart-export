@@ -55,7 +55,7 @@ Settings location: **Obsidian → Settings → Smart Export**
 - **Default output**: XML, print-friendly Markdown, `LLM-ready`, or your custom templates
 - **Default link direction**
 - **Ignored folders**: one folder path per line; excluded from traversal/export
-- **Template folder (markdown)**: vault-relative folder for custom Markdown templates
+- **Markdown template folder**: vault-relative folder for custom Markdown templates
 - **Auto-select current note**
 - **Close modal after export**
 - **Show per-note token estimates**
@@ -66,7 +66,7 @@ Folder exclusion details: [Excluded folders](docs/exclude-folders.md)
 
 For Markdown template exports, Smart Export can load a custom template from your vault:
 
-1. Choose a template folder in **Settings → Smart Export → Template folder (markdown)**.
+1. Choose a template folder in **Settings → Smart Export → Markdown template folder**.
 2. Create one or more `.md` notes in that folder.
 3. Add placeholders from [template docs](templates/README.md) to those notes.
 

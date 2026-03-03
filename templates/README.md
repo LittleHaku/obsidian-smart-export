@@ -17,7 +17,7 @@ Copy one or more template files into your vault at:
 
 `smart-templates/*.md`
 
-You can change this folder in **Settings → Smart Export → Template folder (markdown)**.
+You can change this folder in **Settings → Smart Export → Markdown template folder**.
 
 In the export modal, use the **Output** dropdown to select either:
 

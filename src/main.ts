@@ -433,7 +433,7 @@ class SmartExportSettingTab extends PluginSettingTab {
 		templateDirectoryDesc.append(templateDocsLink);
 
 		new Setting(containerEl)
-			.setName("Template folder (markdown)")
+			.setName("Markdown template folder")
 			.setDesc(templateDirectoryDesc)
 			.addText((text) =>
 				text
