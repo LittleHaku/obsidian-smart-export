@@ -37,7 +37,7 @@ sequenceDiagram
     Traversal->>API: read content for content-eligible nodes
     Traversal-->>Modal: export tree + missing notes count
     Modal->>Modal: resolve custom Markdown template (optional)
-    Modal->>Exporter: export(tree, vault, missingNotes)
+    Modal->>Exporter: export(tree, vault, missingNotes, template?)
     Exporter-->>Modal: serialized output
     Modal-->>User: copy to clipboard
 ```
