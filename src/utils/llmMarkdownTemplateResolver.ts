@@ -58,7 +58,7 @@ export interface ListLlmMarkdownTemplateOptionsOptions {
 }
 
 export interface LlmMarkdownTemplateResolution {
-	template: string | null;
+	template: string;
 	sourcePath: string | null;
 	templateId: string;
 }
