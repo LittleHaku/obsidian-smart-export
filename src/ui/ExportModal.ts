@@ -21,6 +21,7 @@ import {
 	listLlmMarkdownTemplateOptions,
 	resolveLlmMarkdownTemplate,
 } from "../utils/llmMarkdownTemplateResolver";
+import { TEMPLATE_DOCS_URL } from "../constants/templateDocs";
 import {
 	deselectSubtree,
 	enforceAncestorSelection,
@@ -29,8 +30,6 @@ import {
 	selectSubtree,
 } from "./treeSelection";
 
-const TEMPLATE_DOCS_URL =
-	"https://github.com/LittleHaku/obsidian-smart-export/blob/main/templates/README.md";
 const EXPORT_CHOICE_XML = "format:xml";
 const EXPORT_CHOICE_PRINT_FRIENDLY = "format:print-friendly-markdown";
 const EXPORT_CHOICE_LLM_PREFIX = "template:";

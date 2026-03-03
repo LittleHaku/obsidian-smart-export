@@ -13,6 +13,7 @@ import { buildExportOutput, normalizeExportFormat } from "./engine/exportOutput"
 import { ObsidianAPI } from "./obsidian-api";
 import { ExportModal } from "./ui/ExportModal";
 import { LinkTraversalMode, SmartExportSettings } from "./types";
+import { TEMPLATE_DOCS_URL } from "./constants/templateDocs";
 import { normalizeFolderFilterList } from "./utils/folderFilters";
 import {
 	DEFAULT_BUILTIN_LLM_TEMPLATE_ID,
@@ -23,8 +24,6 @@ import {
 	resolveLlmMarkdownTemplate,
 } from "./utils/llmMarkdownTemplateResolver";
 
-const TEMPLATE_DOCS_URL =
-	"https://github.com/LittleHaku/obsidian-smart-export/blob/main/templates/README.md";
 const DEFAULT_OUTPUT_CHOICE_XML = "format:xml";
 const DEFAULT_OUTPUT_CHOICE_PRINT_FRIENDLY = "format:print-friendly-markdown";
 const DEFAULT_OUTPUT_CHOICE_LLM_PREFIX = "template:";
