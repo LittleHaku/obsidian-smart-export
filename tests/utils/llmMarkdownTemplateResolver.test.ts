@@ -185,8 +185,8 @@ describe("llmMarkdownTemplateResolver", () => {
 		const alpha = "smart-templates/alpha.md";
 		const beta = "smart-templates/beta.md";
 		const adapter = {
-			exists: vi.fn(async () => true),
-			read: vi.fn(async (path: string) => (path === alpha ? "   " : "content")),
+			exists: vi.fn(),
+			read: vi.fn(),
 			list: vi.fn(async () => ({
 				files: ["smart-templates/z.txt", beta, alpha],
 				folders: [],
@@ -208,11 +208,18 @@ describe("llmMarkdownTemplateResolver", () => {
 				source: "builtin",
 			},
 			{
+				id: `user:${alpha}`,
+				label: "Custom: alpha",
+				source: "user",
+			},
+			{
 				id: `user:${beta}`,
 				label: "Custom: beta",
 				source: "user",
 			},
 		]);
+		expect(adapter.exists).not.toHaveBeenCalled();
+		expect(adapter.read).not.toHaveBeenCalled();
 	});
 
 	it("lists only built-ins when template directory is blank", async () => {

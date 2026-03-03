@@ -174,10 +174,6 @@ export async function listLlmMarkdownTemplateOptions(
 			.sort((a, b) => a.localeCompare(b));
 
 		for (const filePath of userTemplateFiles) {
-			const content = await tryReadTemplate(app, filePath);
-			if (content === null) {
-				continue;
-			}
 			templateOptions.push({
 				id: toUserTemplateId(filePath),
 				label: `Custom: ${getTemplateLabelFromPath(filePath)}`,
