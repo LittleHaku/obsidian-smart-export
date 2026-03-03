@@ -61,7 +61,7 @@ export default class SmartExportPlugin extends Plugin {
 			name: "Quick export current note",
 			checkCallback: (checking: boolean) => {
 				const activeFile = this.app.workspace.getActiveFile();
-				if (!activeFile) {
+				if (!activeFile || activeFile.extension !== "md") {
 					return false;
 				}
 				if (!checking) {
@@ -110,6 +110,10 @@ export default class SmartExportPlugin extends Plugin {
 	 */
 	private async quickExportCurrentNote(rootFile: TFile): Promise<void> {
 		try {
+			if (rootFile.extension !== "md") {
+				new Notice("Quick export only supports Markdown notes.");
+				return;
+			}
 			if (!navigator.clipboard?.writeText) {
 				new Notice("Clipboard is not available in this environment.");
 				return;
