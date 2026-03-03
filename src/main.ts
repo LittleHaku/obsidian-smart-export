@@ -1,10 +1,33 @@
-import { App, Notice, Plugin, PluginSettingTab, Setting, TFile, debounce } from "obsidian";
+import {
+	App,
+	Notice,
+	Plugin,
+	PluginSettingTab,
+	Setting,
+	TFile,
+	DropdownComponent,
+	debounce,
+} from "obsidian";
 import { BFSTraversal } from "./engine/BFSTraversal";
 import { buildExportOutput, normalizeExportFormat } from "./engine/exportOutput";
 import { ObsidianAPI } from "./obsidian-api";
 import { ExportModal } from "./ui/ExportModal";
 import { LinkTraversalMode, SmartExportSettings } from "./types";
 import { normalizeFolderFilterList } from "./utils/folderFilters";
+import {
+	DEFAULT_BUILTIN_LLM_TEMPLATE_ID,
+	LLM_MARKDOWN_TEMPLATE_DIRECTORY,
+	LlmMarkdownTemplateOption,
+	listLlmMarkdownTemplateOptions,
+	normalizeTemplateDirectoryPath,
+	resolveLlmMarkdownTemplate,
+} from "./utils/llmMarkdownTemplateResolver";
+
+const TEMPLATE_DOCS_URL =
+	"https://github.com/LittleHaku/obsidian-smart-export/blob/main/templates/README.md";
+const DEFAULT_OUTPUT_CHOICE_XML = "format:xml";
+const DEFAULT_OUTPUT_CHOICE_PRINT_FRIENDLY = "format:print-friendly-markdown";
+const DEFAULT_OUTPUT_CHOICE_LLM_PREFIX = "template:";
 
 /**
  * Converts textarea input (one folder path per line) into a normalized list.
@@ -14,15 +37,75 @@ function parseFolderFilterText(text: string): string[] {
 	return normalizeFolderFilterList(lines);
 }
 
+function normalizeTemplateDirectorySetting(path: string): string {
+	const normalized = normalizeTemplateDirectoryPath(path);
+	return normalized.length > 0 ? normalized : LLM_MARKDOWN_TEMPLATE_DIRECTORY;
+}
+
+function getAvailableTemplateOptions(
+	templateOptions: LlmMarkdownTemplateOption[]
+): LlmMarkdownTemplateOption[] {
+	if (templateOptions.length > 0) {
+		return templateOptions;
+	}
+	return [
+		{
+			id: DEFAULT_BUILTIN_LLM_TEMPLATE_ID,
+			label: "LLM-ready",
+			source: "builtin",
+		},
+	];
+}
+
+function getCurrentDefaultOutputChoice(
+	settings: SmartExportSettings,
+	templateOptions: LlmMarkdownTemplateOption[]
+): string {
+	if (settings.defaultExportFormat === "xml") {
+		return DEFAULT_OUTPUT_CHOICE_XML;
+	}
+	if (settings.defaultExportFormat === "print-friendly-markdown") {
+		return DEFAULT_OUTPUT_CHOICE_PRINT_FRIENDLY;
+	}
+	const options = getAvailableTemplateOptions(templateOptions);
+	const hasSelectedTemplate = options.some((option) => option.id === settings.defaultLlmTemplateId);
+	const templateId = hasSelectedTemplate
+		? settings.defaultLlmTemplateId
+		: DEFAULT_BUILTIN_LLM_TEMPLATE_ID;
+	return `${DEFAULT_OUTPUT_CHOICE_LLM_PREFIX}${templateId}`;
+}
+
+function applyDefaultOutputChoiceToSettings(
+	settings: SmartExportSettings,
+	value: string
+): void {
+	if (value === DEFAULT_OUTPUT_CHOICE_XML) {
+		settings.defaultExportFormat = "xml";
+		return;
+	}
+	if (value === DEFAULT_OUTPUT_CHOICE_PRINT_FRIENDLY) {
+		settings.defaultExportFormat = "print-friendly-markdown";
+		return;
+	}
+	if (value.startsWith(DEFAULT_OUTPUT_CHOICE_LLM_PREFIX)) {
+		const templateId = value.slice(DEFAULT_OUTPUT_CHOICE_LLM_PREFIX.length);
+		settings.defaultExportFormat = "llm-markdown";
+		settings.defaultLlmTemplateId =
+			templateId.length > 0 ? templateId : DEFAULT_BUILTIN_LLM_TEMPLATE_ID;
+	}
+}
+
 const DEFAULT_SETTINGS: SmartExportSettings = {
 	defaultContentDepth: 3,
 	defaultTitleDepth: 6,
 	defaultExportFormat: "xml",
+	defaultLlmTemplateId: DEFAULT_BUILTIN_LLM_TEMPLATE_ID,
 	defaultLinkTraversalMode: "outgoing",
 	autoSelectCurrentNote: true,
 	closeModalAfterExport: false,
 	showTokenEstimatesInTree: false,
 	ignoredTraversalFolders: [],
+	llmMarkdownTemplateDirectory: LLM_MARKDOWN_TEMPLATE_DIRECTORY,
 };
 
 /**
@@ -99,6 +182,23 @@ export default class SmartExportPlugin extends Plugin {
 			(storedSettings as { defaultExportFormat?: unknown } | null)?.defaultExportFormat ??
 				this.settings.defaultExportFormat
 		);
+		const storedDefaultLlmTemplateId = (
+			storedSettings as { defaultLlmTemplateId?: unknown } | null
+		)?.defaultLlmTemplateId;
+		this.settings.defaultLlmTemplateId =
+			typeof storedDefaultLlmTemplateId === "string" &&
+			storedDefaultLlmTemplateId.trim().length > 0
+				? storedDefaultLlmTemplateId
+				: DEFAULT_BUILTIN_LLM_TEMPLATE_ID;
+		const storedTemplateDirectory = (
+			storedSettings as { llmMarkdownTemplateDirectory?: unknown } | null
+		)?.llmMarkdownTemplateDirectory;
+		const templateDirectoryValue =
+			typeof storedTemplateDirectory === "string"
+				? storedTemplateDirectory
+				: this.settings.llmMarkdownTemplateDirectory;
+		this.settings.llmMarkdownTemplateDirectory =
+			normalizeTemplateDirectorySetting(templateDirectoryValue);
 	}
 
 	async saveSettings() {
@@ -134,11 +234,22 @@ export default class SmartExportPlugin extends Plugin {
 				new Notice("Quick export failed. Could not load the current note.");
 				return;
 			}
+			const llmMarkdownTemplate =
+				this.settings.defaultExportFormat === "llm-markdown"
+					? (
+							await resolveLlmMarkdownTemplate(
+								this.app,
+								this.settings.llmMarkdownTemplateDirectory,
+								this.settings.defaultLlmTemplateId
+							)
+						).template
+					: null;
 
 			const output = buildExportOutput({
 				rootNode: exportTree,
 				vaultPath: this.app.vault.getName(),
 				format: this.settings.defaultExportFormat,
+				llmMarkdownTemplate,
 				missingNotesCount: traversal.getMissingNotes().length,
 				onInvalidFormat: () => {
 					new Notice("Unknown export format in settings; falling back to XML.");
@@ -163,6 +274,8 @@ class SmartExportSettingTab extends PluginSettingTab {
 
 	display(): void {
 		const { containerEl } = this;
+		let defaultOutputDropdown: DropdownComponent | null = null;
+		let defaultOutputTemplateOptions: LlmMarkdownTemplateOption[] = [];
 		const debouncedSaveIgnoredFolders = debounce(
 			() => {
 				void this.plugin.saveSettings();
@@ -170,6 +283,48 @@ class SmartExportSettingTab extends PluginSettingTab {
 			300,
 			true
 		);
+
+		const applyDefaultOutputOptions = () => {
+			if (!defaultOutputDropdown) {
+				return;
+			}
+			const templateOptions = getAvailableTemplateOptions(defaultOutputTemplateOptions);
+			defaultOutputDropdown.selectEl.empty();
+			defaultOutputDropdown.addOption(
+				DEFAULT_OUTPUT_CHOICE_XML,
+				"XML - structured format with metadata"
+			);
+			defaultOutputDropdown.addOption(
+				DEFAULT_OUTPUT_CHOICE_PRINT_FRIENDLY,
+				"Print-friendly Markdown - clean, readable format"
+			);
+			for (const option of templateOptions) {
+				defaultOutputDropdown.addOption(
+					`${DEFAULT_OUTPUT_CHOICE_LLM_PREFIX}${option.id}`,
+					`Markdown - ${option.label}`
+				);
+			}
+			defaultOutputDropdown.setValue(
+				getCurrentDefaultOutputChoice(this.plugin.settings, templateOptions)
+			);
+		};
+
+		const reloadDefaultOutputOptions = async () => {
+			defaultOutputTemplateOptions = await listLlmMarkdownTemplateOptions(
+				this.app,
+				this.plugin.settings.llmMarkdownTemplateDirectory,
+				{ includeCompactBuiltin: false }
+			);
+			const availableOptions = getAvailableTemplateOptions(defaultOutputTemplateOptions);
+			if (
+				this.plugin.settings.defaultExportFormat === "llm-markdown" &&
+				!availableOptions.some((option) => option.id === this.plugin.settings.defaultLlmTemplateId)
+			) {
+				this.plugin.settings.defaultLlmTemplateId = DEFAULT_BUILTIN_LLM_TEMPLATE_ID;
+				await this.plugin.saveSettings();
+			}
+			applyDefaultOutputOptions();
+		};
 
 		containerEl.empty();
 
@@ -211,20 +366,29 @@ class SmartExportSettingTab extends PluginSettingTab {
 					})
 			);
 
+		const defaultOutputDesc = document.createDocumentFragment();
+		defaultOutputDesc.append(
+			"Choose your default output: XML, print-friendly Markdown, or a Markdown template. "
+		);
+		const defaultOutputDocsLink = document.createElement("a");
+		defaultOutputDocsLink.href = TEMPLATE_DOCS_URL;
+		defaultOutputDocsLink.textContent = "Template docs";
+		defaultOutputDocsLink.target = "_blank";
+		defaultOutputDocsLink.rel = "noopener noreferrer";
+		defaultOutputDesc.append(defaultOutputDocsLink);
+
 		new Setting(containerEl)
-			.setName("Default export format")
-			.setDesc("Choose your preferred export format")
-			.addDropdown((dropdown) =>
-				dropdown
-					.addOption("xml", "XML - structured format with metadata")
-					.addOption("llm-markdown", "Markdown for AI tools - optimized for model input")
-					.addOption("print-friendly-markdown", "Print-friendly - clean, readable format")
-					.setValue(this.plugin.settings.defaultExportFormat)
-					.onChange(async (value: "xml" | "llm-markdown" | "print-friendly-markdown") => {
-						this.plugin.settings.defaultExportFormat = value;
-						await this.plugin.saveSettings();
-					})
-			);
+			.setName("Default output")
+			.setDesc(defaultOutputDesc)
+			.addDropdown((dropdown) => {
+				defaultOutputDropdown = dropdown;
+				dropdown.onChange(async (value) => {
+					applyDefaultOutputChoiceToSettings(this.plugin.settings, value);
+					await this.plugin.saveSettings();
+				});
+				applyDefaultOutputOptions();
+			});
+		void reloadDefaultOutputOptions();
 
 		new Setting(containerEl)
 			.setName("Default link direction")
@@ -254,6 +418,32 @@ class SmartExportSettingTab extends PluginSettingTab {
 					.onChange((value) => {
 						this.plugin.settings.ignoredTraversalFolders = parseFolderFilterText(value);
 						debouncedSaveIgnoredFolders();
+					})
+			);
+
+		const templateDirectoryDesc = document.createDocumentFragment();
+		templateDirectoryDesc.append(
+			"Vault-relative folder for custom Markdown templates. Smart Export prefers llm-markdown.md and then falls back to the first .md file in that folder. "
+		);
+		const templateDocsLink = document.createElement("a");
+		templateDocsLink.href = TEMPLATE_DOCS_URL;
+		templateDocsLink.textContent = "Template placeholder docs";
+		templateDocsLink.target = "_blank";
+		templateDocsLink.rel = "noopener noreferrer";
+		templateDirectoryDesc.append(templateDocsLink);
+
+		new Setting(containerEl)
+			.setName("Template folder (markdown)")
+			.setDesc(templateDirectoryDesc)
+			.addText((text) =>
+				text
+					.setPlaceholder(LLM_MARKDOWN_TEMPLATE_DIRECTORY)
+					.setValue(this.plugin.settings.llmMarkdownTemplateDirectory)
+					.onChange(async (value) => {
+						this.plugin.settings.llmMarkdownTemplateDirectory =
+							normalizeTemplateDirectorySetting(value);
+						await this.plugin.saveSettings();
+						void reloadDefaultOutputOptions();
 					})
 			);
 

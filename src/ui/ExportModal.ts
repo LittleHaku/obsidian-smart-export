@@ -4,6 +4,7 @@ import {
 	Setting,
 	TFile,
 	SliderComponent,
+	DropdownComponent,
 	Notice,
 	debounce,
 	setTooltip,
@@ -15,12 +16,24 @@ import { ObsidianAPI } from "../obsidian-api";
 import { ExportNode, LinkTraversalMode, SmartExportSettings } from "../types";
 import { applyContentSelection } from "./treeContentSelection";
 import {
+	DEFAULT_BUILTIN_LLM_TEMPLATE_ID,
+	LlmMarkdownTemplateOption,
+	listLlmMarkdownTemplateOptions,
+	resolveLlmMarkdownTemplate,
+} from "../utils/llmMarkdownTemplateResolver";
+import {
 	deselectSubtree,
 	enforceAncestorSelection,
 	selectAncestors,
 	selectNode,
 	selectSubtree,
 } from "./treeSelection";
+
+const TEMPLATE_DOCS_URL =
+	"https://github.com/LittleHaku/obsidian-smart-export/blob/main/templates/README.md";
+const EXPORT_CHOICE_XML = "format:xml";
+const EXPORT_CHOICE_PRINT_FRIENDLY = "format:print-friendly-markdown";
+const EXPORT_CHOICE_LLM_PREFIX = "template:";
 
 /**
  * The main modal for configuring and triggering a smart export.
@@ -41,6 +54,12 @@ export class ExportModal extends Modal {
 	private linkTraversalMode: LinkTraversalMode = "outgoing";
 	/** The selected export format. */
 	private exportFormat: "xml" | "llm-markdown" | "print-friendly-markdown";
+	/** The selected LLM template id for markdown exports. */
+	private selectedLlmTemplateId: string = DEFAULT_BUILTIN_LLM_TEMPLATE_ID;
+	/** Available built-in and custom template options. */
+	private llmTemplateOptions: LlmMarkdownTemplateOption[] = [];
+	/** Dropdown used to select format/template options in one control. */
+	private exportChoiceDropdown: DropdownComponent | null = null;
 	/** The HTML element that displays the estimated token count. */
 	private tokenCountEl: HTMLElement;
 	/** A debounced function to update the token count dynamically. */
@@ -103,6 +122,10 @@ export class ExportModal extends Modal {
 		this.titleDepth = settings.defaultTitleDepth;
 		this.linkTraversalMode = settings.defaultLinkTraversalMode;
 		this.exportFormat = settings.defaultExportFormat;
+		this.selectedLlmTemplateId =
+			settings.defaultLlmTemplateId?.trim().length > 0
+				? settings.defaultLlmTemplateId
+				: DEFAULT_BUILTIN_LLM_TEMPLATE_ID;
 	}
 
 	/**
@@ -235,20 +258,29 @@ export class ExportModal extends Modal {
 			cls: "smart-export-section-title",
 		});
 
+		const outputDesc = document.createDocumentFragment();
+		outputDesc.append(
+			"Choose XML, print-friendly Markdown, or a Markdown template (built-in or custom). "
+		);
+		const templateDocsLink = document.createElement("a");
+		templateDocsLink.href = TEMPLATE_DOCS_URL;
+		templateDocsLink.textContent = "Template docs";
+		templateDocsLink.target = "_blank";
+		templateDocsLink.rel = "noopener noreferrer";
+		outputDesc.append(templateDocsLink);
+
 		new Setting(exportSection)
-			.setName("Output format")
-			.setDesc("Choose the format optimized for your workflow")
+			.setName("Output")
+			.setDesc(outputDesc)
 			.addDropdown((dropdown) => {
-				dropdown
-					.addOption("xml", "XML - structured format with metadata")
-					.addOption("llm-markdown", "Markdown - optimized for model input")
-					.addOption("print-friendly-markdown", "Print-friendly - clean, readable format")
-					.setValue(this.exportFormat)
-					.onChange((value: "xml" | "llm-markdown" | "print-friendly-markdown") => {
-						this.exportFormat = value;
-						this.debouncedTokenUpdate();
-					});
+				this.exportChoiceDropdown = dropdown;
+				dropdown.onChange((value) => {
+					this.applyExportChoiceSelection(value);
+					this.debouncedTokenUpdate();
+				});
+				this.applyExportChoiceOptions();
 			});
+		void this.reloadLlmTemplateOptions();
 
 		// Notes visualization section
 		const treeSection = contentEl.createDiv({ cls: "smart-export-section" });
@@ -347,6 +379,86 @@ export class ExportModal extends Modal {
 		this.tokenCountEl.setText(this.formatTokenCountMessage(tokenCount));
 	}
 
+	private async reloadLlmTemplateOptions(): Promise<void> {
+		this.llmTemplateOptions = await listLlmMarkdownTemplateOptions(
+			this.app,
+			this.settings.llmMarkdownTemplateDirectory,
+			{ includeCompactBuiltin: false }
+		);
+		if (
+			!this.llmTemplateOptions.some((option) => option.id === this.selectedLlmTemplateId) &&
+			this.exportFormat === "llm-markdown"
+		) {
+			this.selectedLlmTemplateId = DEFAULT_BUILTIN_LLM_TEMPLATE_ID;
+		}
+		this.applyExportChoiceOptions();
+	}
+
+	private getAvailableLlmTemplateOptions(): LlmMarkdownTemplateOption[] {
+		if (this.llmTemplateOptions.length > 0) {
+			return this.llmTemplateOptions;
+		}
+			return [
+				{
+					id: DEFAULT_BUILTIN_LLM_TEMPLATE_ID,
+					label: "LLM-ready",
+					source: "builtin",
+				},
+			];
+		}
+
+	private getCurrentExportChoiceValue(): string {
+		if (this.exportFormat === "xml") {
+			return EXPORT_CHOICE_XML;
+		}
+		if (this.exportFormat === "print-friendly-markdown") {
+			return EXPORT_CHOICE_PRINT_FRIENDLY;
+		}
+		const hasSelectedTemplate = this.getAvailableLlmTemplateOptions().some(
+			(option) => option.id === this.selectedLlmTemplateId
+		);
+		const selectedTemplateId = hasSelectedTemplate
+			? this.selectedLlmTemplateId
+			: DEFAULT_BUILTIN_LLM_TEMPLATE_ID;
+		return `${EXPORT_CHOICE_LLM_PREFIX}${selectedTemplateId}`;
+	}
+
+	private applyExportChoiceOptions(): void {
+		if (!this.exportChoiceDropdown) {
+			return;
+		}
+		this.exportChoiceDropdown.selectEl.empty();
+		this.exportChoiceDropdown.addOption(EXPORT_CHOICE_XML, "XML - structured format with metadata");
+		this.exportChoiceDropdown.addOption(
+			EXPORT_CHOICE_PRINT_FRIENDLY,
+			"Print-friendly Markdown - clean, readable format"
+		);
+		for (const option of this.getAvailableLlmTemplateOptions()) {
+			this.exportChoiceDropdown.addOption(
+				`${EXPORT_CHOICE_LLM_PREFIX}${option.id}`,
+				`Markdown - ${option.label}`
+			);
+		}
+		this.exportChoiceDropdown.setValue(this.getCurrentExportChoiceValue());
+	}
+
+	private applyExportChoiceSelection(value: string): void {
+		if (value === EXPORT_CHOICE_XML) {
+			this.exportFormat = "xml";
+			return;
+		}
+		if (value === EXPORT_CHOICE_PRINT_FRIENDLY) {
+			this.exportFormat = "print-friendly-markdown";
+			return;
+		}
+		if (value.startsWith(EXPORT_CHOICE_LLM_PREFIX)) {
+			const templateId = value.slice(EXPORT_CHOICE_LLM_PREFIX.length);
+			this.exportFormat = "llm-markdown";
+			this.selectedLlmTemplateId =
+				templateId.length > 0 ? templateId : DEFAULT_BUILTIN_LLM_TEMPLATE_ID;
+		}
+	}
+
 	/**
 	 * Handles the main export action when the user clicks the export button.
 	 * @private
@@ -365,10 +477,21 @@ export class ExportModal extends Modal {
 			return;
 		}
 		const adjustedTree = applyContentSelection(exportTree, this.selectedNodeIds);
+		const llmMarkdownTemplate =
+			this.exportFormat === "llm-markdown"
+				? (
+						await resolveLlmMarkdownTemplate(
+							this.app,
+							this.settings.llmMarkdownTemplateDirectory,
+							this.selectedLlmTemplateId
+						)
+					).template
+				: null;
 		const output = buildExportOutput({
 			rootNode: adjustedTree,
 			vaultPath: this.app.vault.getName(),
 			format: this.exportFormat,
+			llmMarkdownTemplate,
 			missingNotesCount: this.missingNotesCount,
 			onInvalidFormat: () => {
 				new Notice("Unknown export format selected; falling back to XML.");

@@ -11,6 +11,7 @@ export interface BuildExportOutputOptions {
 	rootNode: ExportNode;
 	vaultPath: string;
 	format: unknown;
+	llmMarkdownTemplate?: string | null;
 	missingNotesCount?: number;
 	onInvalidFormat?: (fallbackFormat: ExportFormat) => void;
 }
@@ -42,7 +43,8 @@ export function buildExportOutput(options: BuildExportOutputOptions): string {
 			return new LlmMarkdownExporter().export(
 				options.rootNode,
 				options.vaultPath,
-				missingNotesCount
+				missingNotesCount,
+				options.llmMarkdownTemplate ?? undefined
 			);
 		case "print-friendly-markdown":
 			return new PrintFriendlyMarkdownExporter().export(options.rootNode);

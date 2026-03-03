@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Directory-based custom Markdown template loading from a vault folder (default `smart-templates`)
+- Placeholder-based LLM Markdown template rendering (`{{metadata_yaml}}`, `{{note_contents_section}}`, metadata placeholders, and more)
+- Copyable built-in template pack in `templates/llm-markdown/` (`default` and `compact`)
+- New setting `Template folder (llm)` with a direct link to the template placeholder docs
+- New unified `Output` dropdown in the export modal to choose XML/print-friendly outputs or built-in/custom Markdown templates
+- New `Default output` setting that supports built-in and custom Markdown templates (with docs link)
+- Settings and modal `Output` now show only built-in `LLM-ready` plus custom templates (`compact` remains as a docs/example template)
+
+### Changed
+
+- LLM Markdown export now supports selecting among multiple templates and falls back safely to built-in `default`
+
 ## [1.4.0] - 2026-03-03
 
 ### Added

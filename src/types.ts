@@ -35,6 +35,8 @@ export interface SmartExportSettings {
 	defaultTitleDepth: number;
 	/** The default format for the exported output. */
 	defaultExportFormat: "xml" | "llm-markdown" | "print-friendly-markdown";
+	/** The default LLM template id used when defaultExportFormat is llm-markdown. */
+	defaultLlmTemplateId: string;
 	/** The default link direction mode used when exploring related notes. */
 	defaultLinkTraversalMode: LinkTraversalMode;
 	/** Whether to automatically select the currently active note as the root for export. */
@@ -45,4 +47,6 @@ export interface SmartExportSettings {
 	showTokenEstimatesInTree: boolean;
 	/** Folders excluded from traversal in all link directions. */
 	ignoredTraversalFolders: string[];
+	/** Vault-relative folder used to resolve custom LLM Markdown templates. */
+	llmMarkdownTemplateDirectory: string;
 }

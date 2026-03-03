@@ -269,6 +269,56 @@ console.log("code block");
 		});
 	});
 
+	describe("Template Rendering", () => {
+		it("renders custom templates with placeholders", () => {
+			const child = createMockExportNode("Child", "child.md", 1, "Child content");
+			const rootNode = createMockExportNode("Root", "root.md", 0, "Root content", [child]);
+			const exporter = new LlmMarkdownExporter();
+			const template = `# Export
+Vault: {{vault_path}}
+Root: {{starting_note}}
+Count: {{total_notes_exported}}
+Alias count: {{total_notes}}
+Missing: {{missing_notes}}
+
+{{included_notes}}
+
+{{note_contents}}`;
+
+			const result = exporter.export(rootNode, "TemplateVault", 0, template);
+
+			expect(result).toContain("# Export");
+			expect(result).toContain("Vault: TemplateVault");
+			expect(result).toContain("Root: Root");
+			expect(result).toContain("Count: 2");
+			expect(result).toContain("Alias count: 2");
+			expect(result).toContain("Missing: 0");
+			expect(result).toContain('Note 1: "Root"');
+			expect(result).toContain('Note 2: "Child"');
+			expect(result).toContain("Root content");
+			expect(result).toContain("Child content");
+		});
+
+		it("keeps unknown placeholders unchanged", () => {
+			const rootNode = createMockExportNode("Root", "root.md");
+			const exporter = new LlmMarkdownExporter();
+
+			const result = exporter.export(rootNode, "TestVault", 0, "Unknown: {{does_not_exist}}");
+
+			expect(result).toBe("Unknown: {{does_not_exist}}");
+		});
+
+		it("falls back to default template when custom template is empty", () => {
+			const rootNode = createMockExportNode("Root", "root.md", 0, "Root content");
+			const exporter = new LlmMarkdownExporter();
+
+			const result = exporter.export(rootNode, "TestVault", 0, "   ");
+
+			expect(result).toContain("## Note Structure");
+			expect(result).toContain("## Note Contents");
+		});
+	});
+
 	describe("Output Format Structure", () => {
 		it("should maintain proper markdown structure with sections", () => {
 			const rootNode = createMockExportNode("Test Note", "test.md");

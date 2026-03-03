@@ -1,6 +1,6 @@
 # Export Architecture
 
-Updated: February 16, 2026
+Updated: March 3, 2026
 
 ## Overview
 
@@ -14,6 +14,7 @@ Core modules:
 - `src/engine/LlmMarkdownExporter.ts`
 - `src/engine/PrintFriendlyMarkdownExporter.ts`
 - `src/utils/folderFilters.ts`
+- `src/utils/llmMarkdownTemplateResolver.ts`
 
 ## 1) Export Runtime Flow
 
@@ -35,10 +36,30 @@ sequenceDiagram
     end
     Traversal->>API: read content for content-eligible nodes
     Traversal-->>Modal: export tree + missing notes count
+    Modal->>Modal: resolve custom Markdown template (optional)
     Modal->>Exporter: export(tree, vault, missingNotes)
     Exporter-->>Modal: serialized output
     Modal-->>User: copy to clipboard
 ```
+
+Markdown template selection and resolution:
+
+1. User chooses output in the modal dropdown (`Output`).
+2. The built-in template exposed in UI is `default` (`LLM-ready`).
+3. Custom templates are loaded from `<llmMarkdownTemplateDirectory>/*.md`.
+4. If a selected custom template is missing/unreadable, exporter falls back to built-in `default`.
+5. When no explicit template id is provided (quick export), resolver checks:
+   - `<llmMarkdownTemplateDirectory>/llm-markdown.md`
+   - first readable `.md` in `<llmMarkdownTemplateDirectory>/`
+   - built-in `default`
+
+Notes:
+
+- `{{metadata_yaml}}` renders as a complete YAML frontmatter block (including `---` delimiters).
+- Templates can use full metadata keys (`{{total_notes_exported}}`) or aliases (`{{total_notes}}`).
+- Plugin settings expose `Default output`, which shows XML/print-friendly, built-in `LLM-ready`, and custom templates.
+- The modal output dropdown uses the same built-in filtering as settings (`LLM-ready` only).
+- `compact` remains in the repository as a reference template example for users to copy/customize.
 
 ## 2) Traversal and Folder Exclusion Logic
 
