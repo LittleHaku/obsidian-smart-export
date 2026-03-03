@@ -122,9 +122,10 @@ export class ExportModal extends Modal {
 		this.titleDepth = settings.defaultTitleDepth;
 		this.linkTraversalMode = settings.defaultLinkTraversalMode;
 		this.exportFormat = settings.defaultExportFormat;
+		const defaultTemplateId = settings.defaultLlmTemplateId?.trim();
 		this.selectedLlmTemplateId =
-			settings.defaultLlmTemplateId?.trim().length > 0
-				? settings.defaultLlmTemplateId
+			defaultTemplateId && defaultTemplateId.length > 0
+				? defaultTemplateId
 				: DEFAULT_BUILTIN_LLM_TEMPLATE_ID;
 	}
 

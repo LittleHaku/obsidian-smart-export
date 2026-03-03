@@ -210,9 +210,8 @@ export async function resolveLlmMarkdownTemplate(
 		return { template: null, sourcePath: null, templateId: DEFAULT_BUILTIN_LLM_TEMPLATE_ID };
 	}
 
-	const explicitTemplateId =
-		typeof templateId === "string" && templateId.trim().length > 0 ? templateId : null;
-	if (explicitTemplateId) {
+	const explicitTemplateId = typeof templateId === "string" ? templateId.trim() : null;
+	if (explicitTemplateId && explicitTemplateId.length > 0) {
 		const builtinTemplate = findBuiltinTemplate(explicitTemplateId);
 		if (builtinTemplate) {
 			return {

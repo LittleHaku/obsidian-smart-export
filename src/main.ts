@@ -188,7 +188,7 @@ export default class SmartExportPlugin extends Plugin {
 		this.settings.defaultLlmTemplateId =
 			typeof storedDefaultLlmTemplateId === "string" &&
 			storedDefaultLlmTemplateId.trim().length > 0
-				? storedDefaultLlmTemplateId
+				? storedDefaultLlmTemplateId.trim()
 				: DEFAULT_BUILTIN_LLM_TEMPLATE_ID;
 		const storedTemplateDirectory = (
 			storedSettings as { llmMarkdownTemplateDirectory?: unknown } | null

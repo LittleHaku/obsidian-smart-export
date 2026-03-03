@@ -47,6 +47,27 @@ describe("llmMarkdownTemplateResolver", () => {
 		expect(adapter.list).not.toHaveBeenCalled();
 	});
 
+	it("trims whitespace around explicit built-in template ids", async () => {
+		const adapter = {
+			exists: vi.fn(),
+			read: vi.fn(),
+			list: vi.fn(),
+		};
+		const app = createMockApp(adapter);
+
+		const result = await resolveLlmMarkdownTemplate(
+			app,
+			LLM_MARKDOWN_TEMPLATE_DIRECTORY,
+			`  ${COMPACT_BUILTIN_LLM_TEMPLATE_ID}  `
+		);
+
+		expect(result.templateId).toBe(COMPACT_BUILTIN_LLM_TEMPLATE_ID);
+		expect(result.sourcePath).toBeNull();
+		expect(adapter.exists).not.toHaveBeenCalled();
+		expect(adapter.read).not.toHaveBeenCalled();
+		expect(adapter.list).not.toHaveBeenCalled();
+	});
+
 	it("resolves an explicit user template id", async () => {
 		const userTemplatePath = "smart-templates/custom.md";
 		const adapter = {
