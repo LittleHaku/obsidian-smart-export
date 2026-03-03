@@ -63,6 +63,7 @@ Folder exclusion details: [Excluded folders](docs/exclude-folders.md)
 ## 5 Keyboard Shortcut
 
 - Primary command: `Smart Export: Open export`
+- Quick command: `Smart Export: Quick export current note` (uses default settings and copies directly to clipboard)
 - Assign your own shortcut in **Settings → Hotkeys**.
 
 ## 6 Documentation

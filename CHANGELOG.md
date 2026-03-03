@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.4.0] - 2026-03-03
+
+### Added
+
+- New command `Smart Export: Quick export current note` to export from the active note using default settings and copy directly to clipboard
+
 ## [1.3.0] - 2026-02-16
 
 ### Added

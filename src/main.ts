@@ -1,4 +1,7 @@
-import { App, Plugin, PluginSettingTab, Setting, debounce } from "obsidian";
+import { App, Notice, Plugin, PluginSettingTab, Setting, TFile, debounce } from "obsidian";
+import { BFSTraversal } from "./engine/BFSTraversal";
+import { buildExportOutput, normalizeExportFormat } from "./engine/exportOutput";
+import { ObsidianAPI } from "./obsidian-api";
 import { ExportModal } from "./ui/ExportModal";
 import { LinkTraversalMode, SmartExportSettings } from "./types";
 import { normalizeFolderFilterList } from "./utils/folderFilters";
@@ -52,6 +55,22 @@ export default class SmartExportPlugin extends Plugin {
 			},
 		});
 
+		// Quick command that exports from the current note without opening the modal.
+		this.addCommand({
+			id: "quick-export-current-note",
+			name: "Quick export current note",
+			checkCallback: (checking: boolean) => {
+				const activeFile = this.app.workspace.getActiveFile();
+				if (!activeFile || activeFile.extension !== "md") {
+					return false;
+				}
+				if (!checking) {
+					void this.quickExportCurrentNote(activeFile);
+				}
+				return true;
+			},
+		});
+
 		// This adds a settings tab so the user can configure various aspects of the plugin
 		this.addSettingTab(new SmartExportSettingTab(this.app, this));
 	}
@@ -76,10 +95,61 @@ export default class SmartExportPlugin extends Plugin {
 		this.settings.ignoredTraversalFolders = normalizeFolderFilterList(
 			this.settings.ignoredTraversalFolders
 		);
+		this.settings.defaultExportFormat = normalizeExportFormat(
+			(storedSettings as { defaultExportFormat?: unknown } | null)?.defaultExportFormat ??
+				this.settings.defaultExportFormat
+		);
 	}
 
 	async saveSettings() {
 		await this.saveData(this.settings);
+	}
+
+	/**
+	 * Exports from the active note using default settings and copies the output to clipboard.
+	 */
+	private async quickExportCurrentNote(rootFile: TFile): Promise<void> {
+		try {
+			if (rootFile.extension !== "md") {
+				new Notice("Quick export only supports Markdown notes.");
+				return;
+			}
+			if (!navigator.clipboard?.writeText) {
+				new Notice("Clipboard is not available in this environment.");
+				return;
+			}
+
+			const obsidianAPI = new ObsidianAPI(this.app);
+			const traversal = new BFSTraversal(
+				obsidianAPI,
+				this.settings.defaultContentDepth,
+				this.settings.defaultTitleDepth,
+				this.settings.defaultLinkTraversalMode,
+				{
+					ignoredTraversalFolders: this.settings.ignoredTraversalFolders,
+				}
+			);
+			const exportTree = await traversal.traverse(rootFile.path);
+			if (!exportTree) {
+				new Notice("Quick export failed. Could not load the current note.");
+				return;
+			}
+
+			const output = buildExportOutput({
+				rootNode: exportTree,
+				vaultPath: this.app.vault.getName(),
+				format: this.settings.defaultExportFormat,
+				missingNotesCount: traversal.getMissingNotes().length,
+				onInvalidFormat: () => {
+					new Notice("Unknown export format in settings; falling back to XML.");
+				},
+			});
+			await navigator.clipboard.writeText(output);
+			new Notice("Quick export copied to clipboard.");
+		} catch (error) {
+			console.error("Quick export failed", error);
+			new Notice("Quick export failed. See console for details.");
+		}
 	}
 }
 

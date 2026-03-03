@@ -10,11 +10,9 @@ import {
 } from "obsidian";
 import { RootNoteSuggestModal } from "./RootNoteSuggestModal";
 import { BFSTraversal } from "../engine/BFSTraversal";
+import { buildExportOutput } from "../engine/exportOutput";
 import { ObsidianAPI } from "../obsidian-api";
 import { ExportNode, LinkTraversalMode, SmartExportSettings } from "../types";
-import { XMLExporter } from "../engine/XMLExporter";
-import { LlmMarkdownExporter } from "../engine/LlmMarkdownExporter";
-import { PrintFriendlyMarkdownExporter } from "../engine/PrintFriendlyMarkdownExporter";
 import { applyContentSelection } from "./treeContentSelection";
 import {
 	deselectSubtree,
@@ -367,10 +365,29 @@ export class ExportModal extends Modal {
 			return;
 		}
 		const adjustedTree = applyContentSelection(exportTree, this.selectedNodeIds);
-		const output = this.buildExportOutput(adjustedTree);
+		const output = buildExportOutput({
+			rootNode: adjustedTree,
+			vaultPath: this.app.vault.getName(),
+			format: this.exportFormat,
+			missingNotesCount: this.missingNotesCount,
+			onInvalidFormat: () => {
+				new Notice("Unknown export format selected; falling back to XML.");
+			},
+		});
 		const tokenCount = this.estimateTokens(output);
 		this.tokenCountEl.setText(this.formatTokenCountMessage(tokenCount));
-		await navigator.clipboard.writeText(output);
+		if (!navigator.clipboard?.writeText) {
+			new Notice("Clipboard is not available in this environment.");
+			return;
+		}
+		try {
+			await navigator.clipboard.writeText(output);
+		} catch (error) {
+			console.error("Failed to copy export to clipboard", error);
+			this.tokenCountEl.setText(this.formatTokenCountMessage(tokenCount));
+			new Notice("Failed to copy export to clipboard.");
+			return;
+		}
 		new Notice("Export copied to clipboard.");
 		if (this.settings.closeModalAfterExport) {
 			this.close();
@@ -601,25 +618,6 @@ export class ExportModal extends Modal {
 			new Notice("Failed to build export tree. See console for details.");
 			this.renderExportTree();
 			return null;
-		}
-	}
-
-	/**
-	 * Builds the export output string for a filtered tree.
-	 * @private
-	 */
-	private buildExportOutput(rootNode: ExportNode): string {
-		const vaultPath = this.app.vault.getName();
-
-		switch (this.exportFormat) {
-			case "xml":
-				return new XMLExporter().export(rootNode, vaultPath, this.missingNotesCount);
-			case "llm-markdown":
-				return new LlmMarkdownExporter().export(rootNode, vaultPath, this.missingNotesCount);
-			case "print-friendly-markdown":
-				return new PrintFriendlyMarkdownExporter().export(rootNode);
-			default:
-				return "";
 		}
 	}
 
