@@ -85,11 +85,11 @@ Default recommendation:
 - This template is the recommended baseline because it includes structured guidance text for prompt/context ingestion.
 - Additional templates like `compact` are provided as examples for users who want starting points.
 
-Resolution order:
+Resolution order (only when no explicit template is selected / `templateId` is omitted):
 
 - `<template-folder>/llm-markdown.md`
 - first `.md` file in `<template-folder>` (alphabetical path order)
-- built-in default template if no custom template is found
+- built-in default template if no custom template is found via the above rules
 
 Placeholder reference: [`templates/README.md`](templates/README.md)
 
