@@ -48,7 +48,12 @@ Markdown template selection and resolution:
 2. The built-in template exposed in UI is `default` (`LLM-ready`).
 3. Custom templates are loaded from `<llmMarkdownTemplateDirectory>/*.md`.
 4. If a selected custom template is missing/unreadable, exporter falls back to built-in `default`.
-5. When no explicit template id is provided (quick export), resolver checks:
+5. Quick export passes `settings.defaultLlmTemplateId` to `resolveLlmMarkdownTemplate(...)`.
+6. For an explicit template id, resolver attempts:
+   - built-in template id match
+   - `user:` template path read
+   - built-in `default` fallback when selection is missing/unreadable
+7. Folder fallback is only used when resolver is called without an explicit template id:
    - `<llmMarkdownTemplateDirectory>/llm-markdown.md`
    - first readable `.md` in `<llmMarkdownTemplateDirectory>/`
    - built-in `default`
