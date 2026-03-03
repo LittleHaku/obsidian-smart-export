@@ -90,7 +90,7 @@ function parseUserTemplateId(templateId: string): string | null {
 function getTemplateLabelFromPath(path: string): string {
 	const normalized = normalizePath(path);
 	const segments = normalized.split("/");
-	const fileName = segments[segments.length - 1] ?? normalized;
+	const fileName = segments[segments.length - 1];
 	return fileName.replace(/\.md$/i, "");
 }
 
@@ -201,10 +201,7 @@ export async function resolveLlmMarkdownTemplate(
 	templateDirectory: string = LLM_MARKDOWN_TEMPLATE_DIRECTORY,
 	templateId?: string
 ): Promise<LlmMarkdownTemplateResolution> {
-	const defaultBuiltinTemplate = findBuiltinTemplate(DEFAULT_BUILTIN_LLM_TEMPLATE_ID);
-	if (!defaultBuiltinTemplate) {
-		return { template: null, sourcePath: null, templateId: DEFAULT_BUILTIN_LLM_TEMPLATE_ID };
-	}
+	const defaultBuiltinTemplate = findBuiltinTemplate(DEFAULT_BUILTIN_LLM_TEMPLATE_ID)!;
 
 	const explicitTemplateId = typeof templateId === "string" ? templateId.trim() : null;
 	if (explicitTemplateId && explicitTemplateId.length > 0) {

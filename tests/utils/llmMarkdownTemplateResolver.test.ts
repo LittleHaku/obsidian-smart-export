@@ -109,6 +109,26 @@ describe("llmMarkdownTemplateResolver", () => {
 		expect(result.template).toContain("## Note Structure");
 	});
 
+	it("falls back to built-in default when explicit user template read throws", async () => {
+		const adapter = {
+			exists: vi.fn(async () => {
+				throw new Error("adapter failure");
+			}),
+			read: vi.fn(),
+			list: vi.fn(),
+		};
+		const app = createMockApp(adapter);
+
+		const result = await resolveLlmMarkdownTemplate(
+			app,
+			LLM_MARKDOWN_TEMPLATE_DIRECTORY,
+			"user:smart-templates/broken.md"
+		);
+
+		expect(result.templateId).toBe(DEFAULT_BUILTIN_LLM_TEMPLATE_ID);
+		expect(result.sourcePath).toBeNull();
+	});
+
 	it("resolves the preferred folder template when no explicit template id is provided", async () => {
 		const preferredPath = `${LLM_MARKDOWN_TEMPLATE_DIRECTORY}/${LLM_MARKDOWN_TEMPLATE_FILE}`;
 		const adapter = {
@@ -185,6 +205,20 @@ describe("llmMarkdownTemplateResolver", () => {
 		expect(result.sourcePath).toBeNull();
 	});
 
+	it("falls back to built-in default for empty explicit user template ids", async () => {
+		const adapter = {
+			exists: vi.fn(),
+			read: vi.fn(),
+			list: vi.fn(),
+		};
+		const app = createMockApp(adapter);
+
+		const result = await resolveLlmMarkdownTemplate(app, LLM_MARKDOWN_TEMPLATE_DIRECTORY, "user:");
+
+		expect(result.templateId).toBe(DEFAULT_BUILTIN_LLM_TEMPLATE_ID);
+		expect(result.sourcePath).toBeNull();
+	});
+
 	it("lists built-in and user template options", async () => {
 		const alpha = "smart-templates/alpha.md";
 		const beta = "smart-templates/beta.md";
@@ -251,6 +285,32 @@ describe("llmMarkdownTemplateResolver", () => {
 		expect(adapter.list).not.toHaveBeenCalled();
 	});
 
+	it("lists built-ins when listing custom templates throws", async () => {
+		const adapter = {
+			exists: vi.fn(),
+			read: vi.fn(),
+			list: vi.fn(async () => {
+				throw new Error("list failed");
+			}),
+		};
+		const app = createMockApp(adapter);
+
+		const options = await listLlmMarkdownTemplateOptions(app);
+
+		expect(options).toEqual([
+			{
+				id: DEFAULT_BUILTIN_LLM_TEMPLATE_ID,
+				label: "LLM-ready",
+				source: "builtin",
+			},
+			{
+				id: COMPACT_BUILTIN_LLM_TEMPLATE_ID,
+				label: "Compact",
+				source: "builtin",
+			},
+		]);
+	});
+
 	it("can list options without compact built-in template", async () => {
 		const adapter = {
 			exists: vi.fn(),
@@ -273,6 +333,29 @@ describe("llmMarkdownTemplateResolver", () => {
 				source: "builtin",
 			},
 		]);
+	});
+
+	it("falls back to built-in default when fallback markdown files are unreadable", async () => {
+		const preferredPath = `${LLM_MARKDOWN_TEMPLATE_DIRECTORY}/${LLM_MARKDOWN_TEMPLATE_FILE}`;
+		const unreadableA = "smart-templates/a.md";
+		const unreadableB = "smart-templates/b.md";
+		const adapter = {
+			exists: vi.fn(async () => false),
+			read: vi.fn(),
+			list: vi.fn(async () => ({
+				files: [unreadableA, unreadableB],
+				folders: [],
+			})),
+		};
+		const app = createMockApp(adapter);
+
+		const result = await resolveLlmMarkdownTemplate(app);
+
+		expect(result.templateId).toBe(DEFAULT_BUILTIN_LLM_TEMPLATE_ID);
+		expect(result.sourcePath).toBeNull();
+		expect(adapter.exists).toHaveBeenCalledWith(preferredPath);
+		expect(adapter.exists).toHaveBeenCalledWith(unreadableA);
+		expect(adapter.exists).toHaveBeenCalledWith(unreadableB);
 	});
 
 	it("normalizes directory paths", () => {
