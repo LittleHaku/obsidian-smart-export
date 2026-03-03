@@ -399,14 +399,14 @@ export class ExportModal extends Modal {
 		if (this.llmTemplateOptions.length > 0) {
 			return this.llmTemplateOptions;
 		}
-			return [
-				{
-					id: DEFAULT_BUILTIN_LLM_TEMPLATE_ID,
-					label: "LLM-ready",
-					source: "builtin",
-				},
-			];
-		}
+		return [
+			{
+				id: DEFAULT_BUILTIN_LLM_TEMPLATE_ID,
+				label: "LLM-ready",
+				source: "builtin",
+			},
+		];
+	}
 
 	private getCurrentExportChoiceValue(): string {
 		if (this.exportFormat === "xml") {

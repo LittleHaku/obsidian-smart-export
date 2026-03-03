@@ -93,8 +93,10 @@ Total notes: {{total_notes}}
 Missing: {{missing_notes}}
 
 ## Included
+
 {{included_notes}}
 
 ## Content
+
 {{note_contents}}
 ```

@@ -75,10 +75,7 @@ function getCurrentDefaultOutputChoice(
 	return `${DEFAULT_OUTPUT_CHOICE_LLM_PREFIX}${templateId}`;
 }
 
-function applyDefaultOutputChoiceToSettings(
-	settings: SmartExportSettings,
-	value: string
-): void {
+function applyDefaultOutputChoiceToSettings(settings: SmartExportSettings, value: string): void {
 	if (value === DEFAULT_OUTPUT_CHOICE_XML) {
 		settings.defaultExportFormat = "xml";
 		return;
@@ -182,12 +179,10 @@ export default class SmartExportPlugin extends Plugin {
 			(storedSettings as { defaultExportFormat?: unknown } | null)?.defaultExportFormat ??
 				this.settings.defaultExportFormat
 		);
-		const storedDefaultLlmTemplateId = (
-			storedSettings as { defaultLlmTemplateId?: unknown } | null
-		)?.defaultLlmTemplateId;
+		const storedDefaultLlmTemplateId = (storedSettings as { defaultLlmTemplateId?: unknown } | null)
+			?.defaultLlmTemplateId;
 		this.settings.defaultLlmTemplateId =
-			typeof storedDefaultLlmTemplateId === "string" &&
-			storedDefaultLlmTemplateId.trim().length > 0
+			typeof storedDefaultLlmTemplateId === "string" && storedDefaultLlmTemplateId.trim().length > 0
 				? storedDefaultLlmTemplateId.trim()
 				: DEFAULT_BUILTIN_LLM_TEMPLATE_ID;
 		const storedTemplateDirectory = (

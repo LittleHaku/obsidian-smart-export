@@ -114,7 +114,10 @@ export class LlmMarkdownExporter {
 		return allNotes.map((note, index) => `- Note ${index + 1}: "${note.title}"`).join("\n");
 	}
 
-	private buildNoteStructureSection(noteStructureDescription: string, includedNotes: string): string {
+	private buildNoteStructureSection(
+		noteStructureDescription: string,
+		includedNotes: string
+	): string {
 		return `## Note Structure\n\n**Description**:\n${noteStructureDescription}\n\n**Included Notes**:\n${includedNotes}`;
 	}
 

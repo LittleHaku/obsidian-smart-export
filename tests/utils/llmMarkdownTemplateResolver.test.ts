@@ -98,7 +98,11 @@ describe("llmMarkdownTemplateResolver", () => {
 		};
 		const app = createMockApp(adapter);
 
-		const result = await resolveLlmMarkdownTemplate(app, LLM_MARKDOWN_TEMPLATE_DIRECTORY, "user:x.md");
+		const result = await resolveLlmMarkdownTemplate(
+			app,
+			LLM_MARKDOWN_TEMPLATE_DIRECTORY,
+			"user:x.md"
+		);
 
 		expect(result.templateId).toBe(DEFAULT_BUILTIN_LLM_TEMPLATE_ID);
 		expect(result.sourcePath).toBeNull();
