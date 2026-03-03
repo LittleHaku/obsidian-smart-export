@@ -46,5 +46,9 @@ export function buildExportOutput(options: BuildExportOutputOptions): string {
 			);
 		case "print-friendly-markdown":
 			return new PrintFriendlyMarkdownExporter().export(options.rootNode);
+		default: {
+			const exhaustiveFormat: never = normalizedFormat;
+			throw new Error(`Unsupported export format: ${String(exhaustiveFormat)}`);
+		}
 	}
 }
