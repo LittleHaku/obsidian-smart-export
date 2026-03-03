@@ -1,6 +1,7 @@
 # Smart Export Templates
 
-This folder contains copyable templates for the Markdown template exporter.
+This folder contains copyable templates for the LLM Markdown export path.
+Print-friendly Markdown and XML outputs are not templated.
 
 Built-in starter templates in this repo:
 
