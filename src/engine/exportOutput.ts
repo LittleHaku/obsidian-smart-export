@@ -36,17 +36,18 @@ export function buildExportOutput(options: BuildExportOutputOptions): string {
 		options.onInvalidFormat?.(normalizedFormat);
 	}
 
-	if (normalizedFormat === "xml") {
-		return new XMLExporter().export(options.rootNode, options.vaultPath, missingNotesCount);
-	}
-	if (normalizedFormat === "llm-markdown") {
-		return new LlmMarkdownExporter().export(
-			options.rootNode,
-			options.vaultPath,
-			missingNotesCount,
-			options.llmMarkdownTemplate ?? undefined
-		);
-	}
+	// Record<ExportFormat, ...> keeps dispatch exhaustive at compile time.
+	const exporters: Record<ExportFormat, () => string> = {
+		xml: () => new XMLExporter().export(options.rootNode, options.vaultPath, missingNotesCount),
+		"llm-markdown": () =>
+			new LlmMarkdownExporter().export(
+				options.rootNode,
+				options.vaultPath,
+				missingNotesCount,
+				options.llmMarkdownTemplate ?? undefined
+			),
+		"print-friendly-markdown": () => new PrintFriendlyMarkdownExporter().export(options.rootNode),
+	};
 
-	return new PrintFriendlyMarkdownExporter().export(options.rootNode);
+	return exporters[normalizedFormat]();
 }
