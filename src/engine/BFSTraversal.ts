@@ -1,7 +1,11 @@
 import { TFile } from "obsidian";
 import { ExportNode, LinkTraversalMode } from "../types";
 import { ObsidianAPI } from "../obsidian-api";
-import { buildFolderPrefixes, pathMatchesFolderPrefixes } from "../utils/folderFilters";
+import {
+	buildFolderPrefixes,
+	FolderFilterMatcher,
+	pathMatchesFolderPrefixes,
+} from "../utils/folderFilters";
 
 export interface BFSTraversalOptions {
 	/**
@@ -21,7 +25,7 @@ export class BFSTraversal {
 	private contentDepth: number;
 	private titleDepth: number;
 	private linkTraversalMode: LinkTraversalMode;
-	private ignoredTraversalPrefixes: string[];
+	private ignoredTraversalPrefixes: FolderFilterMatcher[];
 	private visited: Set<string> = new Set();
 	private missingNotes: Set<string> = new Set();
 

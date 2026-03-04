@@ -30,11 +30,11 @@ const DEFAULT_OUTPUT_CHOICE_PRINT_FRIENDLY = "format:print-friendly-markdown";
 const DEFAULT_OUTPUT_CHOICE_LLM_PREFIX = "template:";
 
 /**
- * Converts textarea input (one folder path per line) into a normalized list.
+ * Converts settings input into a normalized folder filter list.
+ * Supports comma and newline separators for compatibility.
  */
 function parseFolderFilterText(text: string): string[] {
-	const lines = text.split("\n").map((line) => line.trim());
-	return normalizeFolderFilterList(lines);
+	return normalizeFolderFilterList([text]);
 }
 
 function normalizeTemplateDirectorySetting(path: string): string {
@@ -415,11 +415,12 @@ class SmartExportSettingTab extends PluginSettingTab {
 		new Setting(containerEl)
 			.setName("Ignored folders")
 			.setDesc(
-				"Optional. One folder path per line. Notes in these folders are excluded from traversal and won't appear in the export tree."
+				"Optional comma-separated folders or patterns to exclude from traversal, for example: templates, assets*, attachments*, /archive, /res*, /*/temp, /projects/*."
 			)
-			.addTextArea((textArea) =>
-				textArea
-					.setValue(this.plugin.settings.ignoredTraversalFolders.join("\n"))
+			.addText((text) =>
+				text
+					.setPlaceholder("Templates, assets*, attachments*")
+					.setValue(this.plugin.settings.ignoredTraversalFolders.join(", "))
 					.onChange((value) => {
 						this.plugin.settings.ignoredTraversalFolders = parseFolderFilterText(value);
 						debouncedSaveIgnoredFolders();

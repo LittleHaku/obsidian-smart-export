@@ -74,13 +74,14 @@ Trigger: tree preview render or export action.
 ### Ignored folder filtering
 
 - Configured via `Ignored folders` setting.
+- Accepts comma-separated exact folders and wildcard/path patterns.
 - Applies to all link modes (`outgoing`, `incoming`, `both`).
 - Excluded notes are not added or traversed further.
 - Selected root note is always kept.
 
 ### Debounced settings writes
 
-- `Ignored folders` textarea changes are debounced before `saveSettings()`.
+- `Ignored folders` text input changes are debounced before `saveSettings()`.
 - Prevents saving to disk on every keystroke.
 
 ## Shutdown Process

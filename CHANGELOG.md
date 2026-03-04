@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [1.5.1] - 2026-03-04
+## [1.5.1] - 2026-03-05
 
 ### Added
 
@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - `Markdown template folder` now supports typeahead selection inspired by Templater-style folder picking
+- `Ignored folders` now uses a comma-separated input with wildcard/path pattern support (for example `assets*`, `/*/temp`, `/projects/*`)
 
 ## [1.5.0] - 2026-03-04
 

@@ -3,7 +3,11 @@ import { AbstractInputSuggest, App, TFolder } from "obsidian";
 const MAX_FOLDER_SUGGESTIONS = 100;
 
 function normalizePathForMatch(value: string): string {
-	return value.trim().replace(/\\/g, "/").replace(/^\/+|\/+$/g, "").toLowerCase();
+	return value
+		.trim()
+		.replace(/\\/g, "/")
+		.replace(/^\/+|\/+$/g, "")
+		.toLowerCase();
 }
 
 /**
@@ -21,7 +25,9 @@ export class FolderPathSuggest extends AbstractInputSuggest<string> {
 	protected getSuggestions(query: string): string[] {
 		const normalizedQuery = normalizePathForMatch(query);
 		const folders = this.app.vault.getAllFolders(false);
-		const folderPaths = folders.map((folder: TFolder) => folder.path).filter((path) => path.length > 0);
+		const folderPaths = folders
+			.map((folder: TFolder) => folder.path)
+			.filter((path) => path.length > 0);
 
 		const startsWithMatches: string[] = [];
 		const containsMatches: string[] = [];
@@ -39,8 +45,7 @@ export class FolderPathSuggest extends AbstractInputSuggest<string> {
 		return [
 			...startsWithMatches.sort((a, b) => a.localeCompare(b)),
 			...containsMatches.sort((a, b) => a.localeCompare(b)),
-		]
-			.slice(0, MAX_FOLDER_SUGGESTIONS);
+		].slice(0, MAX_FOLDER_SUGGESTIONS);
 	}
 
 	renderSuggestion(folderPath: string, el: HTMLElement): void {
