@@ -74,8 +74,7 @@ function compilePattern(pattern: string): RegExp {
 	// Examples: /archive, /res*, /*/temp, /projects/*
 	const segments = normalizedPattern.split("/").map((segment) => globSegmentToRegex(segment));
 	const pathRegex = segments.join("/");
-	const anchor = rootAnchored ? "^" : "^";
-	return new RegExp(`${anchor}${pathRegex}(?:/|$)`);
+	return new RegExp(`^${pathRegex}(?:/|$)`);
 }
 
 /**
