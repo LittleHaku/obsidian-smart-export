@@ -12,6 +12,7 @@ import { BFSTraversal } from "./engine/BFSTraversal";
 import { buildExportOutput, normalizeExportFormat } from "./engine/exportOutput";
 import { ObsidianAPI } from "./obsidian-api";
 import { ExportModal } from "./ui/ExportModal";
+import { FolderPathSuggest } from "./ui/FolderPathSuggest";
 import { LinkTraversalMode, SmartExportSettings } from "./types";
 import { TEMPLATE_DOCS_URL } from "./constants/templateDocs";
 import { normalizeFolderFilterList } from "./utils/folderFilters";
@@ -277,6 +278,16 @@ class SmartExportSettingTab extends PluginSettingTab {
 			300,
 			true
 		);
+		const applyTemplateDirectorySetting = async (value: string): Promise<void> => {
+			const normalizedDirectory = normalizeTemplateDirectorySetting(value);
+			if (this.plugin.settings.llmMarkdownTemplateDirectory === normalizedDirectory) {
+				return;
+			}
+
+			this.plugin.settings.llmMarkdownTemplateDirectory = normalizedDirectory;
+			await this.plugin.saveSettings();
+			void reloadDefaultOutputOptions();
+		};
 
 		const applyDefaultOutputOptions = () => {
 			if (!defaultOutputDropdown) {
@@ -429,17 +440,16 @@ class SmartExportSettingTab extends PluginSettingTab {
 		new Setting(containerEl)
 			.setName("Markdown template folder")
 			.setDesc(templateDirectoryDesc)
-			.addText((text) =>
+			.addText((text) => {
 				text
 					.setPlaceholder(LLM_MARKDOWN_TEMPLATE_DIRECTORY)
 					.setValue(this.plugin.settings.llmMarkdownTemplateDirectory)
-					.onChange(async (value) => {
-						this.plugin.settings.llmMarkdownTemplateDirectory =
-							normalizeTemplateDirectorySetting(value);
-						await this.plugin.saveSettings();
-						void reloadDefaultOutputOptions();
-					})
-			);
+					.onChange((value) => {
+						void applyTemplateDirectorySetting(value);
+					});
+				new FolderPathSuggest(this.app, text.inputEl);
+				return text;
+			});
 
 		new Setting(containerEl)
 			.setName("Auto-select current note")

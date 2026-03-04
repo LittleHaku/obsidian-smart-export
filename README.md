@@ -55,7 +55,7 @@ Settings location: **Obsidian → Settings → Smart Export**
 - **Default output**: XML, print-friendly Markdown, `LLM-ready`, or your custom templates
 - **Default link direction**
 - **Ignored folders**: one folder path per line; excluded from traversal/export
-- **Markdown template folder**: vault-relative folder for custom Markdown templates
+- **Markdown template folder**: vault-relative folder for custom Markdown templates, with folder autocomplete
 - **Auto-select current note**
 - **Close modal after export**
 - **Show per-note token estimates**
