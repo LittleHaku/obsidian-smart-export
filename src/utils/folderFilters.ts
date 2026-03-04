@@ -56,10 +56,14 @@ function compilePattern(pattern: string): RegExp {
 	const rootAnchored = pattern.startsWith("/");
 	const normalizedPattern = rootAnchored ? pattern.slice(1) : pattern;
 
-	// Name pattern: no slash + wildcard, matches any folder segment.
-	// Example: assets* or *_temp
+	// Name pattern: no slash + wildcard.
+	// - Without leading "/": matches any folder segment (assets* or *_temp).
+	// - With leading "/": matches only at vault root (/res*).
 	if (!normalizedPattern.includes("/") && normalizedPattern.includes("*")) {
 		const segmentRegex = globSegmentToRegex(normalizedPattern);
+		if (rootAnchored) {
+			return new RegExp(`^${segmentRegex}(?:/|$)`);
+		}
 		return new RegExp(`(?:^|/)${segmentRegex}(?:/|$)`);
 	}
 

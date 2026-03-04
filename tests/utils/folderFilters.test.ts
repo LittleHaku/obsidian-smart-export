@@ -57,6 +57,7 @@ describe("folderFilters", () => {
 		expect(pathMatchesFolderPrefixes("projects/demo/phase1/Note.md", matchers)).toBe(true);
 
 		expect(pathMatchesFolderPrefixes("nested/archive/Note.md", matchers)).toBe(false);
+		expect(pathMatchesFolderPrefixes("nested/research/Note.md", matchers)).toBe(false);
 		expect(pathMatchesFolderPrefixes("temp/Note.md", matchers)).toBe(false);
 		expect(pathMatchesFolderPrefixes("projects/Note.md", matchers)).toBe(false);
 	});
