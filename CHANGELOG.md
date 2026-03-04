@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [1.5.0-beta.1] - 2026-03-03
+## [1.5.0] - 2026-03-04
 
 ### Added
 
@@ -28,6 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Template docs URL is centralized in shared constants to keep settings and modal links in sync
 - Template option listing now avoids unnecessary template file reads while building dropdown options
 - Documentation now clarifies explicit-template resolution behavior for modal/quick export flows and no-template fallback behavior
+- Settings copy for `Markdown template folder` now clearly states that all `.md` files in the folder are available as template options
 
 ### Fixed
 
