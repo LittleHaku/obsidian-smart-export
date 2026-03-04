@@ -1,6 +1,6 @@
 # Versioning and Releases
 
-Updated: February 16, 2026
+Updated: March 4, 2026
 
 ## Overview
 
@@ -27,6 +27,12 @@ The release workflow is triggered on tag push and determines prerelease status f
 
 - If tag contains `beta`, `alpha`, or `canary` → GitHub prerelease
 - Otherwise → normal GitHub release
+
+## Branch and tagging policy
+
+- Prefer merging release-ready PRs into `main` as a **single squash commit** to keep history clean.
+- Create and push **stable release tags only from `main`** (after merge), not from feature branches.
+- This avoids duplicate release builds and keeps release provenance unambiguous.
 
 ## Changelog rule
 
@@ -69,24 +75,19 @@ git push origin 1.3.0-beta.1
 
 After merge and validation:
 
-1. Bump to stable version:
-
-```bash
-pnpm version 1.3.0 --no-git-tag-version
-```
-
-2. Consolidate/rename prerelease changelog notes under:
-
-```md
-## [1.3.0] - YYYY-MM-DD
-```
-
-3. Commit and push.
-4. Create and push stable tag:
+1. Prepare release changes in your PR branch (version files + changelog), then merge into `main` using a single squash commit.
+2. On `main`, validate that `package.json`, `manifest.json`, `versions.json`, and `CHANGELOG.md` are aligned.
+3. Create and push the stable tag from `main`:
 
 ```bash
 git tag -a 1.3.0 -m "1.3.0"
 git push origin 1.3.0
+```
+
+4. If you shipped prerelease notes, ensure they are consolidated under:
+
+```md
+## [1.3.0] - YYYY-MM-DD
 ```
 
 ## Files updated by version bump
