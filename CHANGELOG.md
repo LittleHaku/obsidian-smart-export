@@ -7,6 +7,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.5.0] - 2026-03-04
+
+### Added
+
+- Directory-based custom Markdown template loading from a vault folder (default `smart-templates`)
+- Placeholder-based LLM Markdown template rendering (`{{metadata_yaml}}`, `{{note_contents_section}}`, metadata placeholders, and more)
+- Copyable built-in template pack in `templates/llm-markdown/` (`default` and `compact`)
+- New setting `Markdown template folder` with a direct link to the template placeholder docs
+- New unified `Output` dropdown in the export modal to choose XML/print-friendly outputs or built-in/custom Markdown templates
+- New `Default output` setting that supports built-in and custom Markdown templates (with docs link)
+- Settings and modal `Output` now show only built-in `LLM-ready` plus custom templates (`compact` remains as a docs/example template)
+
+### Changed
+
+- LLM Markdown export now supports selecting among multiple templates and falls back safely to built-in `default`
+- Built-in LLM Markdown templates are now centralized in shared constants so resolver and exporter use the same source of truth
+- Export format dispatch is now explicit and exhaustive to prevent silent fallback behavior for future formats
+- Template ids are now normalized with trimming across settings load, modal selection, and resolver lookup
+- Template docs URL is centralized in shared constants to keep settings and modal links in sync
+- Template option listing now avoids unnecessary template file reads while building dropdown options
+- Documentation now clarifies explicit-template resolution behavior for modal/quick export flows and no-template fallback behavior
+- Settings copy for `Markdown template folder` now clearly states that all `.md` files in the folder are available as template options
+
+### Fixed
+
+- `{{note_structure_description}}` is now populated with the expected default description content instead of an empty string
+
 ## [1.4.0] - 2026-03-03
 
 ### Added

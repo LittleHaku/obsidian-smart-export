@@ -63,6 +63,17 @@ describe("exportOutput", () => {
 		expect(output).toContain("## Note Contents");
 	});
 
+	it("builds llm markdown output from a custom template", () => {
+		const output = buildExportOutput({
+			rootNode: createTree(),
+			vaultPath: "Vault",
+			format: "llm-markdown",
+			llmMarkdownTemplate: "Root={{starting_note}}|Count={{total_notes_exported}}",
+		});
+
+		expect(output).toContain("Root=Root|Count=2");
+	});
+
 	it("builds print-friendly markdown output", () => {
 		const output = buildExportOutput({
 			rootNode: createTree(),

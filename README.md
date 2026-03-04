@@ -42,7 +42,8 @@ Use [BRAT (Beta Reviewers Auto-update Tool)](https://github.com/TfTHacker/obsidi
   - content depth (full content)
   - title depth (title-only context)
 - Folder exclusion (`Ignored folders`) for traversal.
-- Output formats: XML, LLM Markdown, Print-friendly Markdown.
+- Output formats: XML, Markdown templates, Print-friendly Markdown.
+- Multiple Markdown templates (built-in + custom folder templates) with placeholder support.
 - Token estimate display before export.
 
 ## 4 Settings
@@ -51,14 +52,49 @@ Settings location: **Obsidian → Settings → Smart Export**
 
 - **Default content depth**: `1-20`
 - **Default title depth**: `1-20`
-- **Default export format**
+- **Default output**: XML, print-friendly Markdown, `LLM-ready`, or your custom templates
 - **Default link direction**
 - **Ignored folders**: one folder path per line; excluded from traversal/export
+- **Markdown template folder**: vault-relative folder for custom Markdown templates
 - **Auto-select current note**
 - **Close modal after export**
 - **Show per-note token estimates**
 
 Folder exclusion details: [Excluded folders](docs/exclude-folders.md)
+
+### 4.1 Markdown templates
+
+For Markdown template exports, Smart Export can load a custom template from your vault:
+
+1. Choose a template folder in **Settings → Smart Export → Markdown template folder**.
+2. Create one or more `.md` notes in that folder.
+3. Add placeholders from [template docs](templates/README.md) to those notes.
+
+Default folder: `smart-templates` (you can change it).
+
+Template selection:
+
+- In the export modal, use the **Output** dropdown.
+- It includes XML, print-friendly Markdown, and Markdown template options.
+- Markdown template options include built-in templates and templates found in your configured folder.
+- Built-in templates are always available as fallback.
+
+Default recommendation:
+
+- In settings, the built-in option shown is **LLM-ready**.
+- This template is the recommended baseline because it includes structured guidance text for prompt/context ingestion.
+- Additional templates like `compact` are provided as examples for users who want starting points.
+
+Resolution order (only when no explicit template is selected / `templateId` is omitted):
+
+- `<template-folder>/llm-markdown.md`
+- first `.md` file in `<template-folder>` (alphabetical path order)
+- built-in default template if no custom template is found via the above rules
+
+Placeholder reference: [`templates/README.md`](templates/README.md)
+
+`{{metadata_yaml}}` includes the full YAML block with `---` delimiters and keys like
+`export_timestamp`, `starting_note`, `total_notes_exported`, and `missing_notes_count`.
 
 ## 5 Keyboard Shortcut
 
@@ -72,6 +108,7 @@ Folder exclusion details: [Excluded folders](docs/exclude-folders.md)
 - [Export architecture](docs/export-architecture.md)
 - [Startup process](docs/startup-process.md)
 - [Versioning and releases](docs/versioning-and-releases.md)
+- [Template placeholders](templates/README.md)
 - [Product requirements document](docs/PRD.md)
 - [Development tasks](docs/TASKS.md)
 - [Contributing guide](CONTRIBUTING.md)
