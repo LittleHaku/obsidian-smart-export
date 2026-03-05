@@ -40,10 +40,18 @@ describe("noteFilters", () => {
 		it("matches wildcard tag patterns", () => {
 			const matchers = compileTagFilterMatchers(["arch*", "*draft", "projects/*/old"]);
 			expect(tagsMatchFilterMatchers(["archive"], matchers)).toBe(true);
+			expect(tagsMatchFilterMatchers(["old/archive"], matchers)).toBe(true);
 			expect(tagsMatchFilterMatchers(["mydraft"], matchers)).toBe(true);
+			expect(tagsMatchFilterMatchers(["old/mydraft"], matchers)).toBe(true);
 			expect(tagsMatchFilterMatchers(["projects/client-a/old"], matchers)).toBe(true);
 			expect(tagsMatchFilterMatchers(["projects/client-a/old/phase-2"], matchers)).toBe(true);
-			expect(tagsMatchFilterMatchers(["projects/client-a/archive"], matchers)).toBe(false);
+			expect(tagsMatchFilterMatchers(["projects/client-a/archive"], matchers)).toBe(true);
+			expect(
+				tagsMatchFilterMatchers(
+					["projects/client-a/archive"],
+					compileTagFilterMatchers(["projects/*/old"])
+				)
+			).toBe(false);
 		});
 
 		it("handles empty tag values and empty matcher sets", () => {
@@ -51,6 +59,11 @@ describe("noteFilters", () => {
 			expect(tagsMatchFilterMatchers(["#"], matchers)).toBe(false);
 			expect(tagsMatchFilterMatchers(["draft"], [])).toBe(false);
 			expect(tagsMatchFilterMatchers([], matchers)).toBe(false);
+		});
+
+		it("deduplicates and skips invalid patterns when compiling tag matchers", () => {
+			const matchers = compileTagFilterMatchers(["#draft", "draft", "#"]);
+			expect(matchers.map((matcher) => matcher.pattern)).toEqual(["draft"]);
 		});
 	});
 
@@ -64,13 +77,24 @@ describe("noteFilters", () => {
 					"=missing-key",
 					42,
 				])
-			).toEqual(["status=done", "published=true", "archived", "invalid="]);
+			).toEqual(["status=done", "published=true", "archived"]);
 		});
 
 		it("returns an empty property rule list when input is not an array", () => {
 			expect(normalizePropertyFilterList(undefined)).toEqual([]);
 			expect(normalizePropertyFilterList("status=done")).toEqual([]);
 			expect(compilePropertyFilterRules(undefined)).toEqual([]);
+		});
+
+		it("deduplicates and skips invalid rules when compiling property filters", () => {
+			const rules = compilePropertyFilterRules(["status=done", "status=done", "=missing"]);
+			expect(rules).toEqual([
+				{
+					raw: "status=done",
+					key: "status",
+					expectedValue: "done",
+				},
+			]);
 		});
 
 		it("matches key-only property rules", () => {

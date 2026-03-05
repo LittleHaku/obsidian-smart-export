@@ -52,6 +52,9 @@ function compileTagPattern(pattern: string): RegExp {
 		.split("*")
 		.map((part) => escapeRegex(part))
 		.join("[^/]*");
+	if (!pattern.includes("/")) {
+		return new RegExp(`(?:^|/)${wildcardRegex}(?:/|$)`);
+	}
 	return new RegExp(`^${wildcardRegex}(?:/|$)`);
 }
 
@@ -79,6 +82,9 @@ function normalizePropertyRuleToken(token: string): string {
 		return "";
 	}
 	const value = normalizePropertyValue(trimmed.slice(equalIndex + 1));
+	if (!value) {
+		return "";
+	}
 	return `${key}=${value}`;
 }
 
@@ -168,7 +174,16 @@ export function compileTagFilterMatchers(patterns: string[] | undefined): TagFil
 		return [];
 	}
 
-	return normalizeTagFilterList(patterns).map((pattern) => ({
+	const normalized: string[] = [];
+	const seen = new Set<string>();
+	for (const pattern of patterns) {
+		const normalizedPattern = normalizeTagToken(pattern);
+		if (!normalizedPattern || seen.has(normalizedPattern)) continue;
+		seen.add(normalizedPattern);
+		normalized.push(normalizedPattern);
+	}
+
+	return normalized.map((pattern) => ({
 		pattern,
 		regex: compileTagPattern(pattern),
 	}));
@@ -225,7 +240,16 @@ export function compilePropertyFilterRules(rules: string[] | undefined): Propert
 		return [];
 	}
 
-	return normalizePropertyFilterList(rules).map((raw) => {
+	const normalized: string[] = [];
+	const seen = new Set<string>();
+	for (const rule of rules) {
+		const normalizedRule = normalizePropertyRuleToken(rule);
+		if (!normalizedRule || seen.has(normalizedRule)) continue;
+		seen.add(normalizedRule);
+		normalized.push(normalizedRule);
+	}
+
+	return normalized.map((raw) => {
 		const equalIndex = raw.indexOf("=");
 		if (equalIndex < 0) {
 			return {

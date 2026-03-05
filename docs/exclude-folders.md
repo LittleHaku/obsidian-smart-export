@@ -6,9 +6,9 @@ Updated: March 5, 2026
 
 Smart Export supports three exclusion settings:
 
-`Ignored folders`
-`Hide notes with tags`
-`Hide notes with property rules`
+- `Ignored folders`
+- `Hide notes with tags`
+- `Hide notes with property rules`
 
 Each one accepts comma-separated entries. Matching notes are excluded from traversal in every link direction (`outgoing`, `incoming`, `both`).
 
@@ -47,8 +47,8 @@ Tag filters are normalized (trimmed, lowercased, leading `#` removed), then matc
 2. Descendants-only rule:
    - `archive/*` matches `archive/2026` but not `archive`
 3. Wildcard rule:
-   - `arch*` (starts with)
-   - `*draft` (ends with)
+   - `arch*` (segment starts with `arch`, in any path segment)
+   - `*draft` (segment ends with `draft`, in any path segment)
    - `projects/*/old` (segment wildcard)
 
 ## Property matching model
