@@ -174,6 +174,8 @@ pnpm benchmark
 - Report bugs and request features in [GitHub Issues](https://github.com/LittleHaku/obsidian-smart-export/issues).
 - Support development: [Buy me a coffee](https://buymeacoffee.com/littlehaku).
 
+[![Star History Chart](https://api.star-history.com/image?repos=LittleHaku/obsidian-smart-export&type=date&legend=top-left)](https://www.star-history.com/?repos=LittleHaku%2Fobsidian-smart-export&type=date&legend=top-left)
+
 ## 11 License
 
 MIT License. See [LICENSE](LICENSE).
