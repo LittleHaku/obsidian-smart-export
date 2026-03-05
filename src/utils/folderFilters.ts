@@ -119,7 +119,7 @@ export function normalizeFolderFilterList(values: unknown): string[] {
 /**
  * Compiles filter entries into regex matchers for fast traversal checks.
  */
-export function buildFolderPrefixes(folders: string[] | undefined): FolderFilterMatcher[] {
+export function compileFolderFilterMatchers(folders: string[] | undefined): FolderFilterMatcher[] {
 	if (!folders || folders.length === 0) {
 		return [];
 	}
@@ -134,7 +134,10 @@ export function buildFolderPrefixes(folders: string[] | undefined): FolderFilter
  * Matches a note path against compiled folder filter matchers.
  * The filename is removed before matching, so rules apply to folder paths only.
  */
-export function pathMatchesFolderPrefixes(path: string, matchers: FolderFilterMatcher[]): boolean {
+export function pathMatchesFolderFilterMatchers(
+	path: string,
+	matchers: FolderFilterMatcher[]
+): boolean {
 	const folderPath = toFolderPath(path);
 	if (!folderPath) {
 		return false;

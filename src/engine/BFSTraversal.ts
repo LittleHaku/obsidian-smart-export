@@ -2,9 +2,9 @@ import { TFile } from "obsidian";
 import { ExportNode, LinkTraversalMode } from "../types";
 import { ObsidianAPI } from "../obsidian-api";
 import {
-	buildFolderPrefixes,
+	compileFolderFilterMatchers,
 	FolderFilterMatcher,
-	pathMatchesFolderPrefixes,
+	pathMatchesFolderFilterMatchers,
 } from "../utils/folderFilters";
 
 export interface BFSTraversalOptions {
@@ -25,7 +25,7 @@ export class BFSTraversal {
 	private contentDepth: number;
 	private titleDepth: number;
 	private linkTraversalMode: LinkTraversalMode;
-	private ignoredTraversalPrefixes: FolderFilterMatcher[];
+	private ignoredTraversalMatchers: FolderFilterMatcher[];
 	private visited: Set<string> = new Set();
 	private missingNotes: Set<string> = new Set();
 
@@ -47,7 +47,7 @@ export class BFSTraversal {
 		this.contentDepth = contentDepth;
 		this.titleDepth = titleDepth;
 		this.linkTraversalMode = linkTraversalMode;
-		this.ignoredTraversalPrefixes = buildFolderPrefixes(options.ignoredTraversalFolders);
+		this.ignoredTraversalMatchers = compileFolderFilterMatchers(options.ignoredTraversalFolders);
 	}
 
 	/**
@@ -161,11 +161,11 @@ export class BFSTraversal {
 	}
 
 	private shouldExcludeTraversalFile(file: TFile): boolean {
-		if (this.ignoredTraversalPrefixes.length === 0) {
+		if (this.ignoredTraversalMatchers.length === 0) {
 			return false;
 		}
 
-		return pathMatchesFolderPrefixes(file.path, this.ignoredTraversalPrefixes);
+		return pathMatchesFolderFilterMatchers(file.path, this.ignoredTraversalMatchers);
 	}
 
 	/**

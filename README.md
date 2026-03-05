@@ -54,7 +54,7 @@ Settings location: **Obsidian → Settings → Smart Export**
 - **Default title depth**: `1-20`
 - **Default output**: XML, print-friendly Markdown, `LLM-ready`, or your custom templates
 - **Default link direction**
-- **Ignored folders**: comma-separated folders/patterns (for example `templates, assets*, /archive`) excluded from traversal/export
+- **Ignored folders**: comma-separated folders/patterns (for example `templates, assets*, /archive`) excluded from traversal/export. Leading `/` anchors to vault root.
 - **Markdown template folder**: vault-relative folder for custom Markdown templates, with folder autocomplete
 - **Auto-select current note**
 - **Close modal after export**

@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
-	buildFolderPrefixes,
+	compileFolderFilterMatchers,
 	normalizeFolderFilterList,
 	normalizeFolderFilterPath,
-	pathMatchesFolderPrefixes,
+	pathMatchesFolderFilterMatchers,
 } from "../../src/utils/folderFilters";
 
 describe("folderFilters", () => {
@@ -34,31 +34,31 @@ describe("folderFilters", () => {
 	});
 
 	it("matches exact folder prefixes (legacy behavior)", () => {
-		const matchers = buildFolderPrefixes(["Archive", "Research/AI"]);
-		expect(pathMatchesFolderPrefixes("Archive/Note.md", matchers)).toBe(true);
-		expect(pathMatchesFolderPrefixes("Research/AI/Model.md", matchers)).toBe(true);
-		expect(pathMatchesFolderPrefixes("Archive.md", matchers)).toBe(false);
-		expect(pathMatchesFolderPrefixes("Research/Notes.md", matchers)).toBe(false);
+		const matchers = compileFolderFilterMatchers(["Archive", "Research/AI"]);
+		expect(pathMatchesFolderFilterMatchers("Archive/Note.md", matchers)).toBe(true);
+		expect(pathMatchesFolderFilterMatchers("Research/AI/Model.md", matchers)).toBe(true);
+		expect(pathMatchesFolderFilterMatchers("Archive.md", matchers)).toBe(false);
+		expect(pathMatchesFolderFilterMatchers("Research/Notes.md", matchers)).toBe(false);
 	});
 
 	it("matches wildcard name patterns against any folder segment", () => {
-		const matchers = buildFolderPrefixes(["assets*", "*_temp"]);
-		expect(pathMatchesFolderPrefixes("media/assets/Note.md", matchers)).toBe(true);
-		expect(pathMatchesFolderPrefixes("work/cache_temp/Note.md", matchers)).toBe(true);
-		expect(pathMatchesFolderPrefixes("media/asset/Note.md", matchers)).toBe(false);
+		const matchers = compileFolderFilterMatchers(["assets*", "*_temp"]);
+		expect(pathMatchesFolderFilterMatchers("media/assets/Note.md", matchers)).toBe(true);
+		expect(pathMatchesFolderFilterMatchers("work/cache_temp/Note.md", matchers)).toBe(true);
+		expect(pathMatchesFolderFilterMatchers("media/asset/Note.md", matchers)).toBe(false);
 	});
 
 	it("matches root/path patterns", () => {
-		const matchers = buildFolderPrefixes(["/archive", "/res*", "/*/temp", "/projects/*"]);
-		expect(pathMatchesFolderPrefixes("archive/Note.md", matchers)).toBe(true);
-		expect(pathMatchesFolderPrefixes("research/Note.md", matchers)).toBe(true);
-		expect(pathMatchesFolderPrefixes("work/temp/Note.md", matchers)).toBe(true);
-		expect(pathMatchesFolderPrefixes("projects/demo/Note.md", matchers)).toBe(true);
-		expect(pathMatchesFolderPrefixes("projects/demo/phase1/Note.md", matchers)).toBe(true);
+		const matchers = compileFolderFilterMatchers(["/archive", "/res*", "/*/temp", "/projects/*"]);
+		expect(pathMatchesFolderFilterMatchers("archive/Note.md", matchers)).toBe(true);
+		expect(pathMatchesFolderFilterMatchers("research/Note.md", matchers)).toBe(true);
+		expect(pathMatchesFolderFilterMatchers("work/temp/Note.md", matchers)).toBe(true);
+		expect(pathMatchesFolderFilterMatchers("projects/demo/Note.md", matchers)).toBe(true);
+		expect(pathMatchesFolderFilterMatchers("projects/demo/phase1/Note.md", matchers)).toBe(true);
 
-		expect(pathMatchesFolderPrefixes("nested/archive/Note.md", matchers)).toBe(false);
-		expect(pathMatchesFolderPrefixes("nested/research/Note.md", matchers)).toBe(false);
-		expect(pathMatchesFolderPrefixes("temp/Note.md", matchers)).toBe(false);
-		expect(pathMatchesFolderPrefixes("projects/Note.md", matchers)).toBe(false);
+		expect(pathMatchesFolderFilterMatchers("nested/archive/Note.md", matchers)).toBe(false);
+		expect(pathMatchesFolderFilterMatchers("nested/research/Note.md", matchers)).toBe(false);
+		expect(pathMatchesFolderFilterMatchers("temp/Note.md", matchers)).toBe(false);
+		expect(pathMatchesFolderFilterMatchers("projects/Note.md", matchers)).toBe(false);
 	});
 });

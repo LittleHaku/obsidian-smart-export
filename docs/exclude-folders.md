@@ -38,11 +38,12 @@ Rules are normalized (trimmed, slash-normalized, deduplicated), then applied to 
 
 - If a linked note matches any exclusion rule, it is not added to the export tree and is not traversed.
 - The selected root note is always kept.
+- Leading `/` is a root anchor. If you want segment matching anywhere in the path, remove the leading `/` (for example `assets*` instead of `/assets*`).
 
 ## Where this is used in code
 
 - Settings parsing: `src/main.ts`
-- Filter normalization + matcher compilation: `src/utils/folderFilters.ts`
+- Filter normalization + matcher compilation: `src/utils/folderFilters.ts` (`compileFolderFilterMatchers`, `pathMatchesFolderFilterMatchers`)
 - Traversal exclusion checks: `src/engine/BFSTraversal.ts`
 - Traversal tests: `tests/engine/BFSTraversal.test.ts`
 - Filter utility tests: `tests/utils/folderFilters.test.ts`

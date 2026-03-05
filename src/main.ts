@@ -261,6 +261,7 @@ export default class SmartExportPlugin extends Plugin {
 
 class SmartExportSettingTab extends PluginSettingTab {
 	plugin: SmartExportPlugin;
+	private templateFolderSuggest: FolderPathSuggest | null = null;
 
 	constructor(app: App, plugin: SmartExportPlugin) {
 		super(app, plugin);
@@ -331,6 +332,8 @@ class SmartExportSettingTab extends PluginSettingTab {
 			applyDefaultOutputOptions();
 		};
 
+		this.templateFolderSuggest?.destroy();
+		this.templateFolderSuggest = null;
 		containerEl.empty();
 
 		new Setting(containerEl)
@@ -448,7 +451,7 @@ class SmartExportSettingTab extends PluginSettingTab {
 					.onChange((value) => {
 						void applyTemplateDirectorySetting(value);
 					});
-				new FolderPathSuggest(this.app, text.inputEl);
+				this.templateFolderSuggest = new FolderPathSuggest(this.app, text.inputEl);
 				return text;
 			});
 
@@ -483,5 +486,11 @@ class SmartExportSettingTab extends PluginSettingTab {
 					await this.plugin.saveSettings();
 				})
 			);
+	}
+
+	hide(): void {
+		this.templateFolderSuggest?.destroy();
+		this.templateFolderSuggest = null;
+		super.hide();
 	}
 }
