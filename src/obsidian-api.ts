@@ -1,4 +1,4 @@
-import { App, TFile, Reference } from "obsidian";
+import { App, TFile, Reference, getAllTags } from "obsidian";
 import { normalizeNoteTag } from "./utils/noteFilters";
 
 /**
@@ -123,32 +123,16 @@ export class ObsidianAPI {
 	 * Reads normalized tags for a note from inline tags and frontmatter tags.
 	 */
 	public getNoteTags(file: TFile): string[] {
-		const cache = this.app.metadataCache.getCache(file.path) as
-			| {
-					tags?: Array<{ tag?: string }>;
-					frontmatter?: Record<string, unknown>;
-			  }
-			| null
-			| undefined;
+		const cache = this.app.metadataCache.getCache(file.path);
 		if (!cache) {
 			return [];
 		}
 
 		const normalizedTags = new Set<string>();
-
-		for (const tagEntry of cache.tags ?? []) {
-			if (!tagEntry || typeof tagEntry.tag !== "string") continue;
-			const normalizedTag = normalizeNoteTag(tagEntry.tag);
+		for (const rawTag of getAllTags(cache) ?? []) {
+			const normalizedTag = normalizeNoteTag(rawTag);
 			if (!normalizedTag) continue;
 			normalizedTags.add(normalizedTag);
-		}
-
-		const frontmatter = cache.frontmatter;
-		if (frontmatter && typeof frontmatter === "object" && !Array.isArray(frontmatter)) {
-			const tagFields = [frontmatter.tags, frontmatter.tag];
-			for (const tagField of tagFields) {
-				this.collectFrontmatterTags(tagField, normalizedTags);
-			}
 		}
 
 		return [...normalizedTags];
@@ -167,28 +151,6 @@ export class ObsidianAPI {
 			return null;
 		}
 		return frontmatter;
-	}
-
-	private collectFrontmatterTags(value: unknown, output: Set<string>): void {
-		if (typeof value === "string") {
-			for (const token of value.split(/[,\n]/)) {
-				const normalizedTag = normalizeNoteTag(token);
-				if (!normalizedTag) continue;
-				output.add(normalizedTag);
-			}
-			return;
-		}
-
-		if (!Array.isArray(value)) {
-			return;
-		}
-
-		for (const tagValue of value) {
-			if (typeof tagValue !== "string") continue;
-			const normalizedTag = normalizeNoteTag(tagValue);
-			if (!normalizedTag) continue;
-			output.add(normalizedTag);
-		}
 	}
 
 	// Future methods for API interaction will go here.

@@ -8,6 +8,15 @@ export class LinkCache {}
 export class Position {}
 export class Loc {}
 
+interface MockTagCache {
+	tag: string;
+}
+
+interface MockCachedMetadata {
+	tags?: MockTagCache[];
+	frontmatter?: Record<string, unknown>;
+}
+
 export function normalizePath(path: string): string {
 	return path
 		.replace(/\u00A0/g, " ")
@@ -55,4 +64,43 @@ export function stringifyYaml(obj: unknown): string {
 			.map(([key, value]) => `${key}: ${formatYamlValue(value)}`)
 			.join("\n") + "\n"
 	);
+}
+
+export function getAllTags(cache: unknown): string[] | null {
+	if (!cache || typeof cache !== "object") {
+		return null;
+	}
+
+	const metadata = cache as MockCachedMetadata;
+	const tags = new Set<string>();
+
+	for (const tagEntry of metadata.tags ?? []) {
+		if (!tagEntry || typeof tagEntry.tag !== "string") continue;
+		tags.add(tagEntry.tag);
+	}
+
+	const frontmatter = metadata.frontmatter;
+	if (frontmatter && typeof frontmatter === "object" && !Array.isArray(frontmatter)) {
+		const tagFields = [frontmatter.tags, frontmatter.tag];
+		for (const tagField of tagFields) {
+			if (typeof tagField === "string") {
+				for (const token of tagField.split(/[,\n]/)) {
+					const trimmed = token.trim();
+					if (!trimmed) continue;
+					tags.add(trimmed.startsWith("#") ? trimmed : `#${trimmed}`);
+				}
+				continue;
+			}
+			if (Array.isArray(tagField)) {
+				for (const tagValue of tagField) {
+					if (typeof tagValue !== "string") continue;
+					const trimmed = tagValue.trim();
+					if (!trimmed) continue;
+					tags.add(trimmed.startsWith("#") ? trimmed : `#${trimmed}`);
+				}
+			}
+		}
+	}
+
+	return tags.size > 0 ? [...tags] : null;
 }
