@@ -1,6 +1,6 @@
 # Export Architecture
 
-Updated: March 3, 2026
+Updated: March 5, 2026
 
 ## Overview
 
@@ -14,6 +14,7 @@ Core modules:
 - `src/engine/LlmMarkdownExporter.ts`
 - `src/engine/PrintFriendlyMarkdownExporter.ts`
 - `src/utils/folderFilters.ts`
+- `src/utils/noteFilters.ts`
 - `src/utils/llmMarkdownTemplateResolver.ts`
 
 ## 1) Export Runtime Flow
@@ -31,7 +32,7 @@ sequenceDiagram
     Traversal->>API: getFileByPath(rootPath)
     loop BFS levels
         Traversal->>API: get outgoing/incoming links
-        Traversal->>Traversal: apply ignored folder filter
+        Traversal->>Traversal: apply folder/tag/property filters
         Traversal->>Traversal: add node + queue children
     end
     Traversal->>API: read content for content-eligible nodes
@@ -66,11 +67,11 @@ Notes:
 - The modal output dropdown uses the same built-in filtering as settings (`LLM-ready` only).
 - `compact` remains in the repository as a reference template example for users to copy/customize.
 
-## 2) Traversal and Folder Exclusion Logic
+## 2) Traversal and Exclusion Logic
 
 ```mermaid
 flowchart TD
-    A[Discovered linked file] --> B{In ignored folders?}
+    A[Discovered linked file] --> B{Matches folder/tag/property exclusion?}
     B -- Yes --> C[Skip node]
     B -- No --> D{Already visited?}
     D -- Yes --> E[Skip duplicate]
@@ -100,11 +101,15 @@ flowchart LR
     A3[Title depth]
     A4[Link direction]
     A5[Ignored folders]
+    A6[Ignored tag patterns]
+    A7[Ignored property rules]
     A1 --> B
     A2 --> B
     A3 --> B
     A4 --> B
     A5 --> B
+    A6 --> B
+    A7 --> B
 ```
 
-Cache keys serialize ignored folders with `JSON.stringify(...)` to avoid delimiter collisions.
+Cache keys serialize ignored folders/tags/property rules with `JSON.stringify(...)` to avoid delimiter collisions.

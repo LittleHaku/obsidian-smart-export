@@ -16,6 +16,7 @@ import { FolderPathSuggest } from "./ui/FolderPathSuggest";
 import { LinkTraversalMode, SmartExportSettings } from "./types";
 import { TEMPLATE_DOCS_URL } from "./constants/templateDocs";
 import { normalizeFolderFilterList } from "./utils/folderFilters";
+import { normalizePropertyFilterList, normalizeTagFilterList } from "./utils/noteFilters";
 import {
 	DEFAULT_BUILTIN_LLM_TEMPLATE_ID,
 	LLM_MARKDOWN_TEMPLATE_DIRECTORY,
@@ -35,6 +36,22 @@ const DEFAULT_OUTPUT_CHOICE_LLM_PREFIX = "template:";
  */
 function parseFolderFilterText(text: string): string[] {
 	return normalizeFolderFilterList([text]);
+}
+
+/**
+ * Converts settings input into a normalized tag filter list.
+ * Supports comma and newline separators for compatibility.
+ */
+function parseTagFilterText(text: string): string[] {
+	return normalizeTagFilterList([text]);
+}
+
+/**
+ * Converts settings input into a normalized property-rule filter list.
+ * Supports comma and newline separators for compatibility.
+ */
+function parsePropertyRuleText(text: string): string[] {
+	return normalizePropertyFilterList([text]);
 }
 
 function normalizeTemplateDirectorySetting(path: string): string {
@@ -102,6 +119,8 @@ const DEFAULT_SETTINGS: SmartExportSettings = {
 	closeModalAfterExport: false,
 	showTokenEstimatesInTree: false,
 	ignoredTraversalFolders: [],
+	ignoredTraversalTagPatterns: [],
+	ignoredTraversalPropertyRules: [],
 	llmMarkdownTemplateDirectory: LLM_MARKDOWN_TEMPLATE_DIRECTORY,
 };
 
@@ -175,6 +194,12 @@ export default class SmartExportPlugin extends Plugin {
 		this.settings.ignoredTraversalFolders = normalizeFolderFilterList(
 			this.settings.ignoredTraversalFolders
 		);
+		this.settings.ignoredTraversalTagPatterns = normalizeTagFilterList(
+			this.settings.ignoredTraversalTagPatterns
+		);
+		this.settings.ignoredTraversalPropertyRules = normalizePropertyFilterList(
+			this.settings.ignoredTraversalPropertyRules
+		);
 		this.settings.defaultExportFormat = normalizeExportFormat(
 			(storedSettings as { defaultExportFormat?: unknown } | null)?.defaultExportFormat ??
 				this.settings.defaultExportFormat
@@ -222,6 +247,8 @@ export default class SmartExportPlugin extends Plugin {
 				this.settings.defaultLinkTraversalMode,
 				{
 					ignoredTraversalFolders: this.settings.ignoredTraversalFolders,
+					ignoredTraversalTagPatterns: this.settings.ignoredTraversalTagPatterns,
+					ignoredTraversalPropertyRules: this.settings.ignoredTraversalPropertyRules,
 				}
 			);
 			const exportTree = await traversal.traverse(rootFile.path);
@@ -273,6 +300,20 @@ class SmartExportSettingTab extends PluginSettingTab {
 		let defaultOutputDropdown: DropdownComponent | null = null;
 		let defaultOutputTemplateOptions: LlmMarkdownTemplateOption[] = [];
 		const debouncedSaveIgnoredFolders = debounce(
+			() => {
+				void this.plugin.saveSettings();
+			},
+			300,
+			true
+		);
+		const debouncedSaveIgnoredTags = debounce(
+			() => {
+				void this.plugin.saveSettings();
+			},
+			300,
+			true
+		);
+		const debouncedSaveIgnoredProperties = debounce(
 			() => {
 				void this.plugin.saveSettings();
 			},
@@ -427,6 +468,36 @@ class SmartExportSettingTab extends PluginSettingTab {
 					.onChange((value) => {
 						this.plugin.settings.ignoredTraversalFolders = parseFolderFilterText(value);
 						debouncedSaveIgnoredFolders();
+					})
+			);
+
+		new Setting(containerEl)
+			.setName("Hide notes with tags")
+			.setDesc(
+				"Optional comma-separated tag patterns to exclude from traversal, for example: archive*, #draft, projects/*/old. Use archive for tag+descendants or archive/* for descendants only."
+			)
+			.addText((text) =>
+				text
+					.setPlaceholder("Archive*, #draft, projects/*/old")
+					.setValue(this.plugin.settings.ignoredTraversalTagPatterns.join(", "))
+					.onChange((value) => {
+						this.plugin.settings.ignoredTraversalTagPatterns = parseTagFilterText(value);
+						debouncedSaveIgnoredTags();
+					})
+			);
+
+		new Setting(containerEl)
+			.setName("Hide notes with property rules")
+			.setDesc(
+				"Optional comma-separated rules using key or key=value, for example: status=done, published=true, archived."
+			)
+			.addText((text) =>
+				text
+					.setPlaceholder("Status=done, published=true, archived")
+					.setValue(this.plugin.settings.ignoredTraversalPropertyRules.join(", "))
+					.onChange((value) => {
+						this.plugin.settings.ignoredTraversalPropertyRules = parsePropertyRuleText(value);
+						debouncedSaveIgnoredProperties();
 					})
 			);
 

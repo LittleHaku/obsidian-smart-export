@@ -47,6 +47,10 @@ export interface SmartExportSettings {
 	showTokenEstimatesInTree: boolean;
 	/** Folders excluded from traversal in all link directions. */
 	ignoredTraversalFolders: string[];
+	/** Tag patterns that exclude notes from traversal in all link directions. */
+	ignoredTraversalTagPatterns: string[];
+	/** Frontmatter rules that exclude notes from traversal in all link directions. */
+	ignoredTraversalPropertyRules: string[];
 	/** Vault-relative folder used to resolve custom LLM Markdown templates. */
 	llmMarkdownTemplateDirectory: string;
 }
