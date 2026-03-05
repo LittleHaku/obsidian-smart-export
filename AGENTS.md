@@ -77,4 +77,8 @@
 
 - Use tags without `v` prefix: `X.Y.Z` or prerelease `X.Y.Z-beta.N`.
 - Changelog header must match the tag exactly (for release note extraction).
+- Changelog section intent:
+  - `Added`: new features introduced in that version.
+  - `Changed`: behavior/performance/UX refinements to features in that same version.
+  - `Fixed`: regressions/bugs that existed in a previously shipped version.
 - See `docs/versioning-and-releases.md` for full flow.

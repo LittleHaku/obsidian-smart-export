@@ -45,6 +45,12 @@ If the tag is:
 
 If no matching section exists, release notes fallback text is generated automatically.
 
+Use section types consistently:
+
+- `Added`: new features introduced in that version.
+- `Changed`: behavior/performance/UX refinements to features being shipped in that same version.
+- `Fixed`: regressions/bugs from an already shipped version (not just in-progress branch work).
+
 ## Prerelease flow (for BRAT testing)
 
 Use this flow when a feature is still in a PR branch and should be tested without a final release:
