@@ -6,6 +6,14 @@ import {
 	FolderFilterMatcher,
 	pathMatchesFolderFilterMatchers,
 } from "../utils/folderFilters";
+import {
+	compilePropertyFilterRules,
+	compileTagFilterMatchers,
+	frontmatterMatchesPropertyFilterRules,
+	PropertyFilterRule,
+	TagFilterMatcher,
+	tagsMatchFilterMatchers,
+} from "../utils/noteFilters";
 
 export interface BFSTraversalOptions {
 	/**
@@ -13,6 +21,14 @@ export interface BFSTraversalOptions {
 	 * This applies to outgoing, incoming, and both traversal modes.
 	 */
 	ignoredTraversalFolders?: string[];
+	/**
+	 * Notes matching any tag pattern are excluded from traversal.
+	 */
+	ignoredTraversalTagPatterns?: string[];
+	/**
+	 * Notes matching any frontmatter rule are excluded from traversal.
+	 */
+	ignoredTraversalPropertyRules?: string[];
 }
 
 /**
@@ -26,6 +42,8 @@ export class BFSTraversal {
 	private titleDepth: number;
 	private linkTraversalMode: LinkTraversalMode;
 	private ignoredTraversalMatchers: FolderFilterMatcher[];
+	private ignoredTraversalTagMatchers: TagFilterMatcher[];
+	private ignoredTraversalPropertyRules: PropertyFilterRule[];
 	private visited: Set<string> = new Set();
 	private missingNotes: Set<string> = new Set();
 
@@ -48,6 +66,12 @@ export class BFSTraversal {
 		this.titleDepth = titleDepth;
 		this.linkTraversalMode = linkTraversalMode;
 		this.ignoredTraversalMatchers = compileFolderFilterMatchers(options.ignoredTraversalFolders);
+		this.ignoredTraversalTagMatchers = compileTagFilterMatchers(
+			options.ignoredTraversalTagPatterns
+		);
+		this.ignoredTraversalPropertyRules = compilePropertyFilterRules(
+			options.ignoredTraversalPropertyRules
+		);
 	}
 
 	/**
@@ -161,11 +185,28 @@ export class BFSTraversal {
 	}
 
 	private shouldExcludeTraversalFile(file: TFile): boolean {
-		if (this.ignoredTraversalMatchers.length === 0) {
-			return false;
+		if (
+			this.ignoredTraversalMatchers.length > 0 &&
+			pathMatchesFolderFilterMatchers(file.path, this.ignoredTraversalMatchers)
+		) {
+			return true;
 		}
 
-		return pathMatchesFolderFilterMatchers(file.path, this.ignoredTraversalMatchers);
+		if (this.ignoredTraversalTagMatchers.length > 0) {
+			const noteTags = this.obsidianAPI.getNoteTags(file);
+			if (tagsMatchFilterMatchers(noteTags, this.ignoredTraversalTagMatchers)) {
+				return true;
+			}
+		}
+
+		if (this.ignoredTraversalPropertyRules.length > 0) {
+			const frontmatter = this.obsidianAPI.getNoteFrontmatter(file);
+			if (frontmatterMatchesPropertyFilterRules(frontmatter, this.ignoredTraversalPropertyRules)) {
+				return true;
+			}
+		}
+
+		return false;
 	}
 
 	/**

@@ -1,6 +1,6 @@
 # Smart Export Startup Process
 
-Updated: February 16, 2026
+Updated: March 5, 2026
 
 ## Table of Contents
 
@@ -11,7 +11,7 @@ Updated: February 16, 2026
   - [Phase 3: Tree build and export](#phase-3-tree-build-and-export)
 - [Critical Runtime Mechanisms](#critical-runtime-mechanisms)
   - [Traversal cache keys](#traversal-cache-keys)
-  - [Ignored folder filtering](#ignored-folder-filtering)
+  - [Ignored note filtering](#ignored-note-filtering)
   - [Debounced settings writes](#debounced-settings-writes)
 - [Shutdown Process](#shutdown-process)
 
@@ -58,9 +58,9 @@ Trigger: ribbon click or command invocation.
 
 Trigger: tree preview render or export action.
 
-1. Modal computes a traversal cache key from root/depth/mode/folder filters.
+1. Modal computes a traversal cache key from root/depth/mode/folder/tag/property filters.
 2. On cache miss, `BFSTraversal.traverse(...)` builds the note tree.
-3. Folder exclusions are applied before nodes enter the tree.
+3. Folder/tag/property exclusions are applied before nodes enter the tree.
 4. Exporter serializes to XML, LLM Markdown, or Print-friendly Markdown.
 5. Output is copied to clipboard.
 
@@ -69,19 +69,22 @@ Trigger: tree preview render or export action.
 ### Traversal cache keys
 
 - Implemented in `ExportModal.getTreeCacheKey()`.
-- Uses `JSON.stringify(ignoredTraversalFolders)` to avoid delimiter collisions.
+- Uses `JSON.stringify(...)` on ignored folders/tags/property rules to avoid delimiter collisions.
 
-### Ignored folder filtering
+### Ignored note filtering
 
-- Configured via `Ignored folders` setting.
-- Accepts comma-separated exact folders and wildcard/path patterns.
+- Configured via:
+  - `Ignored folders`
+  - `Hide notes with tags`
+  - `Hide notes with property rules`
+- Accepts comma-separated entries.
 - Applies to all link modes (`outgoing`, `incoming`, `both`).
 - Excluded notes are not added or traversed further.
 - Selected root note is always kept.
 
 ### Debounced settings writes
 
-- `Ignored folders` text input changes are debounced before `saveSettings()`.
+- Exclusion text input changes are debounced before `saveSettings()`.
 - Prevents saving to disk on every keystroke.
 
 ## Shutdown Process

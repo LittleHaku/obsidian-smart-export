@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.6.0] - 2026-03-05
+
+### Added
+
+- New traversal exclusion setting `Hide notes with tags` (comma-separated tag patterns, for example `archive*, #draft, projects/*/old`)
+- New traversal exclusion setting `Hide notes with property rules` (comma-separated `key` / `key=value` rules, for example `status=done, published=true, archived`)
+- New note filter utility module for tag/property matching (`src/utils/noteFilters.ts`) with dedicated test coverage (`tests/utils/noteFilters.test.ts`)
+- Expanded traversal test coverage for tag/property-based exclusions (`tests/engine/BFSTraversal.test.ts`)
+
+### Changed
+
+- Traversal exclusion now supports folders, tags, and property rules in all link modes (`outgoing`, `incoming`, `both`)
+- Export tree cache keys now include serialized ignored tag patterns and property rules to prevent stale tree reuse across filter changes
+- Exclusion documentation now covers folder/tag/property rule behavior in one place (`docs/exclude-folders.md`)
+
 ## [1.5.1] - 2026-03-05
 
 ### Added

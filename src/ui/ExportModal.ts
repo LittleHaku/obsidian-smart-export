@@ -688,6 +688,8 @@ export class ExportModal extends Modal {
 				this.linkTraversalMode,
 				{
 					ignoredTraversalFolders: this.settings.ignoredTraversalFolders,
+					ignoredTraversalTagPatterns: this.settings.ignoredTraversalTagPatterns,
+					ignoredTraversalPropertyRules: this.settings.ignoredTraversalPropertyRules,
 				}
 			);
 			const exportTree = await traversal.traverse(this.selectedFile.path);
@@ -847,7 +849,11 @@ export class ExportModal extends Modal {
 	private getTreeCacheKey(): string {
 		const rootPath = this.selectedFile?.path ?? "unknown";
 		const ignoredTraversalFolders = JSON.stringify(this.settings.ignoredTraversalFolders);
-		return `${rootPath}|content:${this.contentDepth}|title:${this.titleDepth}|mode:${this.linkTraversalMode}|traversalIgnored:${ignoredTraversalFolders}`;
+		const ignoredTraversalTagPatterns = JSON.stringify(this.settings.ignoredTraversalTagPatterns);
+		const ignoredTraversalPropertyRules = JSON.stringify(
+			this.settings.ignoredTraversalPropertyRules
+		);
+		return `${rootPath}|content:${this.contentDepth}|title:${this.titleDepth}|mode:${this.linkTraversalMode}|traversalIgnored:${ignoredTraversalFolders}|traversalIgnoredTags:${ignoredTraversalTagPatterns}|traversalIgnoredProperties:${ignoredTraversalPropertyRules}`;
 	}
 
 	/**

@@ -1,4 +1,5 @@
-import { App, TFile, Reference } from "obsidian";
+import { App, TFile, Reference, getAllTags } from "obsidian";
+import { normalizeNoteTag } from "./utils/noteFilters";
 
 /**
  * A wrapper class for the Obsidian API to provide a stable, testable interface
@@ -116,6 +117,40 @@ export class ObsidianAPI {
 			return "";
 		}
 		return this.app.vault.cachedRead(file);
+	}
+
+	/**
+	 * Reads normalized tags for a note from inline tags and frontmatter tags.
+	 */
+	public getNoteTags(file: TFile): string[] {
+		const cache = this.app.metadataCache.getCache(file.path);
+		if (!cache) {
+			return [];
+		}
+
+		const normalizedTags = new Set<string>();
+		for (const rawTag of getAllTags(cache) ?? []) {
+			const normalizedTag = normalizeNoteTag(rawTag);
+			if (!normalizedTag) continue;
+			normalizedTags.add(normalizedTag);
+		}
+
+		return [...normalizedTags];
+	}
+
+	/**
+	 * Reads note frontmatter as a plain object.
+	 */
+	public getNoteFrontmatter(file: TFile): Record<string, unknown> | null {
+		const cache = this.app.metadataCache.getCache(file.path) as
+			| { frontmatter?: Record<string, unknown> }
+			| null
+			| undefined;
+		const frontmatter = cache?.frontmatter;
+		if (!frontmatter || typeof frontmatter !== "object" || Array.isArray(frontmatter)) {
+			return null;
+		}
+		return frontmatter;
 	}
 
 	// Future methods for API interaction will go here.

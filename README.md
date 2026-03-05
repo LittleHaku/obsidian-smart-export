@@ -42,6 +42,7 @@ Use [BRAT (Beta Reviewers Auto-update Tool)](https://github.com/TfTHacker/obsidi
   - content depth (full content)
   - title depth (title-only context)
 - Folder exclusion (`Ignored folders`) for traversal with comma-separated wildcard/path patterns.
+- Tag/property exclusion rules for traversal (`Hide notes with tags`, `Hide notes with property rules`).
 - Output formats: XML, Markdown templates, Print-friendly Markdown.
 - Multiple Markdown templates (built-in + custom folder templates) with placeholder support.
 - Token estimate display before export.
@@ -55,12 +56,14 @@ Settings location: **Obsidian → Settings → Smart Export**
 - **Default output**: XML, print-friendly Markdown, `LLM-ready`, or your custom templates
 - **Default link direction**
 - **Ignored folders**: comma-separated folders/patterns (for example `templates, assets*, /archive`) excluded from traversal/export. Leading `/` anchors to vault root.
+- **Hide notes with tags**: comma-separated tag patterns (for example `archive*, #draft, projects/*/old`) excluded from traversal/export.
+- **Hide notes with property rules**: comma-separated rules using `key` or `key=value` (for example `status=done, published=true, archived`) excluded from traversal/export.
 - **Markdown template folder**: vault-relative folder for custom Markdown templates, with folder autocomplete
 - **Auto-select current note**
 - **Close modal after export**
 - **Show per-note token estimates**
 
-Folder exclusion details: [Excluded folders](docs/exclude-folders.md)
+Exclusion details (folders/tags/properties): [Exclusion rules](docs/exclude-folders.md)
 
 ### 4.1 Markdown templates
 
@@ -104,7 +107,7 @@ Placeholder reference: [`templates/README.md`](templates/README.md)
 
 ## 6 Documentation
 
-- [Excluded folders](docs/exclude-folders.md)
+- [Exclusion rules](docs/exclude-folders.md)
 - [Export architecture](docs/export-architecture.md)
 - [Startup process](docs/startup-process.md)
 - [Versioning and releases](docs/versioning-and-releases.md)
