@@ -1,3 +1,5 @@
+import { parseFrontMatterEntry } from "obsidian";
+
 export interface TagFilterMatcher {
 	pattern: string;
 	regex: RegExp;
@@ -100,11 +102,12 @@ function findFrontmatterValue(
 	frontmatter: Record<string, unknown>,
 	key: string
 ): { found: boolean; value: unknown } {
-	for (const [frontmatterKey, frontmatterValue] of Object.entries(frontmatter)) {
+	for (const [frontmatterKey] of Object.entries(frontmatter)) {
 		if (normalizePropertyKey(frontmatterKey) === key) {
+			const parsedValue = parseFrontMatterEntry(frontmatter, frontmatterKey) as unknown;
 			return {
 				found: true,
-				value: frontmatterValue,
+				value: parsedValue,
 			};
 		}
 	}

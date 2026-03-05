@@ -104,3 +104,24 @@ export function getAllTags(cache: unknown): string[] | null {
 
 	return tags.size > 0 ? [...tags] : null;
 }
+
+export function parseFrontMatterEntry(frontmatter: unknown, key: string | RegExp): unknown {
+	if (!frontmatter || typeof frontmatter !== "object" || Array.isArray(frontmatter)) {
+		return null;
+	}
+	const frontmatterRecord = frontmatter as Record<string, unknown>;
+
+	if (typeof key === "string") {
+		return Object.prototype.hasOwnProperty.call(frontmatterRecord, key)
+			? frontmatterRecord[key]
+			: null;
+	}
+
+	for (const [entryKey, entryValue] of Object.entries(frontmatterRecord)) {
+		if (key.test(entryKey)) {
+			return entryValue;
+		}
+	}
+
+	return null;
+}
