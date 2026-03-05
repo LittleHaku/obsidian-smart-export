@@ -63,7 +63,7 @@ Settings location: **Obsidian → Settings → Smart Export**
 - **Close modal after export**
 - **Show per-note token estimates**
 
-Exclusion details (folders/tags/properties): [Excluded folders](docs/exclude-folders.md)
+Exclusion details (folders/tags/properties): [Exclusion rules](docs/exclude-folders.md)
 
 ### 4.1 Markdown templates
 

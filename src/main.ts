@@ -299,21 +299,7 @@ class SmartExportSettingTab extends PluginSettingTab {
 		const { containerEl } = this;
 		let defaultOutputDropdown: DropdownComponent | null = null;
 		let defaultOutputTemplateOptions: LlmMarkdownTemplateOption[] = [];
-		const debouncedSaveIgnoredFolders = debounce(
-			() => {
-				void this.plugin.saveSettings();
-			},
-			300,
-			true
-		);
-		const debouncedSaveIgnoredTags = debounce(
-			() => {
-				void this.plugin.saveSettings();
-			},
-			300,
-			true
-		);
-		const debouncedSaveIgnoredProperties = debounce(
+		const debouncedSaveTraversalExclusions = debounce(
 			() => {
 				void this.plugin.saveSettings();
 			},
@@ -467,7 +453,7 @@ class SmartExportSettingTab extends PluginSettingTab {
 					.setValue(this.plugin.settings.ignoredTraversalFolders.join(", "))
 					.onChange((value) => {
 						this.plugin.settings.ignoredTraversalFolders = parseFolderFilterText(value);
-						debouncedSaveIgnoredFolders();
+						debouncedSaveTraversalExclusions();
 					})
 			);
 
@@ -482,7 +468,7 @@ class SmartExportSettingTab extends PluginSettingTab {
 					.setValue(this.plugin.settings.ignoredTraversalTagPatterns.join(", "))
 					.onChange((value) => {
 						this.plugin.settings.ignoredTraversalTagPatterns = parseTagFilterText(value);
-						debouncedSaveIgnoredTags();
+						debouncedSaveTraversalExclusions();
 					})
 			);
 
@@ -497,7 +483,7 @@ class SmartExportSettingTab extends PluginSettingTab {
 					.setValue(this.plugin.settings.ignoredTraversalPropertyRules.join(", "))
 					.onChange((value) => {
 						this.plugin.settings.ignoredTraversalPropertyRules = parsePropertyRuleText(value);
-						debouncedSaveIgnoredProperties();
+						debouncedSaveTraversalExclusions();
 					})
 			);
 
