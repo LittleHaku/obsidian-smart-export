@@ -507,6 +507,53 @@ describe("BFSTraversal", () => {
 		expect(rootNode?.children.map((child) => child.id)).toEqual(["notes/public.md"]);
 	});
 
+	it("should keep the selected root note even when its tags match ignored patterns", async () => {
+		mockFiles["tags/root-in-ignored-tags.md"] = createMockTFile(
+			"tags/root-in-ignored-tags.md",
+			"root-in-ignored-tags"
+		);
+		mockFiles["tags/other.md"] = createMockTFile("tags/other.md", "other");
+		mockFiles["included/child-from-tag-root.md"] = createMockTFile(
+			"included/child-from-tag-root.md",
+			"child-from-tag-root"
+		);
+
+		mockFileContents["tags/root-in-ignored-tags.md"] = "[[child-from-tag-root]] [[other]]";
+		mockFileContents["tags/other.md"] = "";
+		mockFileContents["included/child-from-tag-root.md"] = "";
+
+		mockFileLinks["tags/root-in-ignored-tags.md"] = [
+			createLink("child-from-tag-root"),
+			createLink("other"),
+		];
+		mockFileLinks["tags/other.md"] = [];
+		mockFileLinks["included/child-from-tag-root.md"] = [];
+
+		mockFileFrontmatterLinks["tags/root-in-ignored-tags.md"] = [];
+		mockFileFrontmatterLinks["tags/other.md"] = [];
+		mockFileFrontmatterLinks["included/child-from-tag-root.md"] = [];
+
+		mockFileTags["tags/root-in-ignored-tags.md"] = [createTag("#personal/private")];
+		mockFileTags["tags/other.md"] = [createTag("#personal")];
+		mockFileTags["included/child-from-tag-root.md"] = [createTag("#work")];
+
+		mockFileFrontmatter["tags/root-in-ignored-tags.md"] = {};
+		mockFileFrontmatter["tags/other.md"] = {};
+		mockFileFrontmatter["included/child-from-tag-root.md"] = {};
+		rebuildResolvedLinks();
+
+		const traversal = new BFSTraversal(obsidianAPI, 1, 1, "outgoing", {
+			ignoredTraversalTagPatterns: ["personal"],
+		});
+		const rootNode = await traversal.traverse("tags/root-in-ignored-tags.md");
+
+		expect(rootNode).not.toBeNull();
+		expect(rootNode?.id).toBe("tags/root-in-ignored-tags.md");
+		expect(rootNode?.children.map((child) => child.id)).toEqual([
+			"included/child-from-tag-root.md",
+		]);
+	});
+
 	it("should exclude notes matching ignored property rules", async () => {
 		mockFiles["property-filter-root.md"] = createMockTFile(
 			"property-filter-root.md",
@@ -553,6 +600,54 @@ describe("BFSTraversal", () => {
 
 		expect(rootNode).not.toBeNull();
 		expect(rootNode?.children.map((child) => child.id)).toEqual(["notes/active.md"]);
+	});
+
+	it("should keep the selected root note even when its properties match ignored rules", async () => {
+		mockFiles["props/root-in-ignored-properties.md"] = createMockTFile(
+			"props/root-in-ignored-properties.md",
+			"root-in-ignored-properties"
+		);
+		mockFiles["props/other.md"] = createMockTFile("props/other.md", "other");
+		mockFiles["included/child-from-property-root.md"] = createMockTFile(
+			"included/child-from-property-root.md",
+			"child-from-property-root"
+		);
+
+		mockFileContents["props/root-in-ignored-properties.md"] =
+			"[[child-from-property-root]] [[other]]";
+		mockFileContents["props/other.md"] = "";
+		mockFileContents["included/child-from-property-root.md"] = "";
+
+		mockFileLinks["props/root-in-ignored-properties.md"] = [
+			createLink("child-from-property-root"),
+			createLink("other"),
+		];
+		mockFileLinks["props/other.md"] = [];
+		mockFileLinks["included/child-from-property-root.md"] = [];
+
+		mockFileFrontmatterLinks["props/root-in-ignored-properties.md"] = [];
+		mockFileFrontmatterLinks["props/other.md"] = [];
+		mockFileFrontmatterLinks["included/child-from-property-root.md"] = [];
+
+		mockFileTags["props/root-in-ignored-properties.md"] = [];
+		mockFileTags["props/other.md"] = [];
+		mockFileTags["included/child-from-property-root.md"] = [];
+
+		mockFileFrontmatter["props/root-in-ignored-properties.md"] = { status: "done" };
+		mockFileFrontmatter["props/other.md"] = { status: "done" };
+		mockFileFrontmatter["included/child-from-property-root.md"] = { status: "todo" };
+		rebuildResolvedLinks();
+
+		const traversal = new BFSTraversal(obsidianAPI, 1, 1, "outgoing", {
+			ignoredTraversalPropertyRules: ["status=done"],
+		});
+		const rootNode = await traversal.traverse("props/root-in-ignored-properties.md");
+
+		expect(rootNode).not.toBeNull();
+		expect(rootNode?.id).toBe("props/root-in-ignored-properties.md");
+		expect(rootNode?.children.map((child) => child.id)).toEqual([
+			"included/child-from-property-root.md",
+		]);
 	});
 
 	it("should traverse outgoing and incoming links without duplicates when mode is both", async () => {
