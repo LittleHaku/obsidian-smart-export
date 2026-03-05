@@ -1,16 +1,18 @@
 import { describe, expect, it } from "vitest";
 import {
-	buildFolderPrefixes,
+	compileFolderFilterMatchers,
 	normalizeFolderFilterList,
 	normalizeFolderFilterPath,
-	pathMatchesFolderPrefixes,
+	pathMatchesFolderFilterMatchers,
 } from "../../src/utils/folderFilters";
 
 describe("folderFilters", () => {
-	it("normalizes a folder path", () => {
+	it("normalizes a folder filter token", () => {
 		expect(normalizeFolderFilterPath("  \\Research\\AI/  ")).toBe("Research/AI");
-		expect(normalizeFolderFilterPath("  //Research///AI//  ")).toBe("Research/AI");
+		expect(normalizeFolderFilterPath("  //Research///AI//  ")).toBe("/Research/AI");
 		expect(normalizeFolderFilterPath("\u00A0Research\\AI")).toBe("Research/AI");
+		expect(normalizeFolderFilterPath(" /res* ")).toBe("/res*");
+		expect(normalizeFolderFilterPath("/")).toBe("");
 		expect(normalizeFolderFilterPath("   ")).toBe("");
 	});
 
@@ -19,30 +21,44 @@ describe("folderFilters", () => {
 		expect(normalizeFolderFilterList("Research")).toEqual([]);
 	});
 
-	it("normalizes, filters, and deduplicates folder values", () => {
+	it("normalizes, splits, and deduplicates comma/newline entries", () => {
 		const result = normalizeFolderFilterList([
-			" Research ",
-			"/Research/",
-			"\\Research\\AI\\",
+			" templates, assets* , /archive ",
+			"attachments*\n/projects/*",
+			"templates",
 			42,
 			"",
-			"  ",
 		]);
 
-		expect(result).toEqual(["Research", "Research/AI"]);
+		expect(result).toEqual(["templates", "assets*", "/archive", "attachments*", "/projects/*"]);
 	});
 
-	it("builds canonical folder prefixes", () => {
-		expect(buildFolderPrefixes(undefined)).toEqual([]);
-		expect(buildFolderPrefixes([" Research ", "Research"])).toEqual(["Research/"]);
-		expect(buildFolderPrefixes(["Archive/Sub"])).toEqual(["Archive/Sub/"]);
+	it("matches exact folder prefixes (legacy behavior)", () => {
+		const matchers = compileFolderFilterMatchers(["Archive", "Research/AI"]);
+		expect(pathMatchesFolderFilterMatchers("Archive/Note.md", matchers)).toBe(true);
+		expect(pathMatchesFolderFilterMatchers("Research/AI/Model.md", matchers)).toBe(true);
+		expect(pathMatchesFolderFilterMatchers("Archive.md", matchers)).toBe(false);
+		expect(pathMatchesFolderFilterMatchers("Research/Notes.md", matchers)).toBe(false);
 	});
 
-	it("matches paths against folder prefixes", () => {
-		const prefixes = ["Archive/", "Research/AI/"];
-		expect(pathMatchesFolderPrefixes("Archive/Note.md", prefixes)).toBe(true);
-		expect(pathMatchesFolderPrefixes("Research/AI/Model.md", prefixes)).toBe(true);
-		expect(pathMatchesFolderPrefixes("Archive.md", prefixes)).toBe(false);
-		expect(pathMatchesFolderPrefixes("Research/Notes.md", prefixes)).toBe(false);
+	it("matches wildcard name patterns against any folder segment", () => {
+		const matchers = compileFolderFilterMatchers(["assets*", "*_temp"]);
+		expect(pathMatchesFolderFilterMatchers("media/assets/Note.md", matchers)).toBe(true);
+		expect(pathMatchesFolderFilterMatchers("work/cache_temp/Note.md", matchers)).toBe(true);
+		expect(pathMatchesFolderFilterMatchers("media/asset/Note.md", matchers)).toBe(false);
+	});
+
+	it("matches root/path patterns", () => {
+		const matchers = compileFolderFilterMatchers(["/archive", "/res*", "/*/temp", "/projects/*"]);
+		expect(pathMatchesFolderFilterMatchers("archive/Note.md", matchers)).toBe(true);
+		expect(pathMatchesFolderFilterMatchers("research/Note.md", matchers)).toBe(true);
+		expect(pathMatchesFolderFilterMatchers("work/temp/Note.md", matchers)).toBe(true);
+		expect(pathMatchesFolderFilterMatchers("projects/demo/Note.md", matchers)).toBe(true);
+		expect(pathMatchesFolderFilterMatchers("projects/demo/phase1/Note.md", matchers)).toBe(true);
+
+		expect(pathMatchesFolderFilterMatchers("nested/archive/Note.md", matchers)).toBe(false);
+		expect(pathMatchesFolderFilterMatchers("nested/research/Note.md", matchers)).toBe(false);
+		expect(pathMatchesFolderFilterMatchers("temp/Note.md", matchers)).toBe(false);
+		expect(pathMatchesFolderFilterMatchers("projects/Note.md", matchers)).toBe(false);
 	});
 });

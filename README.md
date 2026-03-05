@@ -41,7 +41,7 @@ Use [BRAT (Beta Reviewers Auto-update Tool)](https://github.com/TfTHacker/obsidi
 - Dual depth controls:
   - content depth (full content)
   - title depth (title-only context)
-- Folder exclusion (`Ignored folders`) for traversal.
+- Folder exclusion (`Ignored folders`) for traversal with comma-separated wildcard/path patterns.
 - Output formats: XML, Markdown templates, Print-friendly Markdown.
 - Multiple Markdown templates (built-in + custom folder templates) with placeholder support.
 - Token estimate display before export.
@@ -54,8 +54,8 @@ Settings location: **Obsidian → Settings → Smart Export**
 - **Default title depth**: `1-20`
 - **Default output**: XML, print-friendly Markdown, `LLM-ready`, or your custom templates
 - **Default link direction**
-- **Ignored folders**: one folder path per line; excluded from traversal/export
-- **Markdown template folder**: vault-relative folder for custom Markdown templates
+- **Ignored folders**: comma-separated folders/patterns (for example `templates, assets*, /archive`) excluded from traversal/export. Leading `/` anchors to vault root.
+- **Markdown template folder**: vault-relative folder for custom Markdown templates, with folder autocomplete
 - **Auto-select current note**
 - **Close modal after export**
 - **Show per-note token estimates**

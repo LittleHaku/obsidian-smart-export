@@ -15,6 +15,7 @@
 - `pnpm run dev`: incremental development build.
 - `pnpm build`: type-check + production build (`main.js`).
 - `pnpm lint`: ESLint checks.
+- `pnpm format`: run Prettier and apply formatting updates.
 - `pnpm format:check`: Prettier check.
 - `pnpm test`: full Vitest run with coverage.
 - `pnpm vitest run tests/engine/BFSTraversal.test.ts`: run a focused suite.
@@ -65,6 +66,7 @@
 ## Commit & Pull Request Guidelines
 
 - Use Conventional Commits (e.g., `feat:`, `fix:`, `docs:`, `test:`).
+- Before committing, always run `pnpm format`, then `pnpm lint`, and finally `pnpm test`.
 - PRs should include:
   - clear description and linked issue (`Fixes #...` when applicable),
   - updated tests and docs for user-facing changes,
@@ -75,4 +77,8 @@
 
 - Use tags without `v` prefix: `X.Y.Z` or prerelease `X.Y.Z-beta.N`.
 - Changelog header must match the tag exactly (for release note extraction).
+- Changelog section intent:
+  - `Added`: new features introduced in that version.
+  - `Changed`: behavior/performance/UX refinements to features in that same version.
+  - `Fixed`: regressions/bugs that existed in a previously shipped version.
 - See `docs/versioning-and-releases.md` for full flow.

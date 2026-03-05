@@ -1,23 +1,99 @@
 import { normalizePath } from "obsidian";
 
-/**
- * Normalizes a user-provided folder path so matching is stable across platforms
- * and resilient to accidental whitespace/slashes. Uses Obsidian's normalizePath
- * to stay aligned with vault path normalization rules.
- */
-export function normalizeFolderFilterPath(folderPath: string): string {
-	const trimmed = folderPath.trim();
+export interface FolderFilterMatcher {
+	pattern: string;
+	regex: RegExp;
+}
+
+function escapeRegex(value: string): string {
+	return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function normalizeFilterToken(token: string): string {
+	const trimmed = token.trim();
 	if (!trimmed) {
 		return "";
 	}
 
-	return normalizePath(trimmed);
+	const hasRootPrefix = trimmed.startsWith("/");
+	const normalized = trimmed
+		.replace(/\u00A0/g, " ")
+		.normalize()
+		.replace(/[\\/]+/g, "/")
+		.replace(/^\/+/, "")
+		.replace(/\/+$/, "");
+	if (!normalized) {
+		return "";
+	}
+
+	return hasRootPrefix ? `/${normalized}` : normalized;
+}
+
+function splitFilterEntry(value: string): string[] {
+	return value
+		.split(/[,\n]/)
+		.map((token) => token.trim())
+		.filter((token) => token.length > 0);
+}
+
+function globSegmentToRegex(segment: string): string {
+	return segment
+		.split("*")
+		.map((part) => escapeRegex(part))
+		.join("[^/]*");
+}
+
+function toFolderPath(filePath: string): string {
+	const normalized = normalizePath(filePath);
+	const lastSlashIndex = normalized.lastIndexOf("/");
+	if (lastSlashIndex <= 0) {
+		return "";
+	}
+	return normalized.slice(0, lastSlashIndex);
+}
+
+function compilePattern(pattern: string): RegExp {
+	const rootAnchored = pattern.startsWith("/");
+	const normalizedPattern = rootAnchored ? pattern.slice(1) : pattern;
+
+	// Name pattern: no slash + wildcard.
+	// - Without leading "/": matches any folder segment (assets* or *_temp).
+	// - With leading "/": matches only at vault root (/res*).
+	if (!normalizedPattern.includes("/") && normalizedPattern.includes("*")) {
+		const segmentRegex = globSegmentToRegex(normalizedPattern);
+		if (rootAnchored) {
+			return new RegExp(`^${segmentRegex}(?:/|$)`);
+		}
+		return new RegExp(`(?:^|/)${segmentRegex}(?:/|$)`);
+	}
+
+	// Exact folder prefix (legacy behavior): no slash + no wildcard.
+	// Example: GeminiHelper
+	if (!normalizedPattern.includes("/")) {
+		const escapedPrefix = escapeRegex(normalizedPattern);
+		return new RegExp(`^${escapedPrefix}(?:/|$)`);
+	}
+
+	// Path pattern: slash-based with optional wildcards.
+	// Examples: /archive, /res*, /*/temp, /projects/*
+	const segments = normalizedPattern.split("/").map((segment) => globSegmentToRegex(segment));
+	const pathRegex = segments.join("/");
+	return new RegExp(`^${pathRegex}(?:/|$)`);
+}
+
+/**
+ * Normalizes a user-provided folder filter token while preserving:
+ * - wildcard markers (`*`)
+ * - optional root anchor prefix (`/`)
+ */
+export function normalizeFolderFilterPath(folderPath: string): string {
+	return normalizeFilterToken(folderPath);
 }
 
 /**
  * Parses arbitrary persisted values into a clean folder filter list:
  * - non-array input becomes []
- * - non-string entries are ignored
+ * - supports comma and newline separated tokens
  * - values are normalized and deduplicated
  */
 export function normalizeFolderFilterList(values: unknown): string[] {
@@ -29,31 +105,43 @@ export function normalizeFolderFilterList(values: unknown): string[] {
 	const seen = new Set<string>();
 	for (const value of values) {
 		if (typeof value !== "string") continue;
-		const normalizedValue = normalizeFolderFilterPath(value);
-		if (!normalizedValue || seen.has(normalizedValue)) continue;
-		seen.add(normalizedValue);
-		normalized.push(normalizedValue);
+		for (const token of splitFilterEntry(value)) {
+			const normalizedValue = normalizeFilterToken(token);
+			if (!normalizedValue || seen.has(normalizedValue)) continue;
+			seen.add(normalizedValue);
+			normalized.push(normalizedValue);
+		}
 	}
 
 	return normalized;
 }
 
 /**
- * Converts folder names to canonical "prefix/" form so matching can use
- * a fast `startsWith` check with predictable boundaries.
+ * Compiles filter entries into regex matchers for fast traversal checks.
  */
-export function buildFolderPrefixes(folders: string[] | undefined): string[] {
+export function compileFolderFilterMatchers(folders: string[] | undefined): FolderFilterMatcher[] {
 	if (!folders || folders.length === 0) {
 		return [];
 	}
 
-	return normalizeFolderFilterList(folders).map((folder) => `${folder}/`);
+	return normalizeFolderFilterList(folders).map((pattern) => ({
+		pattern,
+		regex: compilePattern(pattern),
+	}));
 }
 
 /**
- * Prefix-based folder matching.
- * Example: prefix `Archive/` matches `Archive/Note.md` but not `Archive.md`.
+ * Matches a note path against compiled folder filter matchers.
+ * The filename is removed before matching, so rules apply to folder paths only.
  */
-export function pathMatchesFolderPrefixes(path: string, prefixes: string[]): boolean {
-	return prefixes.some((prefix) => path.startsWith(prefix));
+export function pathMatchesFolderFilterMatchers(
+	path: string,
+	matchers: FolderFilterMatcher[]
+): boolean {
+	const folderPath = toFolderPath(path);
+	if (!folderPath) {
+		return false;
+	}
+
+	return matchers.some((matcher) => matcher.regex.test(folderPath));
 }

@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.5.1] - 2026-03-05
+
+### Added
+
+- Folder path autocomplete in settings for `Markdown template folder`
+
+### Changed
+
+- `Markdown template folder` now supports typeahead selection inspired by Templater-style folder picking
+- `Ignored folders` now uses a comma-separated input with wildcard/path pattern support (for example `assets*`, `/*/temp`, `/projects/*`)
+- Folder matcher internals now use explicit matcher naming (`compileFolderFilterMatchers`, `pathMatchesFolderFilterMatchers`) to clarify regex-based behavior
+- Leading `/` in an ignored-folder rule is now treated as a root anchor (remove `/` to match folder names in any segment)
+- `Markdown template folder` autocomplete suggestions now use cached results with vault-change invalidation to avoid rebuilding/sorting on every keystroke while typing
+
 ## [1.5.0] - 2026-03-04
 
 ### Added

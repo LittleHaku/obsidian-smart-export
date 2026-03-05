@@ -12,6 +12,7 @@ import { BFSTraversal } from "./engine/BFSTraversal";
 import { buildExportOutput, normalizeExportFormat } from "./engine/exportOutput";
 import { ObsidianAPI } from "./obsidian-api";
 import { ExportModal } from "./ui/ExportModal";
+import { FolderPathSuggest } from "./ui/FolderPathSuggest";
 import { LinkTraversalMode, SmartExportSettings } from "./types";
 import { TEMPLATE_DOCS_URL } from "./constants/templateDocs";
 import { normalizeFolderFilterList } from "./utils/folderFilters";
@@ -29,11 +30,11 @@ const DEFAULT_OUTPUT_CHOICE_PRINT_FRIENDLY = "format:print-friendly-markdown";
 const DEFAULT_OUTPUT_CHOICE_LLM_PREFIX = "template:";
 
 /**
- * Converts textarea input (one folder path per line) into a normalized list.
+ * Converts settings input into a normalized folder filter list.
+ * Supports comma and newline separators for compatibility.
  */
 function parseFolderFilterText(text: string): string[] {
-	const lines = text.split("\n").map((line) => line.trim());
-	return normalizeFolderFilterList(lines);
+	return normalizeFolderFilterList([text]);
 }
 
 function normalizeTemplateDirectorySetting(path: string): string {
@@ -260,6 +261,7 @@ export default class SmartExportPlugin extends Plugin {
 
 class SmartExportSettingTab extends PluginSettingTab {
 	plugin: SmartExportPlugin;
+	private templateFolderSuggest: FolderPathSuggest | null = null;
 
 	constructor(app: App, plugin: SmartExportPlugin) {
 		super(app, plugin);
@@ -277,6 +279,16 @@ class SmartExportSettingTab extends PluginSettingTab {
 			300,
 			true
 		);
+		const applyTemplateDirectorySetting = async (value: string): Promise<void> => {
+			const normalizedDirectory = normalizeTemplateDirectorySetting(value);
+			if (this.plugin.settings.llmMarkdownTemplateDirectory === normalizedDirectory) {
+				return;
+			}
+
+			this.plugin.settings.llmMarkdownTemplateDirectory = normalizedDirectory;
+			await this.plugin.saveSettings();
+			void reloadDefaultOutputOptions();
+		};
 
 		const applyDefaultOutputOptions = () => {
 			if (!defaultOutputDropdown) {
@@ -320,6 +332,8 @@ class SmartExportSettingTab extends PluginSettingTab {
 			applyDefaultOutputOptions();
 		};
 
+		this.templateFolderSuggest?.destroy();
+		this.templateFolderSuggest = null;
 		containerEl.empty();
 
 		new Setting(containerEl)
@@ -404,11 +418,12 @@ class SmartExportSettingTab extends PluginSettingTab {
 		new Setting(containerEl)
 			.setName("Ignored folders")
 			.setDesc(
-				"Optional. One folder path per line. Notes in these folders are excluded from traversal and won't appear in the export tree."
+				"Optional comma-separated folders or patterns to exclude from traversal, for example: templates, assets*, attachments*, /archive, /res*, /*/temp, /projects/*."
 			)
-			.addTextArea((textArea) =>
-				textArea
-					.setValue(this.plugin.settings.ignoredTraversalFolders.join("\n"))
+			.addText((text) =>
+				text
+					.setPlaceholder("Templates, assets*, attachments*")
+					.setValue(this.plugin.settings.ignoredTraversalFolders.join(", "))
 					.onChange((value) => {
 						this.plugin.settings.ignoredTraversalFolders = parseFolderFilterText(value);
 						debouncedSaveIgnoredFolders();
@@ -429,17 +444,16 @@ class SmartExportSettingTab extends PluginSettingTab {
 		new Setting(containerEl)
 			.setName("Markdown template folder")
 			.setDesc(templateDirectoryDesc)
-			.addText((text) =>
+			.addText((text) => {
 				text
 					.setPlaceholder(LLM_MARKDOWN_TEMPLATE_DIRECTORY)
 					.setValue(this.plugin.settings.llmMarkdownTemplateDirectory)
-					.onChange(async (value) => {
-						this.plugin.settings.llmMarkdownTemplateDirectory =
-							normalizeTemplateDirectorySetting(value);
-						await this.plugin.saveSettings();
-						void reloadDefaultOutputOptions();
-					})
-			);
+					.onChange((value) => {
+						void applyTemplateDirectorySetting(value);
+					});
+				this.templateFolderSuggest = new FolderPathSuggest(this.app, text.inputEl);
+				return text;
+			});
 
 		new Setting(containerEl)
 			.setName("Auto-select current note")
@@ -472,5 +486,11 @@ class SmartExportSettingTab extends PluginSettingTab {
 					await this.plugin.saveSettings();
 				})
 			);
+	}
+
+	hide(): void {
+		this.templateFolderSuggest?.destroy();
+		this.templateFolderSuggest = null;
+		super.hide();
 	}
 }
