@@ -82,8 +82,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - root note kept even if located in an excluded folder
 - New utility test suite for folder filter normalization and matching (`tests/utils/folderFilters.test.ts`)
 - New release/versioning runbook (`docs/versioning-and-releases.md`)
-- New Obsidian plugin review checklist (`docs/obsidian-plugin-guidelines.md`)
-- New contributor guide file (`AGENTS.md`)
+- New Obsidian plugin review checklist for maintainer release checks
+- New contributor/maintainer guide for local development workflows
 - New startup lifecycle documentation page with phase-based flow and Mermaid diagram (`docs/startup-process.md`)
 
 ### Changed
@@ -95,7 +95,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Updated README structure with numbered sections and reduced duplication (installation, quick start, docs, settings, troubleshooting)
 - Standardized docs naming from "incoming link folder filters" to "excluded folders" (`docs/exclude-folders.md`)
 - Expanded folder filter tests to cover NBSP normalization and blank-input handling
-- Added explicit docs scope guidance in `AGENTS.md` to keep architecture documentation proportional to plugin complexity
+- Added explicit documentation scope guidance to keep architecture documentation proportional to plugin complexity
 - Updated contribution/release guidance:
   - explicit no-`v` version/tag format (`X.Y.Z`)
   - prerelease tag conventions (`beta` / `alpha` / `canary`)

@@ -107,14 +107,15 @@ Placeholder reference: [`templates/README.md`](templates/README.md)
 
 ## 6 Documentation
 
+- [Documentation index](docs/README.md)
+- [API reference](docs/api-reference.md)
 - [Exclusion rules](docs/exclude-folders.md)
 - [Export architecture](docs/export-architecture.md)
 - [Startup process](docs/startup-process.md)
 - [Versioning and releases](docs/versioning-and-releases.md)
 - [Template placeholders](templates/README.md)
-- [Product requirements document](docs/PRD.md)
-- [Development tasks](docs/TASKS.md)
 - [Contributing guide](CONTRIBUTING.md)
+- [Roadmap and feature backlog (GitHub Issues)](https://github.com/LittleHaku/obsidian-smart-export/issues)
 
 ## 7 Example Output
 

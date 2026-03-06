@@ -27,3 +27,14 @@ coverage/
 
 # Benchmark output
 benchmarks/latest-report.json
+
+# Local-only AI assistant / agent files
+AGENTS.md
+CLAUDE.md
+GEMINI.md
+.claude/
+.cursor/
+.cursorrules
+.cursorignore
+.agents/
+.github/copilot-instructions.md
