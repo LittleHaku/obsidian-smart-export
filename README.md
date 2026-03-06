@@ -64,7 +64,7 @@ Settings location: **Obsidian → Settings → Smart Export**
 - **Hide notes with tags**: comma-separated tag patterns (for example `archive*, #draft, projects/*/old`) excluded from traversal/export.
 - **Hide notes with property rules**: comma-separated rules using `key` or `key=value` (for example `status=done, published=true, archived`) excluded from traversal/export.
 
-### 4.3 Template settings
+### 4.3 Markdown templates
 
 - **Markdown template folder**: vault-relative folder for custom Markdown templates, with folder autocomplete
 
