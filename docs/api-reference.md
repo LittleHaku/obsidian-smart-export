@@ -18,23 +18,27 @@ Defined in `src/main.ts`:
 
 Defined in `src/main.ts` (`SmartExportSettings` + settings tab):
 
-- `Default content depth` (`1-20`)
-- `Default title depth` (`1-20`, kept `>=` content depth)
-- `Default output`
-  - XML
-  - Print-friendly Markdown
-  - Markdown templates (`LLM-ready` built-in + custom templates)
-- `Default link direction`
-  - `outgoing`
-  - `incoming`
-  - `both`
-- `Ignored folders` (comma/newline-separated patterns)
-- `Hide notes with tags` (comma/newline-separated tag patterns)
-- `Hide notes with property rules` (comma/newline-separated `key` or `key=value`)
-- `Markdown template folder` (vault-relative, default `smart-templates`)
-- `Auto-select current note`
-- `Close modal after export`
-- `Show per-note token estimates`
+- Section `Export defaults`
+  - `Default content depth` (`1-20`)
+  - `Default title depth` (`1-20`, kept `>=` content depth)
+  - `Default output`
+    - XML
+    - Print-friendly Markdown
+    - Markdown templates (`LLM-ready` built-in + custom templates)
+  - `Default link direction`
+    - `outgoing`
+    - `incoming`
+    - `both`
+- Section `Traversal exclusions`
+  - `Ignored folders` (comma/newline-separated patterns)
+  - `Hide notes with tags` (comma/newline-separated tag patterns)
+  - `Hide notes with property rules` (comma/newline-separated `key` or `key=value`)
+- Section `Markdown templates`
+  - `Markdown template folder` (vault-relative, default `smart-templates`)
+- Section `Export modal behavior`
+  - `Auto-select current note`
+  - `Close modal after export`
+  - `Show per-note token estimates`
 
 ## Export formats
 

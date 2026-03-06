@@ -363,6 +363,8 @@ class SmartExportSettingTab extends PluginSettingTab {
 		this.templateFolderSuggest = null;
 		containerEl.empty();
 
+		new Setting(containerEl).setName("Export defaults").setHeading();
+
 		new Setting(containerEl)
 			.setName("Default content depth")
 			.setDesc("Default number of levels to include full note content (1-20)")
@@ -442,6 +444,8 @@ class SmartExportSettingTab extends PluginSettingTab {
 					})
 			);
 
+		new Setting(containerEl).setName("Traversal exclusions").setHeading();
+
 		new Setting(containerEl)
 			.setName("Ignored folders")
 			.setDesc(
@@ -487,6 +491,8 @@ class SmartExportSettingTab extends PluginSettingTab {
 					})
 			);
 
+		new Setting(containerEl).setName("Markdown templates").setHeading();
+
 		const templateDirectoryDesc = document.createDocumentFragment();
 		templateDirectoryDesc.append(
 			"Vault-relative folder for custom Markdown templates. Every .md file in this folder is available as a custom template option. "
@@ -511,6 +517,8 @@ class SmartExportSettingTab extends PluginSettingTab {
 				this.templateFolderSuggest = new FolderPathSuggest(this.app, text.inputEl);
 				return text;
 			});
+
+		new Setting(containerEl).setName("Export modal behavior").setHeading();
 
 		new Setting(containerEl)
 			.setName("Auto-select current note")

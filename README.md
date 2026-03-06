@@ -51,21 +51,32 @@ Use [BRAT (Beta Reviewers Auto-update Tool)](https://github.com/TfTHacker/obsidi
 
 Settings location: **Obsidian → Settings → Smart Export**
 
+### 4.1 Export defaults
+
 - **Default content depth**: `1-20`
 - **Default title depth**: `1-20`
 - **Default output**: XML, print-friendly Markdown, `LLM-ready`, or your custom templates
 - **Default link direction**
+
+### 4.2 Traversal exclusions
+
 - **Ignored folders**: comma-separated folders/patterns (for example `templates, assets*, /archive`) excluded from traversal/export. Leading `/` anchors to vault root.
 - **Hide notes with tags**: comma-separated tag patterns (for example `archive*, #draft, projects/*/old`) excluded from traversal/export.
 - **Hide notes with property rules**: comma-separated rules using `key` or `key=value` (for example `status=done, published=true, archived`) excluded from traversal/export.
+
+### 4.3 Markdown templates
+
 - **Markdown template folder**: vault-relative folder for custom Markdown templates, with folder autocomplete
+
+### 4.4 Export modal behavior
+
 - **Auto-select current note**
 - **Close modal after export**
 - **Show per-note token estimates**
 
 Exclusion details (folders/tags/properties): [Exclusion rules](docs/exclude-folders.md)
 
-### 4.1 Markdown templates
+### 4.5 Markdown templates
 
 For Markdown template exports, Smart Export can load a custom template from your vault:
 
