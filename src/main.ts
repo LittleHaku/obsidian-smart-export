@@ -534,7 +534,7 @@ class SmartExportSettingTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.setName("Close modal after export")
-			.setDesc("Close the export dialog after copying to clipboard")
+			.setDesc("Close the export dialog after a successful export")
 			.addToggle((toggle) =>
 				toggle.setValue(this.plugin.settings.closeModalAfterExport).onChange(async (value) => {
 					this.plugin.settings.closeModalAfterExport = value;

@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.7.0-beta.1] - 2026-03-12
+
+### Added
+
+- New `Export to new note` action in the export modal that prompts for a destination folder and note name before creating and opening the Markdown export note
+
+### Changed
+
+- `Export to clipboard` is now the primary export action again in the modal
+- `Close modal after export` now applies to both clipboard exports and newly created export notes
+
 ## [1.6.1] - 2026-03-06
 
 ### Changed
