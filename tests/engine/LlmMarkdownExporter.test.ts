@@ -42,7 +42,7 @@ describe("LlmMarkdownExporter", () => {
 
 			// Check content section
 			expect(result).toContain("## Note Contents");
-			expect(result).toContain('## Note 1: "Root Note"');
+			expect(result).toContain("## Root Note");
 			expect(result).toContain("This is the root content");
 		});
 
@@ -88,10 +88,10 @@ describe("LlmMarkdownExporter", () => {
 			expect(result).toContain('Note 4: "GrandChild"');
 
 			// All notes should have content sections
-			expect(result).toContain('## Note 1: "Root"');
-			expect(result).toContain('## Note 2: "Child 1"');
-			expect(result).toContain('## Note 3: "Child 2"');
-			expect(result).toContain('## Note 4: "GrandChild"');
+			expect(result).toContain("## Root");
+			expect(result).toContain("## Child 1");
+			expect(result).toContain("## Child 2");
+			expect(result).toContain("## GrandChild");
 		});
 
 		it("should process notes in breadth-first order", () => {
@@ -139,7 +139,7 @@ describe("LlmMarkdownExporter", () => {
 			const exporter = new LlmMarkdownExporter();
 			const result = exporter.export(rootNode, "TestVault");
 
-			expect(result).toContain('## Note 1: "Test Note"');
+			expect(result).toContain("## Test Note");
 			// Should handle undefined content gracefully without throwing
 			expect(result).not.toContain("undefined");
 		});
@@ -150,8 +150,8 @@ describe("LlmMarkdownExporter", () => {
 
 			const result = exporter.export(rootNode, "TestVault");
 
-			expect(result).toContain('## Note 1: "Empty Note"');
-			expect(result).toContain('## Note 1: "Empty Note"\n\n');
+			expect(result).toContain("## Empty Note");
+			expect(result).toContain("## Empty Note\n\n");
 		});
 
 		it("should preserve complex markdown content", () => {
@@ -183,6 +183,25 @@ console.log("code block");
 			expect(result).toContain("console.log");
 			expect(result).toContain("[[Quoted Link]]");
 			expect(result).toContain("[External link](https://example.com)");
+		});
+
+		it("rewrites exported alias links into Obsidian heading links", () => {
+			const child = createMockExportNode("Child Note", "notes/Child Note.md", 1, "Child content");
+			const rootNode = createMockExportNode(
+				"Root",
+				"root.md",
+				0,
+				"See [[Child Note|overview]] and [[Missing note|summary]].",
+				[child]
+			);
+			const exporter = new LlmMarkdownExporter();
+
+			const result = exporter.export(rootNode, "TestVault");
+
+			expect(result).toContain("## Root");
+			expect(result).toContain("## Child Note");
+			expect(result).toContain("[[#Child Note|overview (ref:Child Note)]]");
+			expect(result).toContain("summary (ref:Missing note)");
 		});
 	});
 
@@ -247,7 +266,7 @@ console.log("code block");
 
 			expect(result).toContain(longTitle);
 			expect(result).toContain(`Note 1: "${longTitle}"`);
-			expect(result).toContain(`## Note 1: "${longTitle}"`);
+			expect(result).toContain(`## ${longTitle}`);
 		});
 
 		it("should handle empty vault path", () => {

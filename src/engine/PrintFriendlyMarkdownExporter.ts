@@ -1,4 +1,9 @@
 import { ExportNode } from "../types";
+import {
+	buildExportedMarkdownLinkIndex,
+	buildExportedHeadingLabels,
+	rewriteMarkdownLinksForExport,
+} from "../utils/exportMarkdownLinks";
 
 /**
  * A class to handle the export of note trees to a structured Markdown format.
@@ -11,9 +16,31 @@ export class PrintFriendlyMarkdownExporter {
 	 * @returns A string containing the Markdown representation of the note tree.
 	 */
 	public export(rootNode: ExportNode): string {
+		const allNotes = this.flattenTree(rootNode);
+		const headingLabels = buildExportedHeadingLabels(allNotes);
+		const linkIndex = buildExportedMarkdownLinkIndex(
+			allNotes,
+			(note) => headingLabels.get(note.id)!
+		);
 		const chunks: string[] = [];
-		this.buildNode(rootNode, 0, chunks);
+		this.buildNode(rootNode, 0, chunks, linkIndex, headingLabels);
 		return chunks.join("");
+	}
+
+	private flattenTree(rootNode: ExportNode): ExportNode[] {
+		const queue: ExportNode[] = [rootNode];
+		const notes: ExportNode[] = [];
+		let head = 0;
+
+		while (head < queue.length) {
+			const note = queue[head++];
+			notes.push(note);
+			for (const child of note.children) {
+				queue.push(child);
+			}
+		}
+
+		return notes;
 	}
 
 	/**
@@ -23,16 +50,23 @@ export class PrintFriendlyMarkdownExporter {
 	 * @param depth The current depth in the tree, used for heading levels.
 	 * @returns A formatted markdown string.
 	 */
-	private buildNode(node: ExportNode, depth: number, chunks: string[]) {
+	private buildNode(
+		node: ExportNode,
+		depth: number,
+		chunks: string[],
+		linkIndex: ReturnType<typeof buildExportedMarkdownLinkIndex>,
+		headingLabels: Map<string, string>
+	) {
 		const prefix = "#".repeat(depth + 1);
-		chunks.push(`${prefix} ${node.title}\n\n`);
+		const headingLabel = headingLabels.get(node.id)!;
+		chunks.push(`${prefix} ${headingLabel}\n\n`);
 
 		if (node.content && node.includeContent) {
-			chunks.push(`${node.content}\n\n`);
+			chunks.push(`${rewriteMarkdownLinksForExport(node.content, linkIndex)}\n\n`);
 		}
 
 		for (const child of node.children) {
-			this.buildNode(child, depth + 1, chunks);
+			this.buildNode(child, depth + 1, chunks, linkIndex, headingLabels);
 		}
 	}
 }

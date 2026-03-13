@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.8.0-beta.1] - 2026-03-13
+
+### Changed
+
+- Markdown exports now rewrite exported wikilinks into Obsidian same-note heading links when the target note is part of the export
+- Aliased exported wikilinks now preserve visible target context with `ref:` text in Markdown exports
+
 ## [1.7.0] - 2026-03-13
 
 ### Added

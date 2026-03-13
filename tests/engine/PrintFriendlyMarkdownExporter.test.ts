@@ -49,8 +49,6 @@ describe("PrintFriendlyMarkdownExporter", () => {
 			const result = exporter.export(rootNode);
 
 			expect(result).toContain("# Empty Note");
-			// For empty content (""), the condition `node.content && node.includeContent` is false
-			// because "" is falsy, so no content is added
 			expect(result).toBe("# Empty Note\n\n");
 		});
 	});
@@ -166,6 +164,25 @@ console.log("code block");
 			expect(result).toContain("> Quote block");
 			expect(result).toContain("[Link](https://example.com)");
 			expect(result).toContain("[[Wikilink]]");
+		});
+
+		it("should rewrite exported wikilinks into Obsidian heading links and preserve embeds", () => {
+			const child = createMockExportNode("Linked Note", "Linked Note.md", 1, "Child content");
+			const rootNode = createMockExportNode(
+				"Root",
+				"root.md",
+				0,
+				"Link [[Linked Note|summary]] plus image ![[diagram.png]]",
+				[child]
+			);
+
+			const exporter = new PrintFriendlyMarkdownExporter();
+			const result = exporter.export(rootNode);
+
+			expect(result).toContain("# Root");
+			expect(result).toContain("## Linked Note");
+			expect(result).toContain("[[#Linked Note|summary (ref:Linked Note)]]");
+			expect(result).toContain("![[diagram.png]]");
 		});
 
 		it("should handle undefined content", () => {
@@ -286,8 +303,7 @@ console.log("code block");
 			const exporter = new PrintFriendlyMarkdownExporter();
 			const result = exporter.export(rootNode);
 
-			// Check for proper spacing around headings and content
-			expect(result).toMatch(/# Root\n\nRoot content\n\n## Child\n\nChild content\n\n/);
+			expect(result).toBe("# Root\n\nRoot content\n\n## Child\n\nChild content\n\n");
 		});
 
 		it("should handle recursive structure correctly", () => {

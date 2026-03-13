@@ -1,0 +1,201 @@
+import { describe, expect, it } from "vitest";
+import { ExportNode } from "../../src/types";
+import {
+	buildExportedHeadingLabels,
+	buildExportedMarkdownLinkIndex,
+	rewriteMarkdownLinksForExport,
+} from "../../src/utils/exportMarkdownLinks";
+
+function createMockExportNode(title: string, id: string, children: ExportNode[] = []): ExportNode {
+	return {
+		id,
+		title,
+		depth: 0,
+		includeContent: true,
+		content: "",
+		children,
+		tokenCount: 0,
+		lastModified: new Date("2026-03-13T00:00:00.000Z"),
+	};
+}
+
+describe("exportMarkdownLinks", () => {
+	it("adds a path suffix to duplicate exported headings", () => {
+		const labels = buildExportedHeadingLabels([
+			createMockExportNode("Duplicate", "folder-a/Duplicate.md"),
+			createMockExportNode("Duplicate", "folder-b/Duplicate.md"),
+		]);
+
+		expect(labels.get("folder-a/Duplicate.md")).toBe("Duplicate (folder-a/Duplicate)");
+		expect(labels.get("folder-b/Duplicate.md")).toBe("Duplicate (folder-b/Duplicate)");
+	});
+
+	it("falls back to the note path when the exported title is blank", () => {
+		const labels = buildExportedHeadingLabels([createMockExportNode("   ", "notes/Blank.md")]);
+
+		expect(labels.get("notes/Blank.md")).toBe("notes/Blank");
+	});
+
+	it("rewrites exported wikilinks into Obsidian heading links", () => {
+		const child = createMockExportNode("Child", "notes/Child.md");
+		const notes = [createMockExportNode("Root", "Root.md"), child];
+		const labels = buildExportedHeadingLabels(notes);
+		const index = buildExportedMarkdownLinkIndex(
+			notes,
+			(note) => labels.get(note.id) ?? note.title
+		);
+
+		expect(rewriteMarkdownLinksForExport("See [[Child]] for details.", index)).toBe(
+			"See [[#Child|Child]] for details."
+		);
+	});
+
+	it("appends ref text for aliased links", () => {
+		const child = createMockExportNode("Child", "notes/Child.md");
+		const labels = buildExportedHeadingLabels([child]);
+		const index = buildExportedMarkdownLinkIndex(
+			[child],
+			(note) => labels.get(note.id) ?? note.title
+		);
+
+		expect(rewriteMarkdownLinksForExport("Jump to [[Child|overview]].", index)).toBe(
+			"Jump to [[#Child|overview (ref:Child)]]."
+		);
+	});
+
+	it("keeps ambiguous title-only links untouched", () => {
+		const notes = [
+			createMockExportNode("Duplicate", "folder-a/Duplicate.md"),
+			createMockExportNode("Duplicate", "folder-b/Duplicate.md"),
+		];
+		const labels = buildExportedHeadingLabels(notes);
+		const index = buildExportedMarkdownLinkIndex(
+			notes,
+			(note) => labels.get(note.id) ?? note.title
+		);
+
+		expect(rewriteMarkdownLinksForExport("See [[Duplicate]].", index)).toBe("See [[Duplicate]].");
+	});
+
+	it("rewrites path-qualified links even when titles are duplicated", () => {
+		const notes = [
+			createMockExportNode("Duplicate", "folder-a/Duplicate.md"),
+			createMockExportNode("Duplicate", "folder-b/Duplicate.md"),
+		];
+		const labels = buildExportedHeadingLabels(notes);
+		const index = buildExportedMarkdownLinkIndex(
+			notes,
+			(note) => labels.get(note.id) ?? note.title
+		);
+
+		expect(rewriteMarkdownLinksForExport("See [[folder-b/Duplicate]].", index)).toBe(
+			"See [[#Duplicate (folder-b/Duplicate)|folder-b/Duplicate]]."
+		);
+	});
+
+	it("converts unresolved aliased links into readable plain text", () => {
+		const root = createMockExportNode("Root", "Root.md");
+		const labels = buildExportedHeadingLabels([root]);
+		const index = buildExportedMarkdownLinkIndex(
+			[root],
+			(note) => labels.get(note.id) ?? note.title
+		);
+
+		expect(rewriteMarkdownLinksForExport("See [[Missing note|summary]].", index)).toBe(
+			"See summary (ref:Missing note)."
+		);
+	});
+
+	it("keeps malformed links with blank targets untouched", () => {
+		const root = createMockExportNode("Root", "Root.md");
+		const labels = buildExportedHeadingLabels([root]);
+		const index = buildExportedMarkdownLinkIndex(
+			[root],
+			(note) => labels.get(note.id) ?? note.title
+		);
+
+		expect(rewriteMarkdownLinksForExport("See [[|summary]].", index)).toBe("See [[|summary]].");
+	});
+
+	it("supports exported links with heading or block suffixes", () => {
+		const child = createMockExportNode("Child", "notes/Child.md");
+		const labels = buildExportedHeadingLabels([child]);
+		const index = buildExportedMarkdownLinkIndex(
+			[child],
+			(note) => labels.get(note.id) ?? note.title
+		);
+
+		expect(rewriteMarkdownLinksForExport("See [[Child#Section]].", index)).toBe(
+			"See [[#Child|Child#Section]]."
+		);
+		expect(rewriteMarkdownLinksForExport("See [[Child^block]].", index)).toBe(
+			"See [[#Child|Child^block]]."
+		);
+	});
+
+	it("preserves image embeds and code spans", () => {
+		const child = createMockExportNode("Child", "Child.md");
+		const labels = buildExportedHeadingLabels([child]);
+		const index = buildExportedMarkdownLinkIndex(
+			[child],
+			(note) => labels.get(note.id) ?? note.title
+		);
+		const content = [
+			"Inline `[[Child]]` code",
+			"```md",
+			"[[Child]]",
+			"```",
+			"![[diagram.png]]",
+			"[[Child]]",
+		].join("\n");
+
+		expect(rewriteMarkdownLinksForExport(content, index)).toBe(
+			[
+				"Inline `[[Child]]` code",
+				"```md",
+				"[[Child]]",
+				"```",
+				"![[diagram.png]]",
+				"[[#Child|Child]]",
+			].join("\n")
+		);
+	});
+
+	it("returns empty content unchanged", () => {
+		const root = createMockExportNode("Root", "Root.md");
+		const labels = buildExportedHeadingLabels([root]);
+		const index = buildExportedMarkdownLinkIndex(
+			[root],
+			(note) => labels.get(note.id) ?? note.title
+		);
+
+		expect(rewriteMarkdownLinksForExport("", index)).toBe("");
+	});
+
+	it("ignores notes with blank titles when building title lookups", () => {
+		const blank = createMockExportNode("   ", "notes/Blank.md");
+		const labels = buildExportedHeadingLabels([blank]);
+		const index = buildExportedMarkdownLinkIndex(
+			[blank],
+			(note) => labels.get(note.id) ?? note.title
+		);
+
+		expect(rewriteMarkdownLinksForExport("See [[Blank]].", index)).toBe("See [[Blank]].");
+		expect(rewriteMarkdownLinksForExport("See [[notes/Blank]].", index)).toBe(
+			"See [[#notes/Blank|notes/Blank]]."
+		);
+	});
+
+	it("leaves unterminated code spans, embeds, and links unchanged", () => {
+		const child = createMockExportNode("Child", "Child.md");
+		const labels = buildExportedHeadingLabels([child]);
+		const index = buildExportedMarkdownLinkIndex(
+			[child],
+			(note) => labels.get(note.id) ?? note.title
+		);
+
+		expect(rewriteMarkdownLinksForExport("Inline `[[Child]]", index)).toBe("Inline `[[Child]]");
+		expect(rewriteMarkdownLinksForExport("![[diagram.png", index)).toBe("![[diagram.png");
+		expect(rewriteMarkdownLinksForExport("[[Child", index)).toBe("[[Child");
+	});
+});

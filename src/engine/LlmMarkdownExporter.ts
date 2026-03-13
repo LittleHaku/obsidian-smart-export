@@ -4,6 +4,11 @@ import {
 	DEFAULT_BUILTIN_LLM_TEMPLATE_CONTENT,
 	DEFAULT_NOTE_STRUCTURE_DESCRIPTION,
 } from "../constants/llmMarkdownTemplates";
+import {
+	buildExportedMarkdownLinkIndex,
+	buildExportedHeadingLabels,
+	rewriteMarkdownLinksForExport,
+} from "../utils/exportMarkdownLinks";
 
 const DEFAULT_PROCESSING_ORDER = "BFS (Breadth-First Search)";
 const TEMPLATE_PLACEHOLDER_REGEX = /{{\s*([a-z0-9_]+)\s*}}/g;
@@ -109,8 +114,17 @@ export class LlmMarkdownExporter {
 	}
 
 	private buildNoteContentsBlocks(allNotes: ExportNode[]): string {
+		const headingLabels = buildExportedHeadingLabels(allNotes);
+		const linkIndex = buildExportedMarkdownLinkIndex(
+			allNotes,
+			(note) => headingLabels.get(note.id)!
+		);
 		return allNotes
-			.map((note, index) => `## Note ${index + 1}: "${note.title}"\n\n${note.content ?? ""}`)
+			.map((note) => {
+				const rewrittenContent = rewriteMarkdownLinksForExport(note.content ?? "", linkIndex);
+				const headingLabel = headingLabels.get(note.id)!;
+				return `## ${headingLabel}\n\n${rewrittenContent}`;
+			})
 			.join("\n\n---\n\n");
 	}
 
