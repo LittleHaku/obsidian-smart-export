@@ -18,7 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- `Export to clipboard` is now the primary export action again in the modal
+- Export modal primary action and button ordering now follow the configured `Default export target` (clipboard or new note)
 - `Close modal after export` now applies to both clipboard exports and newly created export notes
 - `Quick export current note` now follows the configured default export target instead of always copying to clipboard
 - Quick export to new note now auto-dedupes note names when a previous export already exists at the default path
