@@ -1,10 +1,10 @@
 # Export Architecture
 
-Updated: March 5, 2026
+Updated: March 12, 2026
 
 ## Overview
 
-Smart Export builds a note tree from a selected root note, applies traversal filters, and serializes the result into a chosen export format.
+Smart Export builds a note tree from a selected root note, applies traversal filters, serializes the result into a chosen export format, and then delivers that output either to the clipboard or to a newly created vault note based on the user's delivery settings.
 
 Core modules:
 
@@ -40,7 +40,13 @@ sequenceDiagram
     Modal->>Modal: resolve custom Markdown template (optional)
     Modal->>Exporter: export(tree, vault, missingNotes, template?)
     Exporter-->>Modal: serialized output
-    Modal-->>User: copy to clipboard
+    alt Clipboard export
+        Modal-->>User: copy to clipboard
+    else New note export
+        Modal->>User: prompt for folder + note name
+        Modal->>API: create markdown note at chosen path
+        API-->>User: optionally open created note
+    end
 ```
 
 Markdown template selection and resolution:

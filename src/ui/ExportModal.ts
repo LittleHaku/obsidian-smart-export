@@ -29,15 +29,23 @@ import {
 	selectNode,
 	selectSubtree,
 } from "./treeSelection";
+import { createExportNote } from "../utils/exportNote";
+import { ExportNoteDestinationModal } from "./ExportNoteDestinationModal";
 
 const EXPORT_CHOICE_XML = "format:xml";
 const EXPORT_CHOICE_PRINT_FRIENDLY = "format:print-friendly-markdown";
 const EXPORT_CHOICE_LLM_PREFIX = "template:";
 
+interface PreparedExportOutput {
+	rootFile: TFile;
+	output: string;
+	tokenCount: number;
+}
+
 /**
  * The main modal for configuring and triggering a smart export.
  * It allows users to select a root note, adjust traversal depth,
- * and export the resulting note tree to the clipboard.
+ * and export the resulting note tree to the clipboard or a new note.
  */
 export class ExportModal extends Modal {
 	private static readonly MAX_TREE_CACHE_ENTRIES = 5;
@@ -348,14 +356,26 @@ export class ExportModal extends Modal {
 
 		new Setting(exportActionSection)
 			.setName("Ready to export?")
-			.setDesc("Generate the export and copy it to clipboard")
+			.setDesc("Generate the export and copy it to clipboard or create a new note")
 			.addButton((button) => {
-				button
-					.setButtonText("Export to clipboard")
-					.setCta()
-					.onClick(() => {
-						void this.onExport();
-					});
+				const isDefaultTarget = this.settings.defaultExportTarget === "new-note";
+				button.setButtonText("Export to new note");
+				if (isDefaultTarget) {
+					button.setCta();
+				}
+				button.onClick(() => {
+					void this.onExportToNewNote();
+				});
+			})
+			.addButton((button) => {
+				const isDefaultTarget = this.settings.defaultExportTarget === "clipboard";
+				button.setButtonText("Export to clipboard");
+				if (isDefaultTarget) {
+					button.setCta();
+				}
+				button.onClick(() => {
+					void this.onExportToClipboard();
+				});
 			});
 	}
 
@@ -463,18 +483,19 @@ export class ExportModal extends Modal {
 	 * Handles the main export action when the user clicks the export button.
 	 * @private
 	 */
-	private async onExport() {
+	private async prepareExportOutput(): Promise<PreparedExportOutput | null> {
 		if (!this.selectedFile) {
 			new Notice("Please select a root note first.");
-			return;
+			return null;
 		}
 
+		const rootFile = this.selectedFile;
 		this.tokenCountEl.setText("Exporting...");
 		const exportTree = await this.ensureExportTree();
 		if (!exportTree) {
 			this.tokenCountEl.setText("Export failed");
 			new Notice("Failed to generate export. See console for details.");
-			return;
+			return null;
 		}
 		const adjustedTree = applyContentSelection(exportTree, this.selectedNodeIds);
 		const llmMarkdownTemplate =
@@ -499,15 +520,29 @@ export class ExportModal extends Modal {
 		});
 		const tokenCount = this.estimateTokens(output);
 		this.tokenCountEl.setText(this.formatTokenCountMessage(tokenCount));
+
+		return {
+			rootFile,
+			output,
+			tokenCount,
+		};
+	}
+
+	private async onExportToClipboard() {
+		const preparedExport = await this.prepareExportOutput();
+		if (!preparedExport) {
+			return;
+		}
+
 		if (!navigator.clipboard?.writeText) {
 			new Notice("Clipboard is not available in this environment.");
 			return;
 		}
 		try {
-			await navigator.clipboard.writeText(output);
+			await navigator.clipboard.writeText(preparedExport.output);
 		} catch (error) {
 			console.error("Failed to copy export to clipboard", error);
-			this.tokenCountEl.setText(this.formatTokenCountMessage(tokenCount));
+			this.tokenCountEl.setText(this.formatTokenCountMessage(preparedExport.tokenCount));
 			new Notice("Failed to copy export to clipboard.");
 			return;
 		}
@@ -515,6 +550,36 @@ export class ExportModal extends Modal {
 		if (this.settings.closeModalAfterExport) {
 			this.close();
 		}
+	}
+
+	private async onExportToNewNote() {
+		const preparedExport = await this.prepareExportOutput();
+		if (!preparedExport) {
+			return;
+		}
+
+		new ExportNoteDestinationModal(
+			this.app,
+			preparedExport.rootFile,
+			this.settings.defaultExportNoteFolderPath,
+			async (destination) => {
+				try {
+					const createdFile = await createExportNote(this.app, preparedExport.output, destination, {
+						openAfterCreate: this.settings.openCreatedExportNote,
+					});
+					new Notice(`Export note created: ${createdFile.path}`);
+				} catch (error) {
+					console.error("Failed to create export note", error);
+					this.tokenCountEl.setText(this.formatTokenCountMessage(preparedExport.tokenCount));
+					new Notice(error instanceof Error ? error.message : "Failed to create export note.");
+					return false;
+				}
+
+				if (this.settings.closeModalAfterExport) {
+					this.close();
+				}
+			}
+		).open();
 	}
 
 	/**

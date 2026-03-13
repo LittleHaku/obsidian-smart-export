@@ -32,7 +32,9 @@ Use [BRAT (Beta Reviewers Auto-update Tool)](https://github.com/TfTHacker/obsidi
 2. Select a root note.
 3. Set depth values (recommended start: content `2`, title `4`).
 4. Choose output format.
-5. Click **Export to clipboard**.
+5. Click **Export to clipboard** or **Export to new note**.
+
+`Export to new note` prompts for a vault-relative folder and note name, then creates the Markdown note using your default folder/open preferences from settings.
 
 ## 3 Features
 
@@ -45,6 +47,7 @@ Use [BRAT (Beta Reviewers Auto-update Tool)](https://github.com/TfTHacker/obsidi
 - Tag/property exclusion rules for traversal (`Hide notes with tags`, `Hide notes with property rules`).
 - Output formats: XML, Markdown templates, Print-friendly Markdown.
 - Multiple Markdown templates (built-in + custom folder templates) with placeholder support.
+- Export delivery options: copy to clipboard or create a new note in the vault after choosing folder and note name.
 - Token estimate display before export.
 
 ## 4 Settings
@@ -56,7 +59,9 @@ Settings location: **Obsidian → Settings → Smart Export**
 - **Default content depth**: `1-20`
 - **Default title depth**: `1-20`
 - **Default output**: XML, print-friendly Markdown, `LLM-ready`, or your custom templates
+- **Default export target**: clipboard or new note
 - **Default link direction**
+- **Default export note folder**: vault-relative folder for new export notes (leave empty to use the source note folder)
 
 ### 4.2 Traversal exclusions
 
@@ -72,6 +77,7 @@ Settings location: **Obsidian → Settings → Smart Export**
 
 - **Auto-select current note**
 - **Close modal after export**
+- **Open created export note**
 - **Show per-note token estimates**
 
 Exclusion details (folders/tags/properties): [Exclusion rules](docs/exclude-folders.md)
@@ -113,7 +119,7 @@ Placeholder reference: [`templates/README.md`](templates/README.md)
 ## 5 Keyboard Shortcut
 
 - Primary command: `Smart Export: Open export`
-- Quick command: `Smart Export: Quick export current note` (uses default settings and copies directly to clipboard)
+- Quick command: `Smart Export: Quick export current note` (uses default settings and follows your configured default export target)
 - Assign your own shortcut in **Settings → Hotkeys**.
 
 ## 6 Documentation
@@ -160,6 +166,8 @@ Placeholder reference: [`templates/README.md`](templates/README.md)
 
 ### 8.2 Export too large
 
+- Use **Export to new note** to avoid clipboard limits for large exports.
+- Set **Default export target** to `New note` if your quick-export hotkey should create files instead of using the clipboard.
 - Lower content/title depth.
 - Switch to Print-friendly Markdown.
 - Start from a more specific root note.

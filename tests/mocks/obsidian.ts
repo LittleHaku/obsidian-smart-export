@@ -1,6 +1,7 @@
 // This file mocks the 'obsidian' module for Vitest.
 
 export class TFile {}
+export class TFolder {}
 export class App {}
 export class Vault {}
 export class MetadataCache {}

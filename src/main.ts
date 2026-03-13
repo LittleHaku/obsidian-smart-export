@@ -13,10 +13,16 @@ import { buildExportOutput, normalizeExportFormat } from "./engine/exportOutput"
 import { ObsidianAPI } from "./obsidian-api";
 import { ExportModal } from "./ui/ExportModal";
 import { FolderPathSuggest } from "./ui/FolderPathSuggest";
-import { LinkTraversalMode, SmartExportSettings } from "./types";
+import { ExportTarget, LinkTraversalMode, SmartExportSettings } from "./types";
 import { TEMPLATE_DOCS_URL } from "./constants/templateDocs";
 import { normalizeFolderFilterList } from "./utils/folderFilters";
 import { normalizePropertyFilterList, normalizeTagFilterList } from "./utils/noteFilters";
+import {
+	createExportNote,
+	getAvailableExportNoteDestination,
+	getDefaultExportNoteDestination,
+	normalizeExportNoteFolderPath,
+} from "./utils/exportNote";
 import {
 	DEFAULT_BUILTIN_LLM_TEMPLATE_ID,
 	LLM_MARKDOWN_TEMPLATE_DIRECTORY,
@@ -57,6 +63,10 @@ function parsePropertyRuleText(text: string): string[] {
 function normalizeTemplateDirectorySetting(path: string): string {
 	const normalized = normalizeTemplateDirectoryPath(path);
 	return normalized.length > 0 ? normalized : LLM_MARKDOWN_TEMPLATE_DIRECTORY;
+}
+
+function normalizeExportTarget(value: unknown): ExportTarget {
+	return value === "new-note" ? "new-note" : "clipboard";
 }
 
 function getAvailableTemplateOptions(
@@ -113,8 +123,11 @@ const DEFAULT_SETTINGS: SmartExportSettings = {
 	defaultContentDepth: 3,
 	defaultTitleDepth: 6,
 	defaultExportFormat: "xml",
+	defaultExportTarget: "clipboard",
 	defaultLlmTemplateId: DEFAULT_BUILTIN_LLM_TEMPLATE_ID,
 	defaultLinkTraversalMode: "outgoing",
+	defaultExportNoteFolderPath: "",
+	openCreatedExportNote: true,
 	autoSelectCurrentNote: true,
 	closeModalAfterExport: false,
 	showTokenEstimatesInTree: false,
@@ -204,6 +217,9 @@ export default class SmartExportPlugin extends Plugin {
 			(storedSettings as { defaultExportFormat?: unknown } | null)?.defaultExportFormat ??
 				this.settings.defaultExportFormat
 		);
+		this.settings.defaultExportTarget = normalizeExportTarget(
+			(storedSettings as { defaultExportTarget?: unknown } | null)?.defaultExportTarget
+		);
 		const storedDefaultLlmTemplateId = (storedSettings as { defaultLlmTemplateId?: unknown } | null)
 			?.defaultLlmTemplateId;
 		this.settings.defaultLlmTemplateId =
@@ -219,23 +235,31 @@ export default class SmartExportPlugin extends Plugin {
 				: this.settings.llmMarkdownTemplateDirectory;
 		this.settings.llmMarkdownTemplateDirectory =
 			normalizeTemplateDirectorySetting(templateDirectoryValue);
+		const storedExportNoteFolderPath = (
+			storedSettings as { defaultExportNoteFolderPath?: unknown } | null
+		)?.defaultExportNoteFolderPath;
+		this.settings.defaultExportNoteFolderPath = normalizeExportNoteFolderPath(
+			typeof storedExportNoteFolderPath === "string"
+				? storedExportNoteFolderPath
+				: this.settings.defaultExportNoteFolderPath
+		);
+		const storedOpenCreatedExportNote = (
+			storedSettings as { openCreatedExportNote?: unknown } | null
+		)?.openCreatedExportNote;
+		this.settings.openCreatedExportNote =
+			typeof storedOpenCreatedExportNote === "boolean"
+				? storedOpenCreatedExportNote
+				: this.settings.openCreatedExportNote;
 	}
 
 	async saveSettings() {
 		await this.saveData(this.settings);
 	}
 
-	/**
-	 * Exports from the active note using default settings and copies the output to clipboard.
-	 */
 	private async quickExportCurrentNote(rootFile: TFile): Promise<void> {
 		try {
 			if (rootFile.extension !== "md") {
 				new Notice("Quick export only supports Markdown notes.");
-				return;
-			}
-			if (!navigator.clipboard?.writeText) {
-				new Notice("Clipboard is not available in this environment.");
 				return;
 			}
 
@@ -277,8 +301,27 @@ export default class SmartExportPlugin extends Plugin {
 					new Notice("Unknown export format in settings; falling back to XML.");
 				},
 			});
-			await navigator.clipboard.writeText(output);
-			new Notice("Quick export copied to clipboard.");
+
+			if (this.settings.defaultExportTarget === "clipboard") {
+				if (!navigator.clipboard?.writeText) {
+					new Notice("Clipboard is not available in this environment.");
+					return;
+				}
+
+				await navigator.clipboard.writeText(output);
+				new Notice("Quick export copied to clipboard.");
+				return;
+			}
+
+			const defaultDestination = getDefaultExportNoteDestination(
+				rootFile,
+				this.settings.defaultExportNoteFolderPath
+			);
+			const availableDestination = getAvailableExportNoteDestination(this.app, defaultDestination);
+			const createdFile = await createExportNote(this.app, output, availableDestination, {
+				openAfterCreate: this.settings.openCreatedExportNote,
+			});
+			new Notice(`Quick export note created: ${createdFile.path}`);
 		} catch (error) {
 			console.error("Quick export failed", error);
 			new Notice("Quick export failed. See console for details.");
@@ -289,6 +332,7 @@ export default class SmartExportPlugin extends Plugin {
 class SmartExportSettingTab extends PluginSettingTab {
 	plugin: SmartExportPlugin;
 	private templateFolderSuggest: FolderPathSuggest | null = null;
+	private exportNoteFolderSuggest: FolderPathSuggest | null = null;
 
 	constructor(app: App, plugin: SmartExportPlugin) {
 		super(app, plugin);
@@ -361,6 +405,8 @@ class SmartExportSettingTab extends PluginSettingTab {
 
 		this.templateFolderSuggest?.destroy();
 		this.templateFolderSuggest = null;
+		this.exportNoteFolderSuggest?.destroy();
+		this.exportNoteFolderSuggest = null;
 		containerEl.empty();
 
 		new Setting(containerEl).setName("Export defaults").setHeading();
@@ -426,6 +472,39 @@ class SmartExportSettingTab extends PluginSettingTab {
 				applyDefaultOutputOptions();
 			});
 		void reloadDefaultOutputOptions();
+
+		new Setting(containerEl)
+			.setName("Default export target")
+			.setDesc(
+				"Choose whether quick export and the modal primary action default to copying to clipboard or creating a new note."
+			)
+			.addDropdown((dropdown) =>
+				dropdown
+					.addOption("clipboard", "Clipboard")
+					.addOption("new-note", "New note")
+					.setValue(this.plugin.settings.defaultExportTarget)
+					.onChange(async (value: ExportTarget) => {
+						this.plugin.settings.defaultExportTarget = value;
+						await this.plugin.saveSettings();
+					})
+			);
+
+		new Setting(containerEl)
+			.setName("Default export note folder")
+			.setDesc(
+				"Vault-relative folder used when exporting to a new note. Leave empty to default to the source note folder."
+			)
+			.addText((text) => {
+				text
+					.setPlaceholder("Exports")
+					.setValue(this.plugin.settings.defaultExportNoteFolderPath)
+					.onChange(async (value) => {
+						this.plugin.settings.defaultExportNoteFolderPath = normalizeExportNoteFolderPath(value);
+						await this.plugin.saveSettings();
+					});
+				this.exportNoteFolderSuggest = new FolderPathSuggest(this.app, text.inputEl);
+				return text;
+			});
 
 		new Setting(containerEl)
 			.setName("Default link direction")
@@ -534,10 +613,20 @@ class SmartExportSettingTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.setName("Close modal after export")
-			.setDesc("Close the export dialog after copying to clipboard")
+			.setDesc("Close the export dialog after a successful export")
 			.addToggle((toggle) =>
 				toggle.setValue(this.plugin.settings.closeModalAfterExport).onChange(async (value) => {
 					this.plugin.settings.closeModalAfterExport = value;
+					await this.plugin.saveSettings();
+				})
+			);
+
+		new Setting(containerEl)
+			.setName("Open created export note")
+			.setDesc("Open the new export note immediately after creating it")
+			.addToggle((toggle) =>
+				toggle.setValue(this.plugin.settings.openCreatedExportNote).onChange(async (value) => {
+					this.plugin.settings.openCreatedExportNote = value;
 					await this.plugin.saveSettings();
 				})
 			);
@@ -556,6 +645,8 @@ class SmartExportSettingTab extends PluginSettingTab {
 	hide(): void {
 		this.templateFolderSuggest?.destroy();
 		this.templateFolderSuggest = null;
+		this.exportNoteFolderSuggest?.destroy();
+		this.exportNoteFolderSuggest = null;
 		super.hide();
 	}
 }
