@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.7.0] - 2026-03-13
+
+### Added
+
+- New `Export to new note` action in the export modal that prompts for a destination folder and note name before creating the Markdown export note
+- New setting `Default export target` to choose whether quick export and the modal CTA default to clipboard or new-note delivery
+- New setting `Default export note folder` to prefill the folder used for export-note creation and quick export to new note
+- New setting `Open created export note` to let users create export notes in the background without opening them immediately
+
+### Changed
+
+- `Export to clipboard` is now the primary export action again in the modal
+- `Close modal after export` now applies to both clipboard exports and newly created export notes
+- `Quick export current note` now follows the configured default export target instead of always copying to clipboard
+- Quick export to new note now auto-dedupes note names when a previous export already exists at the default path
+- `Export to new note` now respects the configured default folder and background-open preference
+
 ## [1.7.0-beta.2] - 2026-03-13
 
 ### Added
