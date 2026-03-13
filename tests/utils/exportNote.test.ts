@@ -120,7 +120,7 @@ describe("exportNote", () => {
 			expect(createFolder).toHaveBeenNthCalledWith(1, "projects");
 			expect(createFolder).toHaveBeenNthCalledWith(2, "projects/exports");
 			expect(create).toHaveBeenCalledWith("projects/exports/Smart export - Root.md", "Export body");
-			expect(getLeaf).toHaveBeenCalledWith(true);
+			expect(getLeaf).toHaveBeenCalledWith(false);
 			expect(openFile).toHaveBeenCalledWith(createdFile);
 			expect(result).toBe(createdFile);
 		});

@@ -143,7 +143,7 @@ export async function createExportNote(
 	const createdFile = await app.vault.create(exportNotePath, content);
 
 	if (options.openAfterCreate !== false) {
-		await app.workspace.getLeaf(true).openFile(createdFile);
+		await app.workspace.getLeaf(false).openFile(createdFile);
 	}
 
 	return createdFile;
