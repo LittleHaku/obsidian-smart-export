@@ -26,6 +26,11 @@ export interface ExportNode {
 export type LinkTraversalMode = "outgoing" | "incoming" | "both";
 
 /**
+ * Defines where an export should be delivered by default.
+ */
+export type ExportTarget = "clipboard" | "new-note";
+
+/**
  * Defines the settings for the Smart Export plugin.
  */
 export interface SmartExportSettings {
@@ -35,10 +40,16 @@ export interface SmartExportSettings {
 	defaultTitleDepth: number;
 	/** The default format for the exported output. */
 	defaultExportFormat: "xml" | "llm-markdown" | "print-friendly-markdown";
+	/** The default delivery target used by quick export and the modal CTA. */
+	defaultExportTarget: ExportTarget;
 	/** The default LLM template id used when defaultExportFormat is llm-markdown. */
 	defaultLlmTemplateId: string;
 	/** The default link direction mode used when exploring related notes. */
 	defaultLinkTraversalMode: LinkTraversalMode;
+	/** Vault-relative folder used as the default destination for export notes. */
+	defaultExportNoteFolderPath: string;
+	/** Whether newly created export notes should be opened immediately. */
+	openCreatedExportNote: boolean;
 	/** Whether to automatically select the currently active note as the root for export. */
 	autoSelectCurrentNote: boolean;
 	/** Whether to close the export modal after a successful export. */

@@ -358,17 +358,24 @@ export class ExportModal extends Modal {
 			.setName("Ready to export?")
 			.setDesc("Generate the export and copy it to clipboard or create a new note")
 			.addButton((button) => {
-				button.setButtonText("Export to new note").onClick(() => {
+				const isDefaultTarget = this.settings.defaultExportTarget === "new-note";
+				button.setButtonText("Export to new note");
+				if (isDefaultTarget) {
+					button.setCta();
+				}
+				button.onClick(() => {
 					void this.onExportToNewNote();
 				});
 			})
 			.addButton((button) => {
-				button
-					.setButtonText("Export to clipboard")
-					.setCta()
-					.onClick(() => {
-						void this.onExportToClipboard();
-					});
+				const isDefaultTarget = this.settings.defaultExportTarget === "clipboard";
+				button.setButtonText("Export to clipboard");
+				if (isDefaultTarget) {
+					button.setCta();
+				}
+				button.onClick(() => {
+					void this.onExportToClipboard();
+				});
 			});
 	}
 
@@ -551,23 +558,28 @@ export class ExportModal extends Modal {
 			return;
 		}
 
-		new ExportNoteDestinationModal(this.app, preparedExport.rootFile, async (destination) => {
-			try {
-				const createdFile = await createExportNote(this.app, preparedExport.output, destination, {
-					openAfterCreate: true,
-				});
-				new Notice(`Export note created: ${createdFile.path}`);
-			} catch (error) {
-				console.error("Failed to create export note", error);
-				this.tokenCountEl.setText(this.formatTokenCountMessage(preparedExport.tokenCount));
-				new Notice(error instanceof Error ? error.message : "Failed to create export note.");
-				return false;
-			}
+		new ExportNoteDestinationModal(
+			this.app,
+			preparedExport.rootFile,
+			this.settings.defaultExportNoteFolderPath,
+			async (destination) => {
+				try {
+					const createdFile = await createExportNote(this.app, preparedExport.output, destination, {
+						openAfterCreate: this.settings.openCreatedExportNote,
+					});
+					new Notice(`Export note created: ${createdFile.path}`);
+				} catch (error) {
+					console.error("Failed to create export note", error);
+					this.tokenCountEl.setText(this.formatTokenCountMessage(preparedExport.tokenCount));
+					new Notice(error instanceof Error ? error.message : "Failed to create export note.");
+					return false;
+				}
 
-			if (this.settings.closeModalAfterExport) {
-				this.close();
+				if (this.settings.closeModalAfterExport) {
+					this.close();
+				}
 			}
-		}).open();
+		).open();
 	}
 
 	/**

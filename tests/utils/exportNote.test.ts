@@ -4,6 +4,7 @@ import {
 	buildDefaultExportNoteName,
 	buildExportNotePath,
 	createExportNote,
+	getAvailableExportNoteDestination,
 	getDefaultExportNoteDestination,
 	normalizeExportNoteFolderPath,
 	normalizeExportNoteName,
@@ -55,6 +56,18 @@ describe("exportNote", () => {
 
 			expect(getDefaultExportNoteDestination(rootFile)).toEqual({
 				folderPath: "",
+				noteName: "Smart export - Root",
+			});
+		});
+
+		it("prefers the configured export folder when provided", () => {
+			const rootFile = Object.assign(new TFile(), {
+				path: "projects/root.md",
+				basename: "Root",
+			});
+
+			expect(getDefaultExportNoteDestination(rootFile, " exports/final ")).toEqual({
+				folderPath: "exports/final",
 				noteName: "Smart export - Root",
 			});
 		});
@@ -243,6 +256,52 @@ describe("exportNote", () => {
 
 			expect(createFolder).not.toHaveBeenCalled();
 			expect(create).toHaveBeenCalledWith("Smart export - Root.md", "Export body");
+		});
+	});
+
+	describe("getAvailableExportNoteDestination", () => {
+		it("returns the original destination when the path is unused", () => {
+			const app = {
+				vault: {
+					getAbstractFileByPath: vi.fn().mockReturnValue(null),
+				},
+			} as unknown as App;
+
+			expect(
+				getAvailableExportNoteDestination(app, {
+					folderPath: "exports",
+					noteName: "Smart export - Root",
+				})
+			).toEqual({
+				folderPath: "exports",
+				noteName: "Smart export - Root",
+			});
+		});
+
+		it("dedupes the note name when the default export note already exists", () => {
+			const app = {
+				vault: {
+					getAbstractFileByPath: vi.fn((path: string) => {
+						if (path === "exports/Smart export - Root.md") {
+							return { path };
+						}
+						if (path === "exports/Smart export - Root (2).md") {
+							return { path };
+						}
+						return null;
+					}),
+				},
+			} as unknown as App;
+
+			expect(
+				getAvailableExportNoteDestination(app, {
+					folderPath: " exports ",
+					noteName: "Smart export - Root",
+				})
+			).toEqual({
+				folderPath: "exports",
+				noteName: "Smart export - Root (3)",
+			});
 		});
 	});
 });

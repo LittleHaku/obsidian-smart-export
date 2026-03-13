@@ -4,7 +4,7 @@ Updated: March 12, 2026
 
 ## Overview
 
-Smart Export builds a note tree from a selected root note, applies traversal filters, serializes the result into a chosen export format, and then delivers that output either to the clipboard or to a newly created vault note chosen by the user.
+Smart Export builds a note tree from a selected root note, applies traversal filters, serializes the result into a chosen export format, and then delivers that output either to the clipboard or to a newly created vault note based on the user's delivery settings.
 
 Core modules:
 
@@ -45,7 +45,7 @@ sequenceDiagram
     else New note export
         Modal->>User: prompt for folder + note name
         Modal->>API: create markdown note at chosen path
-        API-->>User: open created note
+        API-->>User: optionally open created note
     end
 ```
 

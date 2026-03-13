@@ -45,10 +45,46 @@ export function buildDefaultExportNoteName(rootNoteTitle: string): string {
 	return `${EXPORT_NOTE_PREFIX} - ${sanitizeExportNoteTitleSegment(rootNoteTitle)}`;
 }
 
-export function getDefaultExportNoteDestination(rootFile: TFile): ExportNoteDestination {
+export function getDefaultExportNoteDestination(
+	rootFile: TFile,
+	preferredFolderPath?: string
+): ExportNoteDestination {
+	const normalizedPreferredFolderPath = normalizeExportNoteFolderPath(preferredFolderPath ?? "");
+
 	return {
-		folderPath: getParentFolderPath(rootFile.path),
+		folderPath:
+			normalizedPreferredFolderPath.length > 0
+				? normalizedPreferredFolderPath
+				: getParentFolderPath(rootFile.path),
 		noteName: buildDefaultExportNoteName(rootFile.basename),
+	};
+}
+
+export function getAvailableExportNoteDestination(
+	app: App,
+	destination: ExportNoteDestination
+): ExportNoteDestination {
+	const normalizedFolderPath = normalizeExportNoteFolderPath(destination.folderPath);
+	const normalizedNoteName = normalizeExportNoteName(destination.noteName);
+
+	let candidateNoteName = normalizedNoteName;
+	let suffix = 2;
+
+	while (
+		app.vault.getAbstractFileByPath(
+			buildExportNotePath({
+				folderPath: normalizedFolderPath,
+				noteName: candidateNoteName,
+			})
+		)
+	) {
+		candidateNoteName = `${normalizedNoteName} (${suffix})`;
+		suffix += 1;
+	}
+
+	return {
+		folderPath: normalizedFolderPath,
+		noteName: candidateNoteName,
 	};
 }
 
