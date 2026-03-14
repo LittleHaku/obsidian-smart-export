@@ -203,6 +203,20 @@ console.log("code block");
 			expect(result).toContain("[[#Child Note|overview (ref:Child Note)]]");
 			expect(result).toContain("summary (ref:Missing note)");
 		});
+
+		it("inserts a blank line before closing included note frontmatter", () => {
+			const rootNode = createMockExportNode(
+				"Root",
+				"root.md",
+				0,
+				["---", "summary: test", "---", "# Inner heading"].join("\n")
+			);
+			const exporter = new LlmMarkdownExporter();
+
+			const result = exporter.export(rootNode, "TestVault");
+
+			expect(result).toContain(["---", "summary: test", "", "---", "# Inner heading"].join("\n"));
+		});
 	});
 
 	describe("Metadata Generation", () => {

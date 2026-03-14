@@ -174,6 +174,58 @@ describe("exportMarkdownLinks", () => {
 		);
 	});
 
+	it("inserts a blank line before closing exported frontmatter", () => {
+		const root = createMockExportNode("Root", "Root.md");
+		const labels = buildExportedHeadingLabels([root]);
+		const index = buildExportedMarkdownLinkIndex(
+			[root],
+			(note) => labels.get(note.id) ?? note.title
+		);
+		const content = ["---", "summary: test", "---", "# Inner heading"].join("\n");
+
+		expect(rewriteMarkdownLinksForExport(content, index)).toBe(
+			["---", "summary: test", "", "---", "# Inner heading"].join("\n")
+		);
+	});
+
+	it("keeps exported frontmatter unchanged when a blank line already exists before closing", () => {
+		const root = createMockExportNode("Root", "Root.md");
+		const labels = buildExportedHeadingLabels([root]);
+		const index = buildExportedMarkdownLinkIndex(
+			[root],
+			(note) => labels.get(note.id) ?? note.title
+		);
+		const content = ["---", "summary: test", "", "---", "# Inner heading"].join("\n");
+
+		expect(rewriteMarkdownLinksForExport(content, index)).toBe(content);
+	});
+
+	it("keeps exported frontmatter unchanged when the closing fence is missing", () => {
+		const root = createMockExportNode("Root", "Root.md");
+		const labels = buildExportedHeadingLabels([root]);
+		const index = buildExportedMarkdownLinkIndex(
+			[root],
+			(note) => labels.get(note.id) ?? note.title
+		);
+		const content = ["---", "summary: test", "# Inner heading"].join("\n");
+
+		expect(rewriteMarkdownLinksForExport(content, index)).toBe(content);
+	});
+
+	it("preserves CRLF line endings when inserting a blank line before closing frontmatter", () => {
+		const root = createMockExportNode("Root", "Root.md");
+		const labels = buildExportedHeadingLabels([root]);
+		const index = buildExportedMarkdownLinkIndex(
+			[root],
+			(note) => labels.get(note.id) ?? note.title
+		);
+		const content = ["---", "summary: test", "---", "# Inner heading"].join("\r\n");
+
+		expect(rewriteMarkdownLinksForExport(content, index)).toBe(
+			["---", "summary: test", "", "---", "# Inner heading"].join("\r\n")
+		);
+	});
+
 	it("returns empty content unchanged", () => {
 		const root = createMockExportNode("Root", "Root.md");
 		const labels = buildExportedHeadingLabels([root]);

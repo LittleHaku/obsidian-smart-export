@@ -185,6 +185,20 @@ console.log("code block");
 			expect(result).toContain("![[diagram.png]]");
 		});
 
+		it("inserts a blank line before closing included note frontmatter", () => {
+			const rootNode = createMockExportNode(
+				"Root",
+				"root.md",
+				0,
+				["---", "summary: test", "---", "# Inner heading"].join("\n")
+			);
+			const exporter = new PrintFriendlyMarkdownExporter();
+
+			const result = exporter.export(rootNode);
+
+			expect(result).toContain(["---", "summary: test", "", "---", "# Inner heading"].join("\n"));
+		});
+
 		it("should handle undefined content", () => {
 			const rootNode: ExportNode = {
 				id: "test.md",

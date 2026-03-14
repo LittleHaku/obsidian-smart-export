@@ -13,6 +13,25 @@ interface ExportedMarkdownLinkIndex {
 	titleReferences: Map<string, ExportedNoteReference | null>;
 }
 
+function normalizeFrontmatterSpacingForExport(content: string): string {
+	if (!(content.startsWith("---\n") || content.startsWith("---\r\n"))) {
+		return content;
+	}
+
+	const newline = content.startsWith("---\r\n") ? "\r\n" : "\n";
+	const lines = content.split(/\r?\n/);
+	const closingIndex = lines.indexOf("---", 1);
+	if (closingIndex < 0) {
+		return content;
+	}
+
+	if (closingIndex > 1 && lines[closingIndex - 1] === "") {
+		return content;
+	}
+
+	return [...lines.slice(0, closingIndex), "", ...lines.slice(closingIndex)].join(newline);
+}
+
 function normalizeLookupKey(value: string): string {
 	const trimmedValue = value.trim().replace(MARKDOWN_EXTENSION_REGEX, "");
 	if (trimmedValue.length === 0) {
@@ -134,6 +153,8 @@ export function rewriteMarkdownLinksForExport(
 	if (content.length === 0) {
 		return content;
 	}
+
+	content = normalizeFrontmatterSpacingForExport(content);
 
 	const rewrittenParts: string[] = [];
 	let currentIndex = 0;
