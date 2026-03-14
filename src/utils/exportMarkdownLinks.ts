@@ -27,24 +27,101 @@ function findLineEnd(content: string, startIndex: number): number {
 	return newlineIndex >= 0 ? newlineIndex + 1 : content.length;
 }
 
-function isFenceStart(content: string, markerIndex: number): boolean {
-	let lineStart = markerIndex;
+function findLineStart(content: string, startIndex: number): number {
+	let lineStart = startIndex;
 	while (lineStart > 0 && content[lineStart - 1] !== "\n") {
 		lineStart -= 1;
 	}
 
-	const indentation = markerIndex - lineStart;
-	if (indentation > 3) {
-		return false;
+	return lineStart;
+}
+
+function skipUpToThreeLeadingSpaces(content: string, startIndex: number): number {
+	let currentIndex = startIndex;
+	let indentation = 0;
+	while (indentation < 3 && content[currentIndex] === " ") {
+		currentIndex += 1;
+		indentation += 1;
 	}
 
-	for (let index = lineStart; index < markerIndex; index += 1) {
-		if (content[index] !== " ") {
-			return false;
+	return currentIndex;
+}
+
+function tryConsumeListMarker(content: string, startIndex: number): number {
+	const unorderedMarker = content[startIndex];
+	if (
+		(unorderedMarker === "-" || unorderedMarker === "+" || unorderedMarker === "*") &&
+		(content[startIndex + 1] === " " || content[startIndex + 1] === "\t")
+	) {
+		let currentIndex = startIndex + 2;
+		while (content[currentIndex] === " " || content[currentIndex] === "\t") {
+			currentIndex += 1;
 		}
+
+		return currentIndex;
 	}
 
-	return true;
+	let currentIndex = startIndex;
+	while (content[currentIndex] >= "0" && content[currentIndex] <= "9") {
+		currentIndex += 1;
+	}
+
+	if (
+		currentIndex > startIndex &&
+		(content[currentIndex] === "." || content[currentIndex] === ")") &&
+		(content[currentIndex + 1] === " " || content[currentIndex + 1] === "\t")
+	) {
+		currentIndex += 2;
+		while (content[currentIndex] === " " || content[currentIndex] === "\t") {
+			currentIndex += 1;
+		}
+
+		return currentIndex;
+	}
+
+	return -1;
+}
+
+function findFenceMarkerIndexAtLine(content: string, lineStart: number): number {
+	let currentIndex = skipUpToThreeLeadingSpaces(content, lineStart);
+
+	while (true) {
+		if (content[currentIndex] === ">") {
+			currentIndex += 1;
+			if (content[currentIndex] === " ") {
+				currentIndex += 1;
+			}
+			currentIndex = skipUpToThreeLeadingSpaces(content, currentIndex);
+			continue;
+		}
+
+		const listMarkerEnd = tryConsumeListMarker(content, currentIndex);
+		if (listMarkerEnd >= 0) {
+			currentIndex = skipUpToThreeLeadingSpaces(content, listMarkerEnd);
+			continue;
+		}
+
+		break;
+	}
+
+	return currentIndex;
+}
+
+function isFenceStart(content: string, markerIndex: number): boolean {
+	const lineStart = findLineStart(content, markerIndex);
+	return findFenceMarkerIndexAtLine(content, lineStart) === markerIndex;
+}
+
+function findClosingInlineCodeSpan(
+	content: string,
+	startIndex: number,
+	backtickLength: number
+): number {
+	const lineEnd = findLineEnd(content, startIndex);
+	const closingDelimiter = "`".repeat(backtickLength);
+	const closingIndex = content.indexOf(closingDelimiter, startIndex + backtickLength);
+
+	return closingIndex >= 0 && closingIndex < lineEnd ? closingIndex : -1;
 }
 
 function findClosingCodeFence(
@@ -56,13 +133,7 @@ function findClosingCodeFence(
 	let lineStart = findLineEnd(content, startIndex);
 
 	while (lineStart < content.length) {
-		let markerIndex = lineStart;
-		let indentation = 0;
-		while (indentation < 3 && content[markerIndex] === " ") {
-			markerIndex += 1;
-			indentation += 1;
-		}
-
+		const markerIndex = findFenceMarkerIndexAtLine(content, lineStart);
 		const markerLength = countRepeatedCharacter(content, markerIndex, fenceCharacter);
 		if (markerLength >= fenceLength) {
 			let afterMarkerIndex = markerIndex + markerLength;
@@ -258,7 +329,7 @@ export function rewriteMarkdownLinksForExport(
 			const isFence = backtickLength >= 3 && isFenceStart(content, currentIndex);
 			const closingIndex = isFence
 				? findClosingCodeFence(content, currentIndex, "`", backtickLength)
-				: content.indexOf("`".repeat(backtickLength), currentIndex + backtickLength);
+				: findClosingInlineCodeSpan(content, currentIndex, backtickLength);
 			if (closingIndex < 0) {
 				rewrittenParts.push(content.slice(currentIndex));
 				break;

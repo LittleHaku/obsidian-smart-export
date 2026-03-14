@@ -280,18 +280,112 @@ describe("exportMarkdownLinks", () => {
 		expect(rewriteMarkdownLinksForExport(content, index)).toBe(content);
 	});
 
-	it("does not treat backtick runs with non-space prefix text as fenced code blocks", () => {
+	it("keeps rewriting disabled inside list-item fenced code blocks", () => {
 		const child = createMockExportNode("Child", "Child.md");
 		const labels = buildExportedHeadingLabels([child]);
 		const index = buildExportedMarkdownLinkIndex(
 			[child],
 			(note) => labels.get(note.id) ?? note.title
 		);
-		const content = ["- ```md", "[[Child]]", "```", "Outside [[Child]]"].join("\n");
+		const content = [
+			"- ```md",
+			'  const literalFence = "```";',
+			"  [[Child]]",
+			"  ```",
+			"Outside [[Child]]",
+		].join("\n");
 
 		expect(rewriteMarkdownLinksForExport(content, index)).toBe(
-			["- ```md", "[[Child]]", "```", "Outside [[#Child|Child]]"].join("\n")
+			[
+				"- ```md",
+				'  const literalFence = "```";',
+				"  [[Child]]",
+				"  ```",
+				"Outside [[#Child|Child]]",
+			].join("\n")
 		);
+	});
+
+	it("supports unordered-list fences with extra spacing after the list marker", () => {
+		const child = createMockExportNode("Child", "Child.md");
+		const labels = buildExportedHeadingLabels([child]);
+		const index = buildExportedMarkdownLinkIndex(
+			[child],
+			(note) => labels.get(note.id) ?? note.title
+		);
+		const content = ["- \t ```md", "   [[Child]]", "   ```", "Outside [[Child]]"].join("\n");
+
+		expect(rewriteMarkdownLinksForExport(content, index)).toBe(
+			["- \t ```md", "   [[Child]]", "   ```", "Outside [[#Child|Child]]"].join("\n")
+		);
+	});
+
+	it("supports unordered-list fences when the list marker is followed directly by a tab", () => {
+		const child = createMockExportNode("Child", "Child.md");
+		const labels = buildExportedHeadingLabels([child]);
+		const index = buildExportedMarkdownLinkIndex(
+			[child],
+			(note) => labels.get(note.id) ?? note.title
+		);
+		const content = ["-\t```md", "   [[Child]]", "   ```", "Outside [[Child]]"].join("\n");
+
+		expect(rewriteMarkdownLinksForExport(content, index)).toBe(
+			["-\t```md", "   [[Child]]", "   ```", "Outside [[#Child|Child]]"].join("\n")
+		);
+	});
+
+	it("keeps rewriting disabled inside ordered-list fenced code blocks", () => {
+		const child = createMockExportNode("Child", "Child.md");
+		const labels = buildExportedHeadingLabels([child]);
+		const index = buildExportedMarkdownLinkIndex(
+			[child],
+			(note) => labels.get(note.id) ?? note.title
+		);
+		const content = ["1. ```md", "   [[Child]]", "   ```", "Outside [[Child]]"].join("\n");
+
+		expect(rewriteMarkdownLinksForExport(content, index)).toBe(
+			["1. ```md", "   [[Child]]", "   ```", "Outside [[#Child|Child]]"].join("\n")
+		);
+	});
+
+	it("supports ordered-list fences with extra spacing after the list marker", () => {
+		const child = createMockExportNode("Child", "Child.md");
+		const labels = buildExportedHeadingLabels([child]);
+		const index = buildExportedMarkdownLinkIndex(
+			[child],
+			(note) => labels.get(note.id) ?? note.title
+		);
+		const content = ["1)\t ```md", "   [[Child]]", "   ```", "Outside [[Child]]"].join("\n");
+
+		expect(rewriteMarkdownLinksForExport(content, index)).toBe(
+			["1)\t ```md", "   [[Child]]", "   ```", "Outside [[#Child|Child]]"].join("\n")
+		);
+	});
+
+	it("keeps rewriting disabled inside blockquote fenced code blocks", () => {
+		const child = createMockExportNode("Child", "Child.md");
+		const labels = buildExportedHeadingLabels([child]);
+		const index = buildExportedMarkdownLinkIndex(
+			[child],
+			(note) => labels.get(note.id) ?? note.title
+		);
+		const content = ["> ```md", "> [[Child]]", "> ```", "Outside [[Child]]"].join("\n");
+
+		expect(rewriteMarkdownLinksForExport(content, index)).toBe(
+			["> ```md", "> [[Child]]", "> ```", "Outside [[#Child|Child]]"].join("\n")
+		);
+	});
+
+	it("does not use a later-line backtick run to close a non-fence inline code span", () => {
+		const child = createMockExportNode("Child", "Child.md");
+		const labels = buildExportedHeadingLabels([child]);
+		const index = buildExportedMarkdownLinkIndex(
+			[child],
+			(note) => labels.get(note.id) ?? note.title
+		);
+		const content = ["Text ```md", 'const literalFence = "```";', "[[Child]]"].join("\n");
+
+		expect(rewriteMarkdownLinksForExport(content, index)).toBe(content);
 	});
 
 	it("leaves unterminated fenced code blocks unchanged", () => {
