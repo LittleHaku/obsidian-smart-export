@@ -27,7 +27,7 @@ function getTargetLookupKey(linkTarget: string): string {
 	return normalizeLookupKey(baseTarget);
 }
 
-function escapeMarkdownLinkLabel(value: string): string {
+function escapeWikiLinkValue(value: string): string {
 	return value.replace(/\\/g, "\\\\").replace(/\|/g, "\\|").replace(/\]/g, "\\]");
 }
 
@@ -50,7 +50,7 @@ function rewriteWikiLink(innerContent: string, linkIndex: ExportedMarkdownLinkIn
 	}
 
 	const label = alias.length > 0 ? `${alias} (ref:${rawTarget})` : rawTarget;
-	return `[[#${resolvedReference.headingTarget}|${escapeMarkdownLinkLabel(label)}]]`;
+	return `[[#${escapeWikiLinkValue(resolvedReference.headingTarget)}|${escapeWikiLinkValue(label)}]]`;
 }
 
 function getDisplayPath(noteId: string): string {

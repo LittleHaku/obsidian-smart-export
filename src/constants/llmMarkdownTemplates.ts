@@ -3,7 +3,7 @@ export const COMPACT_BUILTIN_LLM_TEMPLATE_ID = "builtin:compact";
 
 export const DEFAULT_NOTE_STRUCTURE_DESCRIPTION = `This export contains a knowledge graph of interconnected Obsidian notes.
 Notes are presented in breadth-first order starting from the root note.
-Links between notes are preserved as [[wiki-style links]].
+Links to notes included in the export are rewritten as same-note heading links.
 Missing notes (referenced but not found) are listed separately.`;
 
 export const DEFAULT_BUILTIN_LLM_TEMPLATE_CONTENT = `{{metadata_yaml}}

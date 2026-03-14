@@ -23,17 +23,22 @@ export class PrintFriendlyMarkdownExporter {
 			(note) => headingLabels.get(note.id)!
 		);
 		const chunks: string[] = [];
-		this.buildNode(rootNode, 0, chunks, linkIndex, headingLabels);
+		this.buildNode(rootNode, 0, chunks, linkIndex, headingLabels, new Set<string>());
 		return chunks.join("");
 	}
 
 	private flattenTree(rootNode: ExportNode): ExportNode[] {
 		const queue: ExportNode[] = [rootNode];
 		const notes: ExportNode[] = [];
+		const visited = new Set<string>();
 		let head = 0;
 
 		while (head < queue.length) {
 			const note = queue[head++];
+			if (visited.has(note.id)) {
+				continue;
+			}
+			visited.add(note.id);
 			notes.push(note);
 			for (const child of note.children) {
 				queue.push(child);
@@ -55,8 +60,14 @@ export class PrintFriendlyMarkdownExporter {
 		depth: number,
 		chunks: string[],
 		linkIndex: ReturnType<typeof buildExportedMarkdownLinkIndex>,
-		headingLabels: Map<string, string>
+		headingLabels: Map<string, string>,
+		visited: Set<string>
 	) {
+		if (visited.has(node.id)) {
+			return;
+		}
+		visited.add(node.id);
+
 		const prefix = "#".repeat(depth + 1);
 		const headingLabel = headingLabels.get(node.id)!;
 		chunks.push(`${prefix} ${headingLabel}\n\n`);
@@ -66,7 +77,7 @@ export class PrintFriendlyMarkdownExporter {
 		}
 
 		for (const child of node.children) {
-			this.buildNode(child, depth + 1, chunks, linkIndex, headingLabels);
+			this.buildNode(child, depth + 1, chunks, linkIndex, headingLabels, visited);
 		}
 	}
 }

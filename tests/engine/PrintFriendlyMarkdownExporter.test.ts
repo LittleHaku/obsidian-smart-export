@@ -247,6 +247,20 @@ console.log("code block");
 	});
 
 	describe("Edge Cases", () => {
+		it("should handle circular references without infinite recursion", () => {
+			const nodeB = createMockExportNode("Node B", "node-b.md", 1, "Content B");
+			const nodeA = createMockExportNode("Node A", "node-a.md", 0, "Content A", [nodeB]);
+			nodeB.children.push(nodeA);
+
+			const exporter = new PrintFriendlyMarkdownExporter();
+			const result = exporter.export(nodeA);
+
+			expect(result.match(/^# Node A$/m)).toHaveLength(1);
+			expect(result.match(/^## Node B$/m)).toHaveLength(1);
+			expect(result).toContain("Content A");
+			expect(result).toContain("Content B");
+		});
+
 		it("should handle notes with special characters in titles", () => {
 			const rootNode = createMockExportNode(
 				'Note with "quotes" & <brackets>',

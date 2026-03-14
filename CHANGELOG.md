@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Exported same-note heading links now safely escape note titles that contain wiki-link control characters such as `|` and `]`
+- Print-friendly Markdown export now guards against cyclic note graphs when building and rendering the exported note
+- LLM note-structure text now accurately describes rewritten same-note heading links instead of claiming links remain raw `[[wiki-style links]]`
+
 ## [1.8.0-beta.1] - 2026-03-13
 
 ### Changed

@@ -63,6 +63,19 @@ describe("exportMarkdownLinks", () => {
 		);
 	});
 
+	it("escapes heading targets that contain wiki-link control characters", () => {
+		const special = createMockExportNode("Heading ]| target", "special.md");
+		const labels = buildExportedHeadingLabels([special]);
+		const index = buildExportedMarkdownLinkIndex(
+			[special],
+			(note) => labels.get(note.id) ?? note.title
+		);
+
+		expect(rewriteMarkdownLinksForExport("See [[special|summary]].", index)).toBe(
+			"See [[#Heading \\]\\| target|summary (ref:special)]]."
+		);
+	});
+
 	it("keeps ambiguous title-only links untouched", () => {
 		const notes = [
 			createMockExportNode("Duplicate", "folder-a/Duplicate.md"),

@@ -235,7 +235,7 @@ console.log("code block");
 
 			expect(result).toContain("This export contains a knowledge graph");
 			expect(result).toContain("breadth-first order");
-			expect(result).toContain("[[wiki-style links]]");
+			expect(result).toContain("same-note heading links");
 			expect(result).toContain("Missing notes (referenced but not found)");
 		});
 	});
@@ -349,7 +349,7 @@ Missing: {{missing_notes}}
 			);
 
 			expect(result).toContain("This export contains a knowledge graph");
-			expect(result).toContain("[[wiki-style links]]");
+			expect(result).toContain("same-note heading links");
 		});
 	});
 
