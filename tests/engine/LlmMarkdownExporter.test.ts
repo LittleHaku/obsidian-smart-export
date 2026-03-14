@@ -121,6 +121,23 @@ describe("LlmMarkdownExporter", () => {
 			expect(child2Index).toBeLessThan(gc1Index);
 			expect(gc1Index).toBeLessThan(gc2Index);
 		});
+
+		it("disambiguates duplicate titles consistently in included notes and headings", () => {
+			const duplicateA = createMockExportNode("Duplicate", "folder-a/Duplicate.md", 1, "A");
+			const duplicateB = createMockExportNode("Duplicate", "folder-b/Duplicate.md", 1, "B");
+			const rootNode = createMockExportNode("Root", "root.md", 0, "Root content", [
+				duplicateA,
+				duplicateB,
+			]);
+
+			const exporter = new LlmMarkdownExporter();
+			const result = exporter.export(rootNode, "TestVault");
+
+			expect(result).toContain('Note 2: "Duplicate (folder-a/Duplicate)"');
+			expect(result).toContain('Note 3: "Duplicate (folder-b/Duplicate)"');
+			expect(result).toContain("## Duplicate (folder-a/Duplicate)");
+			expect(result).toContain("## Duplicate (folder-b/Duplicate)");
+		});
 	});
 
 	describe("Content Handling", () => {

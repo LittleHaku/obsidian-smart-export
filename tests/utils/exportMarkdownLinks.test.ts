@@ -174,6 +174,54 @@ describe("exportMarkdownLinks", () => {
 		);
 	});
 
+	it("keeps rewriting disabled inside fenced code blocks even when fence text appears in the block", () => {
+		const child = createMockExportNode("Child", "Child.md");
+		const labels = buildExportedHeadingLabels([child]);
+		const index = buildExportedMarkdownLinkIndex(
+			[child],
+			(note) => labels.get(note.id) ?? note.title
+		);
+		const content = [
+			"```md",
+			'const literalFence = "```";',
+			"[[Child]]",
+			"```",
+			"Outside [[Child]]",
+		].join("\n");
+
+		expect(rewriteMarkdownLinksForExport(content, index)).toBe(
+			["```md", 'const literalFence = "```";', "[[Child]]", "```", "Outside [[#Child|Child]]"].join(
+				"\n"
+			)
+		);
+	});
+
+	it("supports indented CRLF closing fences without rewriting inside the block", () => {
+		const child = createMockExportNode("Child", "Child.md");
+		const labels = buildExportedHeadingLabels([child]);
+		const index = buildExportedMarkdownLinkIndex(
+			[child],
+			(note) => labels.get(note.id) ?? note.title
+		);
+		const content = ["```md", "[[Child]]", "  ```", "Outside [[Child]]"].join("\r\n");
+
+		expect(rewriteMarkdownLinksForExport(content, index)).toBe(
+			["```md", "[[Child]]", "  ```", "Outside [[#Child|Child]]"].join("\r\n")
+		);
+	});
+
+	it("leaves unterminated fenced code blocks unchanged", () => {
+		const child = createMockExportNode("Child", "Child.md");
+		const labels = buildExportedHeadingLabels([child]);
+		const index = buildExportedMarkdownLinkIndex(
+			[child],
+			(note) => labels.get(note.id) ?? note.title
+		);
+		const content = ["```md", "[[Child]]", "const note = 1;"].join("\n");
+
+		expect(rewriteMarkdownLinksForExport(content, index)).toBe(content);
+	});
+
 	it("inserts a blank line before closing exported frontmatter", () => {
 		const root = createMockExportNode("Root", "Root.md");
 		const labels = buildExportedHeadingLabels([root]);
@@ -262,5 +310,18 @@ describe("exportMarkdownLinks", () => {
 		expect(rewriteMarkdownLinksForExport("Inline `[[Child]]", index)).toBe("Inline `[[Child]]");
 		expect(rewriteMarkdownLinksForExport("![[diagram.png", index)).toBe("![[diagram.png");
 		expect(rewriteMarkdownLinksForExport("[[Child", index)).toBe("[[Child");
+	});
+
+	it("keeps standalone bracket and bang characters unchanged", () => {
+		const child = createMockExportNode("Child", "Child.md");
+		const labels = buildExportedHeadingLabels([child]);
+		const index = buildExportedMarkdownLinkIndex(
+			[child],
+			(note) => labels.get(note.id) ?? note.title
+		);
+
+		expect(rewriteMarkdownLinksForExport("Array syntax [x] and excitement!", index)).toBe(
+			"Array syntax [x] and excitement!"
+		);
 	});
 });

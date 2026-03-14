@@ -13,6 +13,65 @@ interface ExportedMarkdownLinkIndex {
 	titleReferences: Map<string, ExportedNoteReference | null>;
 }
 
+function countRepeatedCharacter(content: string, startIndex: number, character: string): number {
+	let currentIndex = startIndex;
+	while (content[currentIndex] === character) {
+		currentIndex += 1;
+	}
+
+	return currentIndex - startIndex;
+}
+
+function findLineEnd(content: string, startIndex: number): number {
+	const newlineIndex = content.indexOf("\n", startIndex);
+	return newlineIndex >= 0 ? newlineIndex + 1 : content.length;
+}
+
+function findClosingCodeFence(
+	content: string,
+	startIndex: number,
+	fenceCharacter: string,
+	fenceLength: number
+): number {
+	let lineStart = findLineEnd(content, startIndex);
+
+	while (lineStart < content.length) {
+		let markerIndex = lineStart;
+		let indentation = 0;
+		while (indentation < 3 && content[markerIndex] === " ") {
+			markerIndex += 1;
+			indentation += 1;
+		}
+
+		const markerLength = countRepeatedCharacter(content, markerIndex, fenceCharacter);
+		if (markerLength >= fenceLength) {
+			const afterMarkerIndex = markerIndex + markerLength;
+			const followingCharacter = content[afterMarkerIndex];
+			if (
+				afterMarkerIndex === content.length ||
+				followingCharacter === "\n" ||
+				followingCharacter === "\r"
+			) {
+				return findLineEnd(content, afterMarkerIndex);
+			}
+		}
+
+		lineStart = findLineEnd(content, lineStart);
+	}
+
+	return -1;
+}
+
+function getNextSpecialTokenIndex(content: string, currentIndex: number): number {
+	const candidateIndexes = [
+		content.indexOf("`", currentIndex),
+		content.indexOf("![[", currentIndex),
+		content.indexOf("[[", currentIndex),
+	].filter((index) => index >= 0);
+
+	return candidateIndexes.length > 0 ? Math.min(...candidateIndexes) : -1;
+}
+
 function normalizeFrontmatterSpacingForExport(content: string): string {
 	if (!(content.startsWith("---\n") || content.startsWith("---\r\n"))) {
 		return content;
@@ -116,16 +175,11 @@ export function buildExportedMarkdownLinkIndex(
 		const reference = {
 			headingTarget: getHeadingTarget(note, index),
 		};
-		const pathLookupKeys = new Set<string>([
-			normalizeLookupKey(note.id),
-			normalizeLookupKey(note.id.replace(MARKDOWN_EXTENSION_REGEX, "")),
-		]);
+		const pathLookupKey = normalizeLookupKey(note.id);
 		const titleLookupKey = normalizeLookupKey(note.title);
 
-		for (const key of pathLookupKeys) {
-			if (key.length > 0) {
-				pathReferences.set(key, reference);
-			}
+		if (pathLookupKey.length > 0) {
+			pathReferences.set(pathLookupKey, reference);
 		}
 
 		if (titleLookupKey.length === 0) {
@@ -160,16 +214,32 @@ export function rewriteMarkdownLinksForExport(
 	let currentIndex = 0;
 
 	while (currentIndex < content.length) {
-		const backtickMatch = content.slice(currentIndex).match(/^`+/);
-		if (backtickMatch) {
-			const backticks = backtickMatch[0];
-			const closingIndex = content.indexOf(backticks, currentIndex + backticks.length);
+		const nextSpecialIndex = getNextSpecialTokenIndex(content, currentIndex);
+		if (nextSpecialIndex < 0) {
+			rewrittenParts.push(content.slice(currentIndex));
+			break;
+		}
+
+		if (nextSpecialIndex > currentIndex) {
+			rewrittenParts.push(content.slice(currentIndex, nextSpecialIndex));
+			currentIndex = nextSpecialIndex;
+		}
+
+		if (content[currentIndex] === "`") {
+			const backtickLength = countRepeatedCharacter(content, currentIndex, "`");
+			const isFence =
+				backtickLength >= 3 && (currentIndex === 0 || content[currentIndex - 1] === "\n");
+			const closingIndex = isFence
+				? findClosingCodeFence(content, currentIndex, "`", backtickLength)
+				: content.indexOf("`".repeat(backtickLength), currentIndex + backtickLength);
 			if (closingIndex < 0) {
 				rewrittenParts.push(content.slice(currentIndex));
 				break;
 			}
-			rewrittenParts.push(content.slice(currentIndex, closingIndex + backticks.length));
-			currentIndex = closingIndex + backticks.length;
+
+			const sliceEnd = isFence ? closingIndex : closingIndex + backtickLength;
+			rewrittenParts.push(content.slice(currentIndex, sliceEnd));
+			currentIndex = sliceEnd;
 			continue;
 		}
 
@@ -184,21 +254,13 @@ export function rewriteMarkdownLinksForExport(
 			continue;
 		}
 
-		if (content.startsWith("[[", currentIndex)) {
-			const closingIndex = content.indexOf("]]", currentIndex + 2);
-			if (closingIndex < 0) {
-				rewrittenParts.push(content.slice(currentIndex));
-				break;
-			}
-			rewrittenParts.push(
-				rewriteWikiLink(content.slice(currentIndex + 2, closingIndex), linkIndex)
-			);
-			currentIndex = closingIndex + 2;
-			continue;
+		const closingIndex = content.indexOf("]]", currentIndex + 2);
+		if (closingIndex < 0) {
+			rewrittenParts.push(content.slice(currentIndex));
+			break;
 		}
-
-		rewrittenParts.push(content[currentIndex]);
-		currentIndex += 1;
+		rewrittenParts.push(rewriteWikiLink(content.slice(currentIndex + 2, closingIndex), linkIndex));
+		currentIndex = closingIndex + 2;
 	}
 
 	return rewrittenParts.join("");

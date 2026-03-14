@@ -102,8 +102,10 @@ export class LlmMarkdownExporter {
 		return `---\n${stringifyYaml(metadata)}---`;
 	}
 
-	private buildIncludedNotes(allNotes: ExportNode[]): string {
-		return allNotes.map((note, index) => `- Note ${index + 1}: "${note.title}"`).join("\n");
+	private buildIncludedNotes(allNotes: ExportNode[], headingLabels: Map<string, string>): string {
+		return allNotes
+			.map((note, index) => `- Note ${index + 1}: "${headingLabels.get(note.id)!}"`)
+			.join("\n");
 	}
 
 	private buildNoteStructureSection(
@@ -113,8 +115,10 @@ export class LlmMarkdownExporter {
 		return `## Note Structure\n\n**Description**:\n${noteStructureDescription}\n\n**Included Notes**:\n${includedNotes}`;
 	}
 
-	private buildNoteContentsBlocks(allNotes: ExportNode[]): string {
-		const headingLabels = buildExportedHeadingLabels(allNotes);
+	private buildNoteContentsBlocks(
+		allNotes: ExportNode[],
+		headingLabels: Map<string, string>
+	): string {
 		const linkIndex = buildExportedMarkdownLinkIndex(
 			allNotes,
 			(note) => headingLabels.get(note.id)!
@@ -143,13 +147,14 @@ export class LlmMarkdownExporter {
 			maxDepth
 		);
 		const metadataYaml = this.buildMetadataYaml(metadata);
+		const headingLabels = buildExportedHeadingLabels(allNotes);
 		const noteStructureDescription = DEFAULT_NOTE_STRUCTURE_DESCRIPTION;
-		const includedNotes = this.buildIncludedNotes(allNotes);
+		const includedNotes = this.buildIncludedNotes(allNotes, headingLabels);
 		const noteStructureSection = this.buildNoteStructureSection(
 			noteStructureDescription,
 			includedNotes
 		);
-		const noteContents = this.buildNoteContentsBlocks(allNotes);
+		const noteContents = this.buildNoteContentsBlocks(allNotes, headingLabels);
 		const noteContentsSection = `## Note Contents\n\n${noteContents}`;
 
 		return {
