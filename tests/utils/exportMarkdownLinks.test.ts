@@ -146,6 +146,22 @@ describe("exportMarkdownLinks", () => {
 		);
 	});
 
+	it("preserves aliased same-note heading and block links", () => {
+		const child = createMockExportNode("Child", "notes/Child.md");
+		const labels = buildExportedHeadingLabels([child]);
+		const index = buildExportedMarkdownLinkIndex(
+			[child],
+			(note) => labels.get(note.id) ?? note.title
+		);
+
+		expect(rewriteMarkdownLinksForExport("See [[#Heading|alias]].", index)).toBe(
+			"See [[#Heading|alias]]."
+		);
+		expect(rewriteMarkdownLinksForExport("See [[^block|alias]].", index)).toBe(
+			"See [[^block|alias]]."
+		);
+	});
+
 	it("preserves image embeds and code spans", () => {
 		const child = createMockExportNode("Child", "Child.md");
 		const labels = buildExportedHeadingLabels([child]);

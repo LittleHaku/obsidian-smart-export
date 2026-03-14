@@ -139,6 +139,10 @@ function rewriteWikiLink(innerContent: string, linkIndex: ExportedMarkdownLinkIn
 		return `[[${innerContent}]]`;
 	}
 
+	if (rawTarget.startsWith("#") || rawTarget.startsWith("^")) {
+		return `[[${innerContent}]]`;
+	}
+
 	const lookupKey = getTargetLookupKey(rawTarget);
 	const resolvedReference =
 		linkIndex.pathReferences.get(lookupKey) ?? linkIndex.titleReferences.get(lookupKey) ?? null;
