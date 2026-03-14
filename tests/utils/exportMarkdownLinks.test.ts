@@ -210,6 +210,60 @@ describe("exportMarkdownLinks", () => {
 		);
 	});
 
+	it("keeps rewriting disabled inside indented fenced code blocks", () => {
+		const child = createMockExportNode("Child", "Child.md");
+		const labels = buildExportedHeadingLabels([child]);
+		const index = buildExportedMarkdownLinkIndex(
+			[child],
+			(note) => labels.get(note.id) ?? note.title
+		);
+		const content = [
+			"- Example:",
+			"  ```md",
+			'  const literalFence = "```";',
+			"  [[Child]]",
+			"  ```",
+			"Outside [[Child]]",
+		].join("\n");
+
+		expect(rewriteMarkdownLinksForExport(content, index)).toBe(
+			[
+				"- Example:",
+				"  ```md",
+				'  const literalFence = "```";',
+				"  [[Child]]",
+				"  ```",
+				"Outside [[#Child|Child]]",
+			].join("\n")
+		);
+	});
+
+	it("does not treat backtick runs with more than three leading spaces as fenced code blocks", () => {
+		const child = createMockExportNode("Child", "Child.md");
+		const labels = buildExportedHeadingLabels([child]);
+		const index = buildExportedMarkdownLinkIndex(
+			[child],
+			(note) => labels.get(note.id) ?? note.title
+		);
+		const content = ["    ```md", "    [[Child]]"].join("\n");
+
+		expect(rewriteMarkdownLinksForExport(content, index)).toBe(content);
+	});
+
+	it("does not treat backtick runs with non-space prefix text as fenced code blocks", () => {
+		const child = createMockExportNode("Child", "Child.md");
+		const labels = buildExportedHeadingLabels([child]);
+		const index = buildExportedMarkdownLinkIndex(
+			[child],
+			(note) => labels.get(note.id) ?? note.title
+		);
+		const content = ["- ```md", "[[Child]]", "```", "Outside [[Child]]"].join("\n");
+
+		expect(rewriteMarkdownLinksForExport(content, index)).toBe(
+			["- ```md", "[[Child]]", "```", "Outside [[#Child|Child]]"].join("\n")
+		);
+	});
+
 	it("leaves unterminated fenced code blocks unchanged", () => {
 		const child = createMockExportNode("Child", "Child.md");
 		const labels = buildExportedHeadingLabels([child]);

@@ -27,6 +27,26 @@ function findLineEnd(content: string, startIndex: number): number {
 	return newlineIndex >= 0 ? newlineIndex + 1 : content.length;
 }
 
+function isFenceStart(content: string, markerIndex: number): boolean {
+	let lineStart = markerIndex;
+	while (lineStart > 0 && content[lineStart - 1] !== "\n") {
+		lineStart -= 1;
+	}
+
+	const indentation = markerIndex - lineStart;
+	if (indentation > 3) {
+		return false;
+	}
+
+	for (let index = lineStart; index < markerIndex; index += 1) {
+		if (content[index] !== " ") {
+			return false;
+		}
+	}
+
+	return true;
+}
+
 function findClosingCodeFence(
 	content: string,
 	startIndex: number,
@@ -227,8 +247,7 @@ export function rewriteMarkdownLinksForExport(
 
 		if (content[currentIndex] === "`") {
 			const backtickLength = countRepeatedCharacter(content, currentIndex, "`");
-			const isFence =
-				backtickLength >= 3 && (currentIndex === 0 || content[currentIndex - 1] === "\n");
+			const isFence = backtickLength >= 3 && isFenceStart(content, currentIndex);
 			const closingIndex = isFence
 				? findClosingCodeFence(content, currentIndex, "`", backtickLength)
 				: content.indexOf("`".repeat(backtickLength), currentIndex + backtickLength);
