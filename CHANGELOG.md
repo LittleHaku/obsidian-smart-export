@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Markdown exports now keep same-note link rewriting disabled for the full duration of fenced code blocks, including indented fenced code blocks and blocks whose content contains the fence text
+- Markdown exports now recognize closing code fences even when the fence marker is followed by trailing spaces or tabs
 - Aliased same-note heading and block links such as `[[#Heading|alias]]` and `[[^block|alias]]` are now preserved as native Obsidian links instead of being flattened into plain text
 - LLM Markdown exports now use the same disambiguated note labels in `Included Notes` that appear in exported section headings for duplicate titles
 

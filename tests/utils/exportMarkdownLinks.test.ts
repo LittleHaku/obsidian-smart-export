@@ -226,6 +226,20 @@ describe("exportMarkdownLinks", () => {
 		);
 	});
 
+	it("supports closing fences with trailing spaces and tabs", () => {
+		const child = createMockExportNode("Child", "Child.md");
+		const labels = buildExportedHeadingLabels([child]);
+		const index = buildExportedMarkdownLinkIndex(
+			[child],
+			(note) => labels.get(note.id) ?? note.title
+		);
+		const content = ["```md", "[[Child]]", "``` \t ", "Outside [[Child]]"].join("\n");
+
+		expect(rewriteMarkdownLinksForExport(content, index)).toBe(
+			["```md", "[[Child]]", "``` \t ", "Outside [[#Child|Child]]"].join("\n")
+		);
+	});
+
 	it("keeps rewriting disabled inside indented fenced code blocks", () => {
 		const child = createMockExportNode("Child", "Child.md");
 		const labels = buildExportedHeadingLabels([child]);

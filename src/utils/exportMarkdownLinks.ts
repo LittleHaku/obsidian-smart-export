@@ -65,7 +65,11 @@ function findClosingCodeFence(
 
 		const markerLength = countRepeatedCharacter(content, markerIndex, fenceCharacter);
 		if (markerLength >= fenceLength) {
-			const afterMarkerIndex = markerIndex + markerLength;
+			let afterMarkerIndex = markerIndex + markerLength;
+			while (content[afterMarkerIndex] === " " || content[afterMarkerIndex] === "\t") {
+				afterMarkerIndex += 1;
+			}
+
 			const followingCharacter = content[afterMarkerIndex];
 			if (
 				afterMarkerIndex === content.length ||
