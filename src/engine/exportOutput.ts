@@ -1,7 +1,7 @@
 import { LlmMarkdownExporter } from "./LlmMarkdownExporter";
 import { PrintFriendlyMarkdownExporter } from "./PrintFriendlyMarkdownExporter";
 import { XMLExporter } from "./XMLExporter";
-import { ExportNode, SmartExportSettings } from "../types";
+import { ExportNode, PrintFriendlyMarkdownOptions, SmartExportSettings } from "../types";
 
 const VALID_EXPORT_FORMATS = new Set(["xml", "llm-markdown", "print-friendly-markdown"]);
 
@@ -12,6 +12,7 @@ export interface BuildExportOutputOptions {
 	vaultPath: string;
 	format: unknown;
 	llmMarkdownTemplate?: string | null;
+	printFriendlyMarkdownOptions?: PrintFriendlyMarkdownOptions | null;
 	missingNotesCount?: number;
 	onInvalidFormat?: (fallbackFormat: ExportFormat) => void;
 }
@@ -46,7 +47,11 @@ export function buildExportOutput(options: BuildExportOutputOptions): string {
 				missingNotesCount,
 				options.llmMarkdownTemplate ?? undefined
 			),
-		"print-friendly-markdown": () => new PrintFriendlyMarkdownExporter().export(options.rootNode),
+		"print-friendly-markdown": () =>
+			new PrintFriendlyMarkdownExporter().export(
+				options.rootNode,
+				options.printFriendlyMarkdownOptions ?? undefined
+			),
 	};
 
 	return exporters[normalizedFormat]();

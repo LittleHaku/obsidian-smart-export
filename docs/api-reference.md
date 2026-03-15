@@ -35,6 +35,10 @@ Defined in `src/main.ts` (`SmartExportSettings` + settings tab):
   - `Hide notes with property rules` (comma/newline-separated `key` or `key=value`)
 - Section `Markdown templates`
   - `Markdown template folder` (vault-relative, default `smart-templates`)
+- Section `Print-friendly Markdown`
+  - `Include table of contents`
+  - `Number headings`
+  - `Insert section dividers`
 - Section `Export modal behavior`
   - `Auto-select current note`
   - `Close modal after export`
@@ -47,6 +51,7 @@ Format dispatch is implemented in `src/engine/exportOutput.ts`:
 - `xml` via `XMLExporter`
 - `llm-markdown` via `LlmMarkdownExporter`
 - `print-friendly-markdown` via `PrintFriendlyMarkdownExporter`
+  - Uses settings-controlled formatting for table of contents links, heading numbering, and note dividers.
 
 Invalid stored/selected format values normalize to `xml`.
 

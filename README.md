@@ -49,6 +49,7 @@ Use [BRAT (Beta Reviewers Auto-update Tool)](https://github.com/TfTHacker/obsidi
 - Multiple Markdown templates (built-in + custom folder templates) with placeholder support.
 - Export delivery options: copy to clipboard or create a new note in the vault after choosing folder and note name.
 - Markdown-based exports rewrite links to exported notes into Obsidian heading links so they stay navigable inside the generated note.
+- Print-friendly Markdown can add a linked table of contents, numbered headings, and section dividers for easier PDF scanning.
 - Token estimate display before export.
 
 ## 4 Settings
@@ -74,7 +75,13 @@ Settings location: **Obsidian → Settings → Smart Export**
 
 - **Markdown template folder**: vault-relative folder for custom Markdown templates, with folder autocomplete
 
-### 4.4 Export modal behavior
+### 4.4 Print-friendly Markdown
+
+- **Include table of contents**: adds a linked table of contents to print-friendly exports
+- **Number headings**: prefixes exported note headings with section numbers such as `1.` and `1.1`
+- **Insert section dividers**: adds divider lines between note sections in print-friendly exports
+
+### 4.5 Export modal behavior
 
 - **Auto-select current note**
 - **Close modal after export**
@@ -83,7 +90,7 @@ Settings location: **Obsidian → Settings → Smart Export**
 
 Exclusion details (folders/tags/properties): [Exclusion rules](docs/exclude-folders.md)
 
-### 4.5 Markdown templates
+### 4.6 Markdown templates
 
 For Markdown template exports, Smart Export can load a custom template from your vault:
 

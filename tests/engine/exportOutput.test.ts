@@ -81,9 +81,29 @@ describe("exportOutput", () => {
 			format: "print-friendly-markdown",
 		});
 
-		expect(output).toContain("# Root");
+		expect(output).toContain("# Table of contents");
+		expect(output).toContain("# 1. Root");
 		expect(output).toContain("Root content");
+		expect(output).toContain("## 1.1 Child");
+		expect(output).toContain("\n\n---\n\n");
+	});
+
+	it("passes print-friendly options through to the exporter", () => {
+		const output = buildExportOutput({
+			rootNode: createTree(),
+			vaultPath: "Vault",
+			format: "print-friendly-markdown",
+			printFriendlyMarkdownOptions: {
+				includeTableOfContents: false,
+				numberHeadings: false,
+				insertSectionDividers: false,
+			},
+		});
+
+		expect(output).not.toContain("# Table of contents");
+		expect(output).toContain("# Root");
 		expect(output).toContain("## Child");
+		expect(output).not.toContain("\n\n---\n\n");
 	});
 
 	it("falls back to xml and reports invalid format when callback is provided", () => {

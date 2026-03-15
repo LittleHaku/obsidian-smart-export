@@ -31,6 +31,8 @@ import {
 } from "./treeSelection";
 import { createExportNote } from "../utils/exportNote";
 import { ExportNoteDestinationModal } from "./ExportNoteDestinationModal";
+import { getPrintFriendlyMarkdownOptions } from "../utils/printFriendlyMarkdownOptions";
+import { PrintFriendlyMarkdownExporter } from "../engine/PrintFriendlyMarkdownExporter";
 
 const EXPORT_CHOICE_XML = "format:xml";
 const EXPORT_CHOICE_PRINT_FRIENDLY = "format:print-friendly-markdown";
@@ -513,6 +515,7 @@ export class ExportModal extends Modal {
 			vaultPath: this.app.vault.getName(),
 			format: this.exportFormat,
 			llmMarkdownTemplate,
+			printFriendlyMarkdownOptions: getPrintFriendlyMarkdownOptions(this.settings),
 			missingNotesCount: this.missingNotesCount,
 			onInvalidFormat: () => {
 				new Notice("Unknown export format selected; falling back to XML.");
@@ -632,14 +635,10 @@ export class ExportModal extends Modal {
 			case "llm-markdown":
 				return metadataChars + titleChars * 2 + selectedContentChars + notes.length * 80;
 			case "print-friendly-markdown":
-				return notes.reduce((total, note) => {
-					const headingChars = note.depth + 4 + note.title.length;
-					const contentChars =
-						note.includeContent && this.selectedNodeIds.has(note.id)
-							? (note.content?.length ?? 0) + 2
-							: 0;
-					return total + headingChars + contentChars;
-				}, 0);
+				return new PrintFriendlyMarkdownExporter().export(
+					applyContentSelection(rootNode, this.selectedNodeIds),
+					getPrintFriendlyMarkdownOptions(this.settings)
+				).length;
 			default:
 				return titleChars + selectedContentChars;
 		}

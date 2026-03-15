@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.9.0-beta.1] - 2026-03-15
+
+### Changed
+
+- Print-friendly Markdown exports can now include a linked table of contents, numbered section headings, and divider lines between note blocks
+- New print-friendly Markdown settings now control whether table of contents links, heading numbering, and section dividers are included in clipboard and new-note exports
+
 ## [1.8.0] - 2026-03-15
 
 ### Changed

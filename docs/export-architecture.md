@@ -72,6 +72,16 @@ Markdown link rewriting in exported note content:
 3. Aliased wikilinks append `ref:<target>` so the target remains readable in Obsidian/PDF contexts.
 4. Image embeds (`![[...]]`) and code spans/fences are preserved without rewriting.
 
+Print-friendly Markdown formatting:
+
+1. The exporter can prepend a linked table of contents.
+2. Heading numbering is assigned by the first depth-first path that includes each note:
+   - root note: `1.`
+   - first child: `1.1`
+   - first grandchild: `1.1.1`
+3. Cyclic or repeated notes keep the number from their first rendered position and are not emitted again.
+4. Divider lines between note sections are controlled by print-friendly settings.
+
 Notes:
 
 - `{{metadata_yaml}}` renders as a complete YAML frontmatter block (including `---` delimiters).
