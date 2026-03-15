@@ -48,6 +48,7 @@ Use [BRAT (Beta Reviewers Auto-update Tool)](https://github.com/TfTHacker/obsidi
 - Output formats: XML, Markdown templates, Print-friendly Markdown.
 - Multiple Markdown templates (built-in + custom folder templates) with placeholder support.
 - Export delivery options: copy to clipboard or create a new note in the vault after choosing folder and note name.
+- Markdown-based exports rewrite links to exported notes into Obsidian heading links so they stay navigable inside the generated note.
 - Token estimate display before export.
 
 ## 4 Settings

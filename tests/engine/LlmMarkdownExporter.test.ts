@@ -42,7 +42,7 @@ describe("LlmMarkdownExporter", () => {
 
 			// Check content section
 			expect(result).toContain("## Note Contents");
-			expect(result).toContain('## Note 1: "Root Note"');
+			expect(result).toContain("## Root Note");
 			expect(result).toContain("This is the root content");
 		});
 
@@ -88,10 +88,10 @@ describe("LlmMarkdownExporter", () => {
 			expect(result).toContain('Note 4: "GrandChild"');
 
 			// All notes should have content sections
-			expect(result).toContain('## Note 1: "Root"');
-			expect(result).toContain('## Note 2: "Child 1"');
-			expect(result).toContain('## Note 3: "Child 2"');
-			expect(result).toContain('## Note 4: "GrandChild"');
+			expect(result).toContain("## Root");
+			expect(result).toContain("## Child 1");
+			expect(result).toContain("## Child 2");
+			expect(result).toContain("## GrandChild");
 		});
 
 		it("should process notes in breadth-first order", () => {
@@ -121,6 +121,23 @@ describe("LlmMarkdownExporter", () => {
 			expect(child2Index).toBeLessThan(gc1Index);
 			expect(gc1Index).toBeLessThan(gc2Index);
 		});
+
+		it("disambiguates duplicate titles consistently in included notes and headings", () => {
+			const duplicateA = createMockExportNode("Duplicate", "folder-a/Duplicate.md", 1, "A");
+			const duplicateB = createMockExportNode("Duplicate", "folder-b/Duplicate.md", 1, "B");
+			const rootNode = createMockExportNode("Root", "root.md", 0, "Root content", [
+				duplicateA,
+				duplicateB,
+			]);
+
+			const exporter = new LlmMarkdownExporter();
+			const result = exporter.export(rootNode, "TestVault");
+
+			expect(result).toContain('Note 2: "Duplicate (folder-a/Duplicate)"');
+			expect(result).toContain('Note 3: "Duplicate (folder-b/Duplicate)"');
+			expect(result).toContain("## Duplicate (folder-a/Duplicate)");
+			expect(result).toContain("## Duplicate (folder-b/Duplicate)");
+		});
 	});
 
 	describe("Content Handling", () => {
@@ -139,7 +156,7 @@ describe("LlmMarkdownExporter", () => {
 			const exporter = new LlmMarkdownExporter();
 			const result = exporter.export(rootNode, "TestVault");
 
-			expect(result).toContain('## Note 1: "Test Note"');
+			expect(result).toContain("## Test Note");
 			// Should handle undefined content gracefully without throwing
 			expect(result).not.toContain("undefined");
 		});
@@ -150,8 +167,8 @@ describe("LlmMarkdownExporter", () => {
 
 			const result = exporter.export(rootNode, "TestVault");
 
-			expect(result).toContain('## Note 1: "Empty Note"');
-			expect(result).toContain('## Note 1: "Empty Note"\n\n');
+			expect(result).toContain("## Empty Note");
+			expect(result).toContain("## Empty Note\n\n");
 		});
 
 		it("should preserve complex markdown content", () => {
@@ -183,6 +200,39 @@ console.log("code block");
 			expect(result).toContain("console.log");
 			expect(result).toContain("[[Quoted Link]]");
 			expect(result).toContain("[External link](https://example.com)");
+		});
+
+		it("rewrites exported alias links into Obsidian heading links", () => {
+			const child = createMockExportNode("Child Note", "notes/Child Note.md", 1, "Child content");
+			const rootNode = createMockExportNode(
+				"Root",
+				"root.md",
+				0,
+				"See [[Child Note|overview]] and [[Missing note|summary]].",
+				[child]
+			);
+			const exporter = new LlmMarkdownExporter();
+
+			const result = exporter.export(rootNode, "TestVault");
+
+			expect(result).toContain("## Root");
+			expect(result).toContain("## Child Note");
+			expect(result).toContain("[[#Child Note|overview (ref:Child Note)]]");
+			expect(result).toContain("summary (ref:Missing note)");
+		});
+
+		it("inserts a blank line before closing included note frontmatter", () => {
+			const rootNode = createMockExportNode(
+				"Root",
+				"root.md",
+				0,
+				["---", "summary: test", "---", "# Inner heading"].join("\n")
+			);
+			const exporter = new LlmMarkdownExporter();
+
+			const result = exporter.export(rootNode, "TestVault");
+
+			expect(result).toContain(["---", "summary: test", "", "---", "# Inner heading"].join("\n"));
 		});
 	});
 
@@ -216,7 +266,7 @@ console.log("code block");
 
 			expect(result).toContain("This export contains a knowledge graph");
 			expect(result).toContain("breadth-first order");
-			expect(result).toContain("[[wiki-style links]]");
+			expect(result).toContain("same-note heading links");
 			expect(result).toContain("Missing notes (referenced but not found)");
 		});
 	});
@@ -247,7 +297,7 @@ console.log("code block");
 
 			expect(result).toContain(longTitle);
 			expect(result).toContain(`Note 1: "${longTitle}"`);
-			expect(result).toContain(`## Note 1: "${longTitle}"`);
+			expect(result).toContain(`## ${longTitle}`);
 		});
 
 		it("should handle empty vault path", () => {
@@ -330,7 +380,7 @@ Missing: {{missing_notes}}
 			);
 
 			expect(result).toContain("This export contains a knowledge graph");
-			expect(result).toContain("[[wiki-style links]]");
+			expect(result).toContain("same-note heading links");
 		});
 	});
 

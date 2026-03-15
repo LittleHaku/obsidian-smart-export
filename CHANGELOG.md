@@ -7,6 +7,53 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.8.0] - 2026-03-15
+
+### Changed
+
+- Markdown exports now rewrite links to exported notes into Obsidian same-note heading links when the target note is part of the export
+- Aliased exported links now preserve visible target context with `ref:` text, and LLM Markdown note sections now use exported note labels directly as headings so rewritten links target native Obsidian headings
+- Markdown link rewriting now scans content by jumping between special tokens instead of slicing on every character, improving large-export performance
+
+### Fixed
+
+- Same-note link rewriting now safely handles duplicate note titles, heading labels containing wiki-link control characters, and same-note heading/block links
+- Markdown exports now preserve code and fence content correctly across indented fences, list-item and blockquote fences, trailing fence whitespace, and inline backtick spans
+- Print-friendly Markdown export now guards against cyclic note graphs when building and rendering the exported note
+- Exported frontmatter now keeps a blank line before the closing fence so Obsidian/PDF outline rendering does not misread the last YAML property as a heading
+- LLM Markdown note-structure text and `Included Notes` labels now match the actual exported headings
+
+## [1.8.0-beta.3] - 2026-03-14
+
+### Changed
+
+- LLM Markdown note sections now use the exported note labels directly as headings so rewritten same-note links can target native Obsidian headings
+- Markdown link rewriting now scans content by jumping between special tokens instead of slicing on every character, improving large-export performance
+
+### Fixed
+
+- Markdown exports now keep same-note link rewriting disabled for the full duration of fenced code blocks, including indented fenced code blocks and blocks whose content contains the fence text
+- Markdown exports now recognize closing code fences even when the fence marker is followed by trailing spaces or tabs
+- Markdown exports now recognize common list-item and blockquote fenced code blocks, and inline backtick spans no longer close against later lines
+- Aliased same-note heading and block links such as `[[#Heading|alias]]` and `[[^block|alias]]` are now preserved as native Obsidian links instead of being flattened into plain text
+- LLM Markdown exports now use the same disambiguated note labels in `Included Notes` that appear in exported section headings for duplicate titles
+
+## [1.8.0-beta.2] - 2026-03-14
+
+### Fixed
+
+- Exported same-note heading links now safely escape note titles that contain wiki-link control characters such as `|` and `]`
+- Print-friendly Markdown export now guards against cyclic note graphs when building and rendering the exported note
+- LLM note-structure text now accurately describes rewritten same-note heading links instead of claiming links remain raw `[[wiki-style links]]`
+- Markdown exports now insert a blank line before the closing fence of included note frontmatter so Obsidian/PDF outline rendering does not misread the last YAML property as a heading
+
+## [1.8.0-beta.1] - 2026-03-13
+
+### Changed
+
+- Markdown exports now rewrite exported wikilinks into Obsidian same-note heading links when the target note is part of the export
+- Aliased exported wikilinks now preserve visible target context with `ref:` text in Markdown exports
+
 ## [1.7.0] - 2026-03-13
 
 ### Added

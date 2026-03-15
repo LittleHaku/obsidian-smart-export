@@ -4,6 +4,11 @@ import {
 	DEFAULT_BUILTIN_LLM_TEMPLATE_CONTENT,
 	DEFAULT_NOTE_STRUCTURE_DESCRIPTION,
 } from "../constants/llmMarkdownTemplates";
+import {
+	buildExportedMarkdownLinkIndex,
+	buildExportedHeadingLabels,
+	rewriteMarkdownLinksForExport,
+} from "../utils/exportMarkdownLinks";
 
 const DEFAULT_PROCESSING_ORDER = "BFS (Breadth-First Search)";
 const TEMPLATE_PLACEHOLDER_REGEX = /{{\s*([a-z0-9_]+)\s*}}/g;
@@ -97,8 +102,10 @@ export class LlmMarkdownExporter {
 		return `---\n${stringifyYaml(metadata)}---`;
 	}
 
-	private buildIncludedNotes(allNotes: ExportNode[]): string {
-		return allNotes.map((note, index) => `- Note ${index + 1}: "${note.title}"`).join("\n");
+	private buildIncludedNotes(allNotes: ExportNode[], headingLabels: Map<string, string>): string {
+		return allNotes
+			.map((note, index) => `- Note ${index + 1}: "${headingLabels.get(note.id)!}"`)
+			.join("\n");
 	}
 
 	private buildNoteStructureSection(
@@ -108,9 +115,20 @@ export class LlmMarkdownExporter {
 		return `## Note Structure\n\n**Description**:\n${noteStructureDescription}\n\n**Included Notes**:\n${includedNotes}`;
 	}
 
-	private buildNoteContentsBlocks(allNotes: ExportNode[]): string {
+	private buildNoteContentsBlocks(
+		allNotes: ExportNode[],
+		headingLabels: Map<string, string>
+	): string {
+		const linkIndex = buildExportedMarkdownLinkIndex(
+			allNotes,
+			(note) => headingLabels.get(note.id)!
+		);
 		return allNotes
-			.map((note, index) => `## Note ${index + 1}: "${note.title}"\n\n${note.content ?? ""}`)
+			.map((note) => {
+				const rewrittenContent = rewriteMarkdownLinksForExport(note.content ?? "", linkIndex);
+				const headingLabel = headingLabels.get(note.id)!;
+				return `## ${headingLabel}\n\n${rewrittenContent}`;
+			})
 			.join("\n\n---\n\n");
 	}
 
@@ -129,13 +147,14 @@ export class LlmMarkdownExporter {
 			maxDepth
 		);
 		const metadataYaml = this.buildMetadataYaml(metadata);
+		const headingLabels = buildExportedHeadingLabels(allNotes);
 		const noteStructureDescription = DEFAULT_NOTE_STRUCTURE_DESCRIPTION;
-		const includedNotes = this.buildIncludedNotes(allNotes);
+		const includedNotes = this.buildIncludedNotes(allNotes, headingLabels);
 		const noteStructureSection = this.buildNoteStructureSection(
 			noteStructureDescription,
 			includedNotes
 		);
-		const noteContents = this.buildNoteContentsBlocks(allNotes);
+		const noteContents = this.buildNoteContentsBlocks(allNotes, headingLabels);
 		const noteContentsSection = `## Note Contents\n\n${noteContents}`;
 
 		return {
