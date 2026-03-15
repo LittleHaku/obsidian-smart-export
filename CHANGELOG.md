@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.8.0] - 2026-03-15
+
+### Changed
+
+- Markdown exports now rewrite links to exported notes into Obsidian same-note heading links when the target note is part of the export
+- Aliased exported links now preserve visible target context with `ref:` text, and LLM Markdown note sections now use exported note labels directly as headings so rewritten links target native Obsidian headings
+- Markdown link rewriting now scans content by jumping between special tokens instead of slicing on every character, improving large-export performance
+
+### Fixed
+
+- Same-note link rewriting now safely handles duplicate note titles, heading labels containing wiki-link control characters, and same-note heading/block links
+- Markdown exports now preserve code and fence content correctly across indented fences, list-item and blockquote fences, trailing fence whitespace, and inline backtick spans
+- Print-friendly Markdown export now guards against cyclic note graphs when building and rendering the exported note
+- Exported frontmatter now keeps a blank line before the closing fence so Obsidian/PDF outline rendering does not misread the last YAML property as a heading
+- LLM Markdown note-structure text and `Included Notes` labels now match the actual exported headings
+
 ## [1.8.0-beta.3] - 2026-03-14
 
 ### Changed
