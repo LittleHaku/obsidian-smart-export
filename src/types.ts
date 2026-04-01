@@ -40,6 +40,8 @@ export interface PrintFriendlyMarkdownOptions {
 	numberHeadings: boolean;
 	/** Whether to insert thematic breaks between exported note sections. */
 	insertSectionDividers: boolean;
+	/** Whether to insert HTML page breaks between exported note sections. */
+	insertPageBreaksBetweenSections: boolean;
 }
 
 /**
@@ -82,4 +84,6 @@ export interface SmartExportSettings {
 	printFriendlyNumberHeadings: boolean;
 	/** Whether print-friendly exports should insert dividers between note sections. */
 	printFriendlyInsertSectionDividers: boolean;
+	/** Whether print-friendly exports should insert page breaks between note sections. */
+	printFriendlyInsertPageBreaks: boolean;
 }

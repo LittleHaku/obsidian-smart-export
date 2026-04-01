@@ -88,6 +88,24 @@ describe("exportOutput", () => {
 		expect(output).toContain("\n\n---\n\n");
 	});
 
+	it("builds print-friendly markdown output with page breaks instead of dividers", () => {
+		const output = buildExportOutput({
+			rootNode: createTree(),
+			vaultPath: "Vault",
+			format: "print-friendly-markdown",
+			printFriendlyMarkdownOptions: {
+				includeTableOfContents: true,
+				numberHeadings: true,
+				insertSectionDividers: true,
+				insertPageBreaksBetweenSections: true,
+			},
+		});
+
+		expect(output).toContain("# Table of contents");
+		expect(output).toContain('<div style="page-break-after: always;"></div>');
+		expect(output).not.toContain("\n\n---\n\n");
+	});
+
 	it("passes print-friendly options through to the exporter", () => {
 		const output = buildExportOutput({
 			rootNode: createTree(),
@@ -97,6 +115,7 @@ describe("exportOutput", () => {
 				includeTableOfContents: false,
 				numberHeadings: false,
 				insertSectionDividers: false,
+				insertPageBreaksBetweenSections: false,
 			},
 		});
 

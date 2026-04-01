@@ -6,6 +6,8 @@ import {
 } from "../utils/exportMarkdownLinks";
 import { DEFAULT_PRINT_FRIENDLY_MARKDOWN_OPTIONS } from "../utils/printFriendlyMarkdownOptions";
 
+const PRINT_PAGE_BREAK_MARKUP = '<div style="page-break-after: always;"></div>';
+
 /**
  * A class to handle the export of note trees to a structured Markdown format.
  */
@@ -174,8 +176,12 @@ export class PrintFriendlyMarkdownExporter {
 
 		const prefix = "#".repeat(depth + 1);
 		const headingLabel = headingLabels.get(node.id)!;
-		if (options.insertSectionDividers && chunks.length > 0) {
-			chunks.push("---\n\n");
+		if (chunks.length > 0) {
+			if (options.insertPageBreaksBetweenSections) {
+				chunks.push(`${PRINT_PAGE_BREAK_MARKUP}\n\n`);
+			} else if (options.insertSectionDividers) {
+				chunks.push("---\n\n");
+			}
 		}
 		chunks.push(`${prefix} ${headingLabel}\n\n`);
 

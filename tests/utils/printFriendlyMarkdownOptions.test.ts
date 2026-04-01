@@ -12,11 +12,13 @@ describe("printFriendlyMarkdownOptions", () => {
 				printFriendlyIncludeTableOfContents: false,
 				printFriendlyNumberHeadings: true,
 				printFriendlyInsertSectionDividers: false,
+				printFriendlyInsertPageBreaks: true,
 			})
 		).toEqual({
 			includeTableOfContents: false,
 			numberHeadings: true,
 			insertSectionDividers: false,
+			insertPageBreaksBetweenSections: true,
 		});
 	});
 

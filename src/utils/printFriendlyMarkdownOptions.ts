@@ -4,6 +4,7 @@ export const DEFAULT_PRINT_FRIENDLY_MARKDOWN_OPTIONS: PrintFriendlyMarkdownOptio
 	includeTableOfContents: true,
 	numberHeadings: true,
 	insertSectionDividers: true,
+	insertPageBreaksBetweenSections: false,
 };
 
 export function getPrintFriendlyMarkdownOptions(
@@ -12,12 +13,14 @@ export function getPrintFriendlyMarkdownOptions(
 		| "printFriendlyIncludeTableOfContents"
 		| "printFriendlyNumberHeadings"
 		| "printFriendlyInsertSectionDividers"
+		| "printFriendlyInsertPageBreaks"
 	>
 ): PrintFriendlyMarkdownOptions {
 	return {
 		includeTableOfContents: settings.printFriendlyIncludeTableOfContents,
 		numberHeadings: settings.printFriendlyNumberHeadings,
 		insertSectionDividers: settings.printFriendlyInsertSectionDividers,
+		insertPageBreaksBetweenSections: settings.printFriendlyInsertPageBreaks,
 	};
 }
 

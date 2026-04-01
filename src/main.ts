@@ -144,6 +144,8 @@ const DEFAULT_SETTINGS: SmartExportSettings = {
 		DEFAULT_PRINT_FRIENDLY_MARKDOWN_OPTIONS.includeTableOfContents,
 	printFriendlyNumberHeadings: DEFAULT_PRINT_FRIENDLY_MARKDOWN_OPTIONS.numberHeadings,
 	printFriendlyInsertSectionDividers: DEFAULT_PRINT_FRIENDLY_MARKDOWN_OPTIONS.insertSectionDividers,
+	printFriendlyInsertPageBreaks:
+		DEFAULT_PRINT_FRIENDLY_MARKDOWN_OPTIONS.insertPageBreaksBetweenSections,
 };
 
 /**
@@ -279,6 +281,13 @@ export default class SmartExportPlugin extends Plugin {
 		this.settings.printFriendlyInsertSectionDividers = normalizePrintFriendlyMarkdownOption(
 			storedPrintFriendlyInsertSectionDividers,
 			DEFAULT_PRINT_FRIENDLY_MARKDOWN_OPTIONS.insertSectionDividers
+		);
+		const storedPrintFriendlyInsertPageBreaks = (
+			storedSettings as { printFriendlyInsertPageBreaks?: unknown } | null
+		)?.printFriendlyInsertPageBreaks;
+		this.settings.printFriendlyInsertPageBreaks = normalizePrintFriendlyMarkdownOption(
+			storedPrintFriendlyInsertPageBreaks,
+			DEFAULT_PRINT_FRIENDLY_MARKDOWN_OPTIONS.insertPageBreaksBetweenSections
 		);
 	}
 
@@ -664,6 +673,20 @@ class SmartExportSettingTab extends PluginSettingTab {
 					.setValue(this.plugin.settings.printFriendlyInsertSectionDividers)
 					.onChange(async (value) => {
 						this.plugin.settings.printFriendlyInsertSectionDividers = value;
+						await this.plugin.saveSettings();
+					})
+			);
+
+		new Setting(containerEl)
+			.setName("Insert page breaks")
+			.setDesc(
+				"Start each exported note section after the first on a new page. When enabled, page breaks replace section dividers."
+			)
+			.addToggle((toggle) =>
+				toggle
+					.setValue(this.plugin.settings.printFriendlyInsertPageBreaks)
+					.onChange(async (value) => {
+						this.plugin.settings.printFriendlyInsertPageBreaks = value;
 						await this.plugin.saveSettings();
 					})
 			);

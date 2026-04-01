@@ -399,9 +399,47 @@ console.log("code block");
 				includeTableOfContents: false,
 				numberHeadings: false,
 				insertSectionDividers: false,
+				insertPageBreaksBetweenSections: false,
 			});
 
 			expect(result).toBe("# Root\n\nRoot content\n\n## Child\n\nChild content\n\n");
+		});
+
+		it("can insert page breaks between sections and replace dividers", () => {
+			const child = createMockExportNode("Child", "child.md", 1, "Child content");
+			const rootNode = createMockExportNode("Root", "root.md", 0, "Root content", [child]);
+			const exporter = new PrintFriendlyMarkdownExporter();
+
+			const result = exporter.export(rootNode, {
+				includeTableOfContents: true,
+				numberHeadings: true,
+				insertSectionDividers: true,
+				insertPageBreaksBetweenSections: true,
+			});
+
+			expect(result).toBe(
+				[
+					"# Table of contents",
+					"",
+					"- [[#1. Root|1. Root]]",
+					"  - [[#1.1 Child|1.1 Child]]",
+					"",
+					'<div style="page-break-after: always;"></div>',
+					"",
+					"# 1. Root",
+					"",
+					"Root content",
+					"",
+					'<div style="page-break-after: always;"></div>',
+					"",
+					"## 1.1 Child",
+					"",
+					"Child content",
+					"",
+					"",
+				].join("\n")
+			);
+			expect(result).not.toContain("\n\n---\n\n");
 		});
 	});
 });

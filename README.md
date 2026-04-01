@@ -49,7 +49,7 @@ Use [BRAT (Beta Reviewers Auto-update Tool)](https://github.com/TfTHacker/obsidi
 - Multiple Markdown templates (built-in + custom folder templates) with placeholder support.
 - Export delivery options: copy to clipboard or create a new note in the vault after choosing folder and note name.
 - Markdown-based exports rewrite links to exported notes into Obsidian heading links so they stay navigable inside the generated note.
-- Print-friendly Markdown can add a linked table of contents, numbered headings, and section dividers for easier PDF scanning.
+- Print-friendly Markdown can add a linked table of contents, numbered headings, section dividers, or page breaks for easier PDF scanning.
 - Token estimate display before export.
 
 ## 4 Settings
@@ -80,6 +80,7 @@ Settings location: **Obsidian → Settings → Smart Export**
 - **Include table of contents**: adds a linked table of contents to print-friendly exports
 - **Number headings**: prefixes exported note headings with section numbers such as `1.` and `1.1`
 - **Insert section dividers**: adds divider lines between note sections in print-friendly exports
+- **Insert page breaks**: starts each note section after the first on a new page and replaces section dividers
 
 ### 4.5 Export modal behavior
 

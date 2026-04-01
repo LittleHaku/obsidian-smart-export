@@ -1,6 +1,6 @@
 # Export Architecture
 
-Updated: March 12, 2026
+Updated: April 1, 2026
 
 ## Overview
 
@@ -81,6 +81,7 @@ Print-friendly Markdown formatting:
    - first grandchild: `1.1.1`
 3. Cyclic or repeated notes keep the number from their first rendered position and are not emitted again.
 4. Divider lines between note sections are controlled by print-friendly settings.
+5. Optional HTML page breaks can replace divider lines between note sections; if a table of contents is included, this also moves the first note section onto a new page.
 
 Notes:
 
