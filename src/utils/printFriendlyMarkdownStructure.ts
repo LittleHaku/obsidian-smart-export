@@ -1,6 +1,7 @@
 import { ExportNode, PrintFriendlyMarkdownOptions } from "../types";
 import { buildExportedHeadingLabels } from "./exportMarkdownLinks";
 import { DEFAULT_PRINT_FRIENDLY_MARKDOWN_OPTIONS } from "./printFriendlyMarkdownOptions";
+import { escapeWikiLinkValue } from "./wikiLinkEscaping";
 
 export const PRINT_FRIENDLY_TABLE_OF_CONTENTS_HEADING = "# Table of contents\n\n";
 export const PRINT_FRIENDLY_SECTION_DIVIDER = "---\n\n";
@@ -62,7 +63,7 @@ export function getPrintFriendlySectionSeparator(options: PrintFriendlyMarkdownO
 }
 
 export function escapePrintFriendlyWikiLinkValue(value: string): string {
-	return value.replace(/\\/g, "\\\\").replace(/\|/g, "\\|").replace(/\]/g, "\\]");
+	return escapeWikiLinkValue(value);
 }
 
 function buildNumberedHeadingLabels(
