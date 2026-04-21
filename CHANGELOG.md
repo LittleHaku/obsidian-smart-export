@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.10.0] - 2026-04-21
+
 ### Added
 
 - Smart Export now shows a one-time what's new modal after plugin updates, with the current release notes plus `OK` and `Buy me a coffee` actions

@@ -18,28 +18,29 @@ describe("releaseNotes", () => {
 	});
 
 	it("returns release notes for a normalized version", () => {
-		expect(getReleaseNotes(" 1.9.0 ")).toEqual(RELEASE_NOTES[0]);
-		expect(getReleaseNotes("1.9.0-beta.1")).toEqual(RELEASE_NOTES[1]);
+		expect(getReleaseNotes(" 1.10.0 ")).toEqual(RELEASE_NOTES[0]);
+		expect(getReleaseNotes("1.9.0")).toEqual(RELEASE_NOTES[1]);
+		expect(getReleaseNotes("1.9.0-beta.1")).toEqual(RELEASE_NOTES[2]);
 		expect(getReleaseNotes("   ")).toBeNull();
 		expect(getReleaseNotes("1.8.0")).toBeNull();
 	});
 
 	it("tracks the current stable release notes payload", () => {
 		const releaseNotes = RELEASE_NOTES[0];
-		expect(releaseNotes.version).toBe("1.9.0");
+		expect(releaseNotes.version).toBe("1.10.0");
 		expect(releaseNotes.date).toBe("2026-04-21");
-		expect(releaseNotes.changed?.some((item) => item.includes("linked table of contents"))).toBe(
-			true
-		);
-		expect(releaseNotes.changed?.some((item) => item.includes("HTML page breaks"))).toBe(true);
+		expect(releaseNotes.new?.some((item) => item.includes("what's new modal"))).toBe(true);
 	});
 
 	it("returns the latest release notes and upgrade ranges", () => {
 		expect(getLatestReleaseNotes()).toEqual(RELEASE_NOTES);
 		expect(getLatestReleaseNotes(1)).toEqual([RELEASE_NOTES[0]]);
-		expect(getReleaseNotesBetweenVersions("1.9.0-beta.1", "1.9.0")).toEqual(RELEASE_NOTES);
-		expect(getReleaseNotesBetweenVersions("1.9.0", "1.9.0")).toEqual([RELEASE_NOTES[0]]);
-		expect(getReleaseNotesBetweenVersions("1.8.0", "1.9.0")).toEqual(getLatestReleaseNotes());
+		expect(getReleaseNotesBetweenVersions("1.9.0-beta.1", "1.9.0")).toEqual([
+			RELEASE_NOTES[1],
+			RELEASE_NOTES[2],
+		]);
+		expect(getReleaseNotesBetweenVersions("1.10.0", "1.10.0")).toEqual([RELEASE_NOTES[0]]);
+		expect(getReleaseNotesBetweenVersions("1.8.0", "1.10.0")).toEqual(getLatestReleaseNotes());
 	});
 
 	it("compares versions using semantic version segments", () => {
@@ -58,12 +59,14 @@ describe("releaseNotes", () => {
 	});
 
 	it("uses per-release auto-display settings and upgrade-path logic", () => {
+		expect(isReleaseAutoDisplayEnabled("1.10.0")).toBe(true);
 		expect(isReleaseAutoDisplayEnabled("1.9.0")).toBe(true);
 		expect(isReleaseAutoDisplayEnabled("1.9.0-beta.1")).toBe(false);
 		expect(isReleaseAutoDisplayEnabled("0.1.0")).toBe(true);
+		expect(shouldAutoDisplayReleaseNotesForUpdate("1.9.0", "1.10.0")).toBe(true);
 		expect(shouldAutoDisplayReleaseNotesForUpdate("1.8.0", "1.9.0")).toBe(true);
 		expect(shouldAutoDisplayReleaseNotesForUpdate("1.9.0-beta.1", "1.9.0")).toBe(true);
-		expect(shouldAutoDisplayReleaseNotesForUpdate("1.9.0", "1.9.0")).toBe(true);
+		expect(shouldAutoDisplayReleaseNotesForUpdate("1.10.0", "1.10.0")).toBe(true);
 		expect(shouldAutoDisplayReleaseNotesForUpdate("2.0.0", "1.9.0-beta.1")).toBe(false);
 		expect(shouldAutoDisplayReleaseNotesForUpdate("99.0.0", "100.0.0")).toBe(true);
 	});

@@ -13,6 +13,14 @@ export interface ReleaseNotesEntry {
 
 export const RELEASE_NOTES: ReleaseNotesEntry[] = [
 	{
+		version: "1.10.0",
+		date: "2026-04-21",
+		showOnUpdate: true,
+		new: [
+			"Smart Export now shows a one-time what's new modal after plugin updates, with the current release notes plus OK and Buy me a coffee actions.",
+		],
+	},
+	{
 		version: "1.9.0",
 		date: "2026-04-21",
 		showOnUpdate: true,
