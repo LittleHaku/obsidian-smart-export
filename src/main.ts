@@ -382,12 +382,14 @@ export default class SmartExportPlugin extends Plugin {
 				new ReleaseNotesModal(this.app, getLatestReleaseNotes(), {
 					fundingUrl,
 					onClose: () => {
-						window.setTimeout(() => {
-							void (async () => {
-								this.lastSeenVersion = currentVersion;
+						void (async () => {
+							this.lastSeenVersion = currentVersion;
+							try {
 								await this.savePluginData();
-							})();
-						}, 1000);
+							} catch (error) {
+								console.error("Failed to persist release notes seen state", error);
+							}
+						})();
 					},
 				}).open();
 				return;
@@ -424,12 +426,14 @@ export default class SmartExportPlugin extends Plugin {
 			new ReleaseNotesModal(this.app, releaseNotes, {
 				fundingUrl,
 				onClose: () => {
-					window.setTimeout(() => {
-						void (async () => {
-							this.lastSeenVersion = currentVersion;
+					void (async () => {
+						this.lastSeenVersion = currentVersion;
+						try {
 							await this.savePluginData();
-						})();
-					}, 1000);
+						} catch (error) {
+							console.error("Failed to persist release notes seen state", error);
+						}
+					})();
 				},
 			}).open();
 		} catch (error) {
