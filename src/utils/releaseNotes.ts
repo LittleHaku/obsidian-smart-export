@@ -35,6 +35,11 @@ export function getReleaseNotesBetweenVersions(
 
 	const startIndex = Math.min(fromIndex, toIndex);
 	const endIndex = Math.max(fromIndex, toIndex);
+
+	// Intentionally inclusive of both endpoints.
+	// The update modal is designed as a grouped recap window, modeled after
+	// Notebook Navigator's behavior, so it may repeat the previously seen
+	// release alongside newly crossed versions in the same modal.
 	return RELEASE_NOTES.slice(startIndex, endIndex + 1);
 }
 

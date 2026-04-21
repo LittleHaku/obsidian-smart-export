@@ -66,6 +66,11 @@ When preparing a release, keep these in sync:
 Treat `CHANGELOG.md` as the human-readable release history and `src/constants/releaseNotes.ts`
 as the runtime source for the post-update modal.
 
+The post-update modal intentionally uses a grouped recap window for version ranges.
+When upgrading between two known versions, the modal may include both the previous
+release and the new release in the same view instead of showing only strictly unseen
+entries. This matches the intended "what's new" recap behavior.
+
 ## Prerelease flow (for BRAT testing)
 
 Use this flow when a feature is still in a PR branch and should be tested without a final release:
