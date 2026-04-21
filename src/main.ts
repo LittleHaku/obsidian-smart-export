@@ -15,6 +15,7 @@ import { ExportModal } from "./ui/ExportModal";
 import { FolderPathSuggest } from "./ui/FolderPathSuggest";
 import { ExportTarget, LinkTraversalMode, SmartExportSettings } from "./types";
 import { TEMPLATE_DOCS_URL } from "./constants/templateDocs";
+import { ReleaseNotesEntry } from "./constants/releaseNotes";
 import { ReleaseNotesModal } from "./ui/ReleaseNotesModal";
 import { normalizeFolderFilterList } from "./utils/folderFilters";
 import { normalizePropertyFilterList, normalizeTagFilterList } from "./utils/noteFilters";
@@ -355,6 +356,26 @@ export default class SmartExportPlugin extends Plugin {
 		this.hasPersistedData = true;
 	}
 
+	private openReleaseNotesModal(
+		releaseNotes: ReleaseNotesEntry[],
+		currentVersion: string,
+		fundingUrl?: string
+	): void {
+		new ReleaseNotesModal(this.app, releaseNotes, {
+			fundingUrl,
+			onClose: () => {
+				void (async () => {
+					this.lastSeenVersion = currentVersion;
+					try {
+						await this.savePluginData();
+					} catch (error) {
+						console.error("Failed to persist release notes seen state", error);
+					}
+				})();
+			},
+		}).open();
+	}
+
 	private async maybeShowReleaseNotes(): Promise<void> {
 		try {
 			const currentVersion = normalizeStoredPluginVersion(this.manifest.version);
@@ -377,19 +398,7 @@ export default class SmartExportPlugin extends Plugin {
 					return;
 				}
 
-				new ReleaseNotesModal(this.app, getLatestReleaseNotes(), {
-					fundingUrl,
-					onClose: () => {
-						void (async () => {
-							this.lastSeenVersion = currentVersion;
-							try {
-								await this.savePluginData();
-							} catch (error) {
-								console.error("Failed to persist release notes seen state", error);
-							}
-						})();
-					},
-				}).open();
+				this.openReleaseNotesModal(getLatestReleaseNotes(), currentVersion, fundingUrl);
 				return;
 			}
 
@@ -419,19 +428,7 @@ export default class SmartExportPlugin extends Plugin {
 				return;
 			}
 
-			new ReleaseNotesModal(this.app, releaseNotes, {
-				fundingUrl,
-				onClose: () => {
-					void (async () => {
-						this.lastSeenVersion = currentVersion;
-						try {
-							await this.savePluginData();
-						} catch (error) {
-							console.error("Failed to persist release notes seen state", error);
-						}
-					})();
-				},
-			}).open();
+			this.openReleaseNotesModal(releaseNotes, currentVersion, fundingUrl);
 		} catch (error) {
 			console.error("Failed to prepare release notes", error);
 		}
