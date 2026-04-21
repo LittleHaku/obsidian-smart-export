@@ -53,6 +53,8 @@ describe("releaseNotes", () => {
 		expect(compareVersions("1.9.0-beta.1", "1.9.0-beta")).toBe(1);
 		expect(compareVersions("1.9.0-beta.1", "1.9.0-beta.2")).toBe(-1);
 		expect(compareVersions("1.9.0-beta", "1.9.0-beta.1")).toBe(-1);
+		expect(compareVersions("1.9.0-beta.1", "1.9.0-beta.alpha")).toBe(-1);
+		expect(compareVersions("1.9.0-beta.alpha", "1.9.0-beta.1")).toBe(1);
 		expect(compareVersions("1.9.0-canary.1", "1.9.0-beta.1")).toBe(1);
 		expect(compareVersions("1.9.0-alpha.1", "1.9.0-beta.1")).toBe(-1);
 		expect(compareVersions("1.9.0-beta.1", "1.9.0-beta.1")).toBe(0);

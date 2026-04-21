@@ -106,6 +106,10 @@ export function compareVersions(firstVersion: string, secondVersion: string): nu
 			continue;
 		}
 
+		if (firstIsNumber !== secondIsNumber) {
+			return firstIsNumber ? -1 : 1;
+		}
+
 		if (firstPart > secondPart) {
 			return 1;
 		}
