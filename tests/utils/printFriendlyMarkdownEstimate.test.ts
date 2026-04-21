@@ -100,6 +100,16 @@ describe("estimatePrintFriendlyMarkdownCharacterCount", () => {
 		expect(estimatedLength).toBe(actualLength);
 	});
 
+	it("matches exporter length when frontmatter is empty", () => {
+		const rootNode = createMockExportNode("Root", "root.md", 0, ["---", "---", "Body"].join("\n"));
+		const exporter = new PrintFriendlyMarkdownExporter();
+
+		const estimatedLength = estimateSelectedLength(rootNode, ["root.md"]);
+		const actualLength = exporter.export(rootNode).length;
+
+		expect(estimatedLength).toBe(actualLength);
+	});
+
 	it("matches exporter length when frontmatter is unclosed", () => {
 		const rootNode = createMockExportNode(
 			"Root",

@@ -118,7 +118,7 @@ function estimateContentLengthAfterNormalization(content: string): number {
 	const newline = content.startsWith("---\r\n") ? "\r\n" : "\n";
 	const lines = content.split(/\r?\n/);
 	const closingIndex = lines.indexOf("---", 1);
-	if (closingIndex < 0 || closingIndex <= 1 || lines[closingIndex - 1] === "") {
+	if (closingIndex < 0 || lines[closingIndex - 1] === "") {
 		return content.length;
 	}
 
