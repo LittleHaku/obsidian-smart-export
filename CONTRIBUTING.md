@@ -55,6 +55,26 @@ We welcome contributions of all types:
 
    Then reload Obsidian and enable the plugin.
 
+### Optional WSL/Linux repo workflow
+
+If you want faster Node/esbuild performance under WSL2, keep the repository on the Linux filesystem and mirror built plugin artifacts back into your Windows or Obsidian vault plugin folder:
+
+1. Copy `.env.example` to `.env.local`
+2. Set `OBSIDIAN_PLUGIN_DIR` to your local plugin folder, for example:
+
+   ```bash
+   OBSIDIAN_PLUGIN_DIR=/mnt/c/Users/<you>/path/to/vault/.obsidian/plugins/smart-export
+   ```
+
+3. Run the normal commands:
+
+   ```bash
+   pnpm run dev
+   pnpm run build
+   ```
+
+When `OBSIDIAN_PLUGIN_DIR` is set, the existing build pipeline still writes local artifacts as usual and also mirrors `main.js`, `manifest.json`, and `styles.css` to that target directory. `.env.local` is ignored by git so each contributor can use a different path.
+
 ### Development Workflow
 
 1. **Create a feature branch**:
