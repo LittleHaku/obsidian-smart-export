@@ -1,6 +1,6 @@
 # Smart Export Startup Process
 
-Updated: March 5, 2026
+Updated: April 21, 2026
 
 ## Table of Contents
 
@@ -17,18 +17,21 @@ Updated: March 5, 2026
 
 ## Overview
 
-Smart Export startup is intentionally lightweight. The plugin registers commands and UI entrypoints on load, then performs traversal/export work only when the user opens the modal.
+Smart Export startup is intentionally lightweight. The plugin registers commands and UI entrypoints on load, defers update-notice UI until the workspace layout is ready, and performs traversal/export work only when the user opens the export modal.
 
 ```mermaid
 sequenceDiagram
     participant Obsidian
     participant Plugin as SmartExportPlugin
+    participant ReleaseNotes as ReleaseNotesModal
     participant Modal as ExportModal
     participant Traversal as BFSTraversal
 
     Obsidian->>Plugin: onload()
     Plugin->>Plugin: loadSettings()
     Plugin->>Obsidian: register ribbon + command + settings tab
+    Obsidian->>Plugin: workspace.onLayoutReady()
+    Plugin->>ReleaseNotes: optional what's new modal after version change
     Obsidian->>Modal: user opens modal
     Modal->>Traversal: build export tree on demand
 ```
@@ -43,8 +46,9 @@ Trigger: `Plugin.onload()` in `src/main.ts`.
 2. Register ribbon icon (`Smart export`).
 3. Register command (`Smart Export: Open export`).
 4. Register settings tab UI.
+5. After `workspace.onLayoutReady(...)`, compare the persisted plugin version with `manifest.json` and optionally open the what's new modal once per version.
 
-No traversal is executed during plugin startup.
+No traversal is executed during plugin startup. The only deferred post-start action is the lightweight release-notes/version check.
 
 ### Phase 2: User opens export modal
 

@@ -50,6 +50,7 @@ Use [BRAT (Beta Reviewers Auto-update Tool)](https://github.com/TfTHacker/obsidi
 - Export delivery options: copy to clipboard or create a new note in the vault after choosing folder and note name.
 - Markdown-based exports rewrite links to exported notes into Obsidian heading links so they stay navigable inside the generated note.
 - Print-friendly Markdown can add a linked table of contents, numbered headings, section dividers, or page breaks for easier PDF scanning.
+- After plugin updates, Smart Export shows a one-time what's new modal with release highlights and quick actions.
 - Token estimate display before export.
 
 ## 4 Settings
