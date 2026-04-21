@@ -32,7 +32,7 @@ import {
 import { createExportNote } from "../utils/exportNote";
 import { ExportNoteDestinationModal } from "./ExportNoteDestinationModal";
 import { getPrintFriendlyMarkdownOptions } from "../utils/printFriendlyMarkdownOptions";
-import { PrintFriendlyMarkdownExporter } from "../engine/PrintFriendlyMarkdownExporter";
+import { estimatePrintFriendlyMarkdownCharacterCount } from "../utils/printFriendlyMarkdownEstimate";
 
 const EXPORT_CHOICE_XML = "format:xml";
 const EXPORT_CHOICE_PRINT_FRIENDLY = "format:print-friendly-markdown";
@@ -635,10 +635,11 @@ export class ExportModal extends Modal {
 			case "llm-markdown":
 				return metadataChars + titleChars * 2 + selectedContentChars + notes.length * 80;
 			case "print-friendly-markdown":
-				return new PrintFriendlyMarkdownExporter().export(
-					applyContentSelection(rootNode, this.selectedNodeIds),
+				return estimatePrintFriendlyMarkdownCharacterCount(
+					rootNode,
+					this.selectedNodeIds,
 					getPrintFriendlyMarkdownOptions(this.settings)
-				).length;
+				);
 			default:
 				return titleChars + selectedContentChars;
 		}
