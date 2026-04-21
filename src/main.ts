@@ -361,6 +361,8 @@ export default class SmartExportPlugin extends Plugin {
 			if (!currentVersion) {
 				return;
 			}
+			const manifest = this.manifest as { fundingUrl?: unknown };
+			const fundingUrl = typeof manifest.fundingUrl === "string" ? manifest.fundingUrl : undefined;
 
 			if (!this.hasPersistedData) {
 				this.lastSeenVersion = currentVersion;
@@ -374,10 +376,6 @@ export default class SmartExportPlugin extends Plugin {
 					await this.savePluginData();
 					return;
 				}
-
-				const manifest = this.manifest as { fundingUrl?: unknown };
-				const fundingUrl =
-					typeof manifest.fundingUrl === "string" ? manifest.fundingUrl : undefined;
 
 				new ReleaseNotesModal(this.app, getLatestReleaseNotes(), {
 					fundingUrl,
@@ -421,8 +419,6 @@ export default class SmartExportPlugin extends Plugin {
 				return;
 			}
 
-			const manifest = this.manifest as { fundingUrl?: unknown };
-			const fundingUrl = typeof manifest.fundingUrl === "string" ? manifest.fundingUrl : undefined;
 			new ReleaseNotesModal(this.app, releaseNotes, {
 				fundingUrl,
 				onClose: () => {
