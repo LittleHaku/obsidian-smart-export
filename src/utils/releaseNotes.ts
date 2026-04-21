@@ -140,17 +140,11 @@ export function shouldAutoDisplayReleaseNotesForUpdate(
 		return isReleaseAutoDisplayEnabled(toVersion);
 	}
 
-	const fromIndex = RELEASE_NOTES.findIndex((note) => note.version === fromVersion);
-	const toIndex = RELEASE_NOTES.findIndex((note) => note.version === toVersion);
-
-	const notesInUpgradePath =
-		fromIndex === -1 || toIndex === -1
-			? RELEASE_NOTES.filter(
-					(note) =>
-						compareVersions(note.version, fromVersion) > 0 &&
-						compareVersions(note.version, toVersion) <= 0
-				)
-			: RELEASE_NOTES.slice(Math.min(fromIndex, toIndex), Math.max(fromIndex, toIndex));
+	const notesInUpgradePath = RELEASE_NOTES.filter(
+		(note) =>
+			compareVersions(note.version, fromVersion) > 0 &&
+			compareVersions(note.version, toVersion) <= 0
+	);
 
 	if (notesInUpgradePath.length === 0) {
 		return isReleaseAutoDisplayEnabled(toVersion);
