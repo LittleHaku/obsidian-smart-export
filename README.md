@@ -194,6 +194,14 @@ pnpm install
 pnpm run dev
 ```
 
+Optional WSL/Linux workflow:
+
+- Keep the repo on the Linux filesystem for faster `pnpm`/TypeScript/esbuild performance.
+- Create a local-only `.env.local` from `.env.example`.
+- Set `OBSIDIAN_PLUGIN_DIR` to your Windows or vault plugin folder, for example `.../.obsidian/plugins/smart-export`.
+- With that env var set, `pnpm dev` and `pnpm build` keep their normal OSS behavior and also mirror `main.js`, `manifest.json`, and `styles.css` into your local Obsidian plugin directory.
+- `.env.local` is git-ignored, so contributors can use different vault paths without changing the repo.
+
 Benchmark:
 
 ```bash
