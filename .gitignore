@@ -38,3 +38,4 @@ GEMINI.md
 .cursorignore
 .agents/
 .github/copilot-instructions.md
+/.codex
