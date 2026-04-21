@@ -1,6 +1,6 @@
 # API reference
 
-Updated: March 6, 2026
+Updated: April 1, 2026
 
 This reference documents current Smart Export behavior exposed to users and contributors.
 
@@ -35,6 +35,11 @@ Defined in `src/main.ts` (`SmartExportSettings` + settings tab):
   - `Hide notes with property rules` (comma/newline-separated `key` or `key=value`)
 - Section `Markdown templates`
   - `Markdown template folder` (vault-relative, default `smart-templates`)
+- Section `Print-friendly Markdown`
+  - `Include table of contents`
+  - `Number headings`
+  - `Insert section dividers`
+  - `Insert page breaks`
 - Section `Export modal behavior`
   - `Auto-select current note`
   - `Close modal after export`
@@ -47,6 +52,7 @@ Format dispatch is implemented in `src/engine/exportOutput.ts`:
 - `xml` via `XMLExporter`
 - `llm-markdown` via `LlmMarkdownExporter`
 - `print-friendly-markdown` via `PrintFriendlyMarkdownExporter`
+  - Uses settings-controlled formatting for table of contents links, heading numbering, note dividers, and page breaks.
 
 Invalid stored/selected format values normalize to `xml`.
 

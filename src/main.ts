@@ -31,6 +31,11 @@ import {
 	normalizeTemplateDirectoryPath,
 	resolveLlmMarkdownTemplate,
 } from "./utils/llmMarkdownTemplateResolver";
+import {
+	DEFAULT_PRINT_FRIENDLY_MARKDOWN_OPTIONS,
+	getPrintFriendlyMarkdownOptions,
+	normalizePrintFriendlyMarkdownOption,
+} from "./utils/printFriendlyMarkdownOptions";
 
 const DEFAULT_OUTPUT_CHOICE_XML = "format:xml";
 const DEFAULT_OUTPUT_CHOICE_PRINT_FRIENDLY = "format:print-friendly-markdown";
@@ -135,6 +140,12 @@ const DEFAULT_SETTINGS: SmartExportSettings = {
 	ignoredTraversalTagPatterns: [],
 	ignoredTraversalPropertyRules: [],
 	llmMarkdownTemplateDirectory: LLM_MARKDOWN_TEMPLATE_DIRECTORY,
+	printFriendlyIncludeTableOfContents:
+		DEFAULT_PRINT_FRIENDLY_MARKDOWN_OPTIONS.includeTableOfContents,
+	printFriendlyNumberHeadings: DEFAULT_PRINT_FRIENDLY_MARKDOWN_OPTIONS.numberHeadings,
+	printFriendlyInsertSectionDividers: DEFAULT_PRINT_FRIENDLY_MARKDOWN_OPTIONS.insertSectionDividers,
+	printFriendlyInsertPageBreaks:
+		DEFAULT_PRINT_FRIENDLY_MARKDOWN_OPTIONS.insertPageBreaksBetweenSections,
 };
 
 /**
@@ -250,6 +261,34 @@ export default class SmartExportPlugin extends Plugin {
 			typeof storedOpenCreatedExportNote === "boolean"
 				? storedOpenCreatedExportNote
 				: this.settings.openCreatedExportNote;
+		const storedPrintFriendlyIncludeTableOfContents = (
+			storedSettings as { printFriendlyIncludeTableOfContents?: unknown } | null
+		)?.printFriendlyIncludeTableOfContents;
+		this.settings.printFriendlyIncludeTableOfContents = normalizePrintFriendlyMarkdownOption(
+			storedPrintFriendlyIncludeTableOfContents,
+			DEFAULT_PRINT_FRIENDLY_MARKDOWN_OPTIONS.includeTableOfContents
+		);
+		const storedPrintFriendlyNumberHeadings = (
+			storedSettings as { printFriendlyNumberHeadings?: unknown } | null
+		)?.printFriendlyNumberHeadings;
+		this.settings.printFriendlyNumberHeadings = normalizePrintFriendlyMarkdownOption(
+			storedPrintFriendlyNumberHeadings,
+			DEFAULT_PRINT_FRIENDLY_MARKDOWN_OPTIONS.numberHeadings
+		);
+		const storedPrintFriendlyInsertSectionDividers = (
+			storedSettings as { printFriendlyInsertSectionDividers?: unknown } | null
+		)?.printFriendlyInsertSectionDividers;
+		this.settings.printFriendlyInsertSectionDividers = normalizePrintFriendlyMarkdownOption(
+			storedPrintFriendlyInsertSectionDividers,
+			DEFAULT_PRINT_FRIENDLY_MARKDOWN_OPTIONS.insertSectionDividers
+		);
+		const storedPrintFriendlyInsertPageBreaks = (
+			storedSettings as { printFriendlyInsertPageBreaks?: unknown } | null
+		)?.printFriendlyInsertPageBreaks;
+		this.settings.printFriendlyInsertPageBreaks = normalizePrintFriendlyMarkdownOption(
+			storedPrintFriendlyInsertPageBreaks,
+			DEFAULT_PRINT_FRIENDLY_MARKDOWN_OPTIONS.insertPageBreaksBetweenSections
+		);
 	}
 
 	async saveSettings() {
@@ -296,6 +335,7 @@ export default class SmartExportPlugin extends Plugin {
 				vaultPath: this.app.vault.getName(),
 				format: this.settings.defaultExportFormat,
 				llmMarkdownTemplate,
+				printFriendlyMarkdownOptions: getPrintFriendlyMarkdownOptions(this.settings),
 				missingNotesCount: traversal.getMissingNotes().length,
 				onInvalidFormat: () => {
 					new Notice("Unknown export format in settings; falling back to XML.");
@@ -596,6 +636,60 @@ class SmartExportSettingTab extends PluginSettingTab {
 				this.templateFolderSuggest = new FolderPathSuggest(this.app, text.inputEl);
 				return text;
 			});
+
+		new Setting(containerEl).setName("Print-friendly Markdown").setHeading();
+
+		new Setting(containerEl)
+			.setName("Include table of contents")
+			.setDesc("Add a linked table of contents at the top of print-friendly exports.")
+			.addToggle((toggle) =>
+				toggle
+					.setValue(this.plugin.settings.printFriendlyIncludeTableOfContents)
+					.onChange(async (value) => {
+						this.plugin.settings.printFriendlyIncludeTableOfContents = value;
+						await this.plugin.saveSettings();
+					})
+			);
+
+		new Setting(containerEl)
+			.setName("Number headings")
+			.setDesc(
+				"Prefix print-friendly note headings with section numbers such as 1., 1.1, and 1.1.1."
+			)
+			.addToggle((toggle) =>
+				toggle
+					.setValue(this.plugin.settings.printFriendlyNumberHeadings)
+					.onChange(async (value) => {
+						this.plugin.settings.printFriendlyNumberHeadings = value;
+						await this.plugin.saveSettings();
+					})
+			);
+
+		new Setting(containerEl)
+			.setName("Insert section dividers")
+			.setDesc("Add divider lines between exported note sections in print-friendly Markdown.")
+			.addToggle((toggle) =>
+				toggle
+					.setValue(this.plugin.settings.printFriendlyInsertSectionDividers)
+					.onChange(async (value) => {
+						this.plugin.settings.printFriendlyInsertSectionDividers = value;
+						await this.plugin.saveSettings();
+					})
+			);
+
+		new Setting(containerEl)
+			.setName("Insert page breaks")
+			.setDesc(
+				"Start each exported note section after the first on a new page. When enabled, page breaks replace section dividers."
+			)
+			.addToggle((toggle) =>
+				toggle
+					.setValue(this.plugin.settings.printFriendlyInsertPageBreaks)
+					.onChange(async (value) => {
+						this.plugin.settings.printFriendlyInsertPageBreaks = value;
+						await this.plugin.saveSettings();
+					})
+			);
 
 		new Setting(containerEl).setName("Export modal behavior").setHeading();
 

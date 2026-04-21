@@ -1,5 +1,6 @@
 import { normalizePath } from "obsidian";
 import { ExportNode } from "../types";
+import { escapeWikiLinkValue } from "./wikiLinkEscaping";
 
 const MARKDOWN_EXTENSION_REGEX = /\.md$/i;
 const HEADING_OR_BLOCK_REF_SEPARATOR_REGEX = /[#^]/;
@@ -198,10 +199,6 @@ function normalizeLookupKey(value: string): string {
 function getTargetLookupKey(linkTarget: string): string {
 	const [baseTarget] = linkTarget.split(HEADING_OR_BLOCK_REF_SEPARATOR_REGEX, 1);
 	return normalizeLookupKey(baseTarget);
-}
-
-function escapeWikiLinkValue(value: string): string {
-	return value.replace(/\\/g, "\\\\").replace(/\|/g, "\\|").replace(/\]/g, "\\]");
 }
 
 function rewriteWikiLink(innerContent: string, linkIndex: ExportedMarkdownLinkIndex): string {

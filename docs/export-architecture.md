@@ -1,6 +1,6 @@
 # Export Architecture
 
-Updated: March 12, 2026
+Updated: April 1, 2026
 
 ## Overview
 
@@ -71,6 +71,17 @@ Markdown link rewriting in exported note content:
 2. Wikilinks pointing to exported notes are rewritten into Obsidian same-note heading links (`[[#Heading]]`) that the exported note can navigate directly.
 3. Aliased wikilinks append `ref:<target>` so the target remains readable in Obsidian/PDF contexts.
 4. Image embeds (`![[...]]`) and code spans/fences are preserved without rewriting.
+
+Print-friendly Markdown formatting:
+
+1. The exporter can prepend a linked table of contents.
+2. Heading numbering is assigned by the first depth-first path that includes each note:
+   - root note: `1.`
+   - first child: `1.1`
+   - first grandchild: `1.1.1`
+3. Cyclic or repeated notes keep the number from their first rendered position and are not emitted again.
+4. Divider lines between note sections are controlled by print-friendly settings.
+5. Optional HTML page breaks can replace divider lines between note sections; if a table of contents is included, this also moves the first note section onto a new page.
 
 Notes:
 

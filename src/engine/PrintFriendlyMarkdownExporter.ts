@@ -1,9 +1,15 @@
-import { ExportNode } from "../types";
+import { ExportNode, PrintFriendlyMarkdownOptions } from "../types";
 import {
 	buildExportedMarkdownLinkIndex,
-	buildExportedHeadingLabels,
 	rewriteMarkdownLinksForExport,
 } from "../utils/exportMarkdownLinks";
+import { DEFAULT_PRINT_FRIENDLY_MARKDOWN_OPTIONS } from "../utils/printFriendlyMarkdownOptions";
+import {
+	buildPrintFriendlyMarkdownStructure,
+	escapePrintFriendlyWikiLinkValue,
+	getPrintFriendlySectionSeparator,
+	PRINT_FRIENDLY_TABLE_OF_CONTENTS_HEADING,
+} from "../utils/printFriendlyMarkdownStructure";
 
 /**
  * A class to handle the export of note trees to a structured Markdown format.
@@ -15,37 +21,62 @@ export class PrintFriendlyMarkdownExporter {
 	 * @param rootNode The root node of the export tree.
 	 * @returns A string containing the Markdown representation of the note tree.
 	 */
-	public export(rootNode: ExportNode): string {
-		const allNotes = this.flattenTree(rootNode);
-		const headingLabels = buildExportedHeadingLabels(allNotes);
+	public export(rootNode: ExportNode, options?: PrintFriendlyMarkdownOptions): string {
+		const resolvedOptions = {
+			...DEFAULT_PRINT_FRIENDLY_MARKDOWN_OPTIONS,
+			...(options ?? {}),
+		};
+		const { allNotes, headingLabels } = buildPrintFriendlyMarkdownStructure(
+			rootNode,
+			resolvedOptions
+		);
 		const linkIndex = buildExportedMarkdownLinkIndex(
 			allNotes,
 			(note) => headingLabels.get(note.id)!
 		);
 		const chunks: string[] = [];
-		this.buildNode(rootNode, 0, chunks, linkIndex, headingLabels, new Set<string>());
+		if (resolvedOptions.includeTableOfContents) {
+			chunks.push(this.buildTableOfContents(rootNode, headingLabels));
+		}
+		this.buildNode(
+			rootNode,
+			0,
+			chunks,
+			linkIndex,
+			headingLabels,
+			new Set<string>(),
+			resolvedOptions
+		);
 		return chunks.join("");
 	}
 
-	private flattenTree(rootNode: ExportNode): ExportNode[] {
-		const queue: ExportNode[] = [rootNode];
-		const notes: ExportNode[] = [];
-		const visited = new Set<string>();
-		let head = 0;
+	private buildTableOfContents(rootNode: ExportNode, headingLabels: Map<string, string>): string {
+		const chunks = [PRINT_FRIENDLY_TABLE_OF_CONTENTS_HEADING];
+		this.buildTableOfContentsEntries(rootNode, 0, chunks, headingLabels, new Set<string>());
+		chunks.push("\n");
+		return chunks.join("");
+	}
 
-		while (head < queue.length) {
-			const note = queue[head++];
-			if (visited.has(note.id)) {
-				continue;
-			}
-			visited.add(note.id);
-			notes.push(note);
-			for (const child of note.children) {
-				queue.push(child);
-			}
+	private buildTableOfContentsEntries(
+		node: ExportNode,
+		depth: number,
+		chunks: string[],
+		headingLabels: Map<string, string>,
+		visited: Set<string>
+	): void {
+		if (visited.has(node.id)) {
+			return;
 		}
+		visited.add(node.id);
 
-		return notes;
+		const indent = "  ".repeat(depth);
+		const headingLabel = headingLabels.get(node.id)!;
+		const escapedHeadingLabel = escapePrintFriendlyWikiLinkValue(headingLabel);
+		chunks.push(`${indent}- [[#${escapedHeadingLabel}|${escapedHeadingLabel}]]\n`);
+
+		for (const child of node.children) {
+			this.buildTableOfContentsEntries(child, depth + 1, chunks, headingLabels, visited);
+		}
 	}
 
 	/**
@@ -61,7 +92,8 @@ export class PrintFriendlyMarkdownExporter {
 		chunks: string[],
 		linkIndex: ReturnType<typeof buildExportedMarkdownLinkIndex>,
 		headingLabels: Map<string, string>,
-		visited: Set<string>
+		visited: Set<string>,
+		options: PrintFriendlyMarkdownOptions
 	) {
 		if (visited.has(node.id)) {
 			return;
@@ -70,6 +102,9 @@ export class PrintFriendlyMarkdownExporter {
 
 		const prefix = "#".repeat(depth + 1);
 		const headingLabel = headingLabels.get(node.id)!;
+		if (chunks.length > 0) {
+			chunks.push(getPrintFriendlySectionSeparator(options));
+		}
 		chunks.push(`${prefix} ${headingLabel}\n\n`);
 
 		if (node.content && node.includeContent) {
@@ -77,7 +112,7 @@ export class PrintFriendlyMarkdownExporter {
 		}
 
 		for (const child of node.children) {
-			this.buildNode(child, depth + 1, chunks, linkIndex, headingLabels, visited);
+			this.buildNode(child, depth + 1, chunks, linkIndex, headingLabels, visited, options);
 		}
 	}
 }

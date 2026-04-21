@@ -28,7 +28,9 @@ describe("PrintFriendlyMarkdownExporter", () => {
 
 			const result = exporter.export(rootNode);
 
-			expect(result).toContain("# Root Note");
+			expect(result).toContain("# Table of contents");
+			expect(result).toContain("- [[#1. Root Note|1. Root Note]]");
+			expect(result).toContain("# 1. Root Note");
 			expect(result).toContain("This is the root content");
 		});
 
@@ -38,7 +40,8 @@ describe("PrintFriendlyMarkdownExporter", () => {
 
 			const result = exporter.export(rootNode);
 
-			expect(result).toContain("# Title Only");
+			expect(result).toContain("# Table of contents");
+			expect(result).toContain("# 1. Title Only");
 			expect(result).not.toContain("Content for Title Only");
 		});
 
@@ -48,8 +51,10 @@ describe("PrintFriendlyMarkdownExporter", () => {
 
 			const result = exporter.export(rootNode);
 
-			expect(result).toContain("# Empty Note");
-			expect(result).toBe("# Empty Note\n\n");
+			expect(result).toContain("# 1. Empty Note");
+			expect(result).toBe(
+				"# Table of contents\n\n- [[#1. Empty Note|1. Empty Note]]\n\n---\n\n# 1. Empty Note\n\n"
+			);
 		});
 	});
 
@@ -62,9 +67,11 @@ describe("PrintFriendlyMarkdownExporter", () => {
 			const exporter = new PrintFriendlyMarkdownExporter();
 			const result = exporter.export(rootNode);
 
-			expect(result).toContain("# Root");
-			expect(result).toContain("## Child 1");
-			expect(result).toContain("## Child 2");
+			expect(result).toContain("# 1. Root");
+			expect(result).toContain("## 1.1 Child 1");
+			expect(result).toContain("## 1.2 Child 2");
+			expect(result).toContain("  - [[#1.1 Child 1|1.1 Child 1]]");
+			expect(result).toContain("  - [[#1.2 Child 2|1.2 Child 2]]");
 			expect(result).toContain("Root content");
 			expect(result).toContain("Child 1 content");
 			expect(result).toContain("Child 2 content");
@@ -78,9 +85,9 @@ describe("PrintFriendlyMarkdownExporter", () => {
 			const exporter = new PrintFriendlyMarkdownExporter();
 			const result = exporter.export(rootNode);
 
-			expect(result).toContain("# Root");
-			expect(result).toContain("## Child");
-			expect(result).toContain("### GrandChild");
+			expect(result).toContain("# 1. Root");
+			expect(result).toContain("## 1.1 Child");
+			expect(result).toContain("### 1.1.1 GrandChild");
 			expect(result).toContain("Root content");
 			expect(result).toContain("Child content");
 			expect(result).toContain("Deep content");
@@ -97,11 +104,11 @@ describe("PrintFriendlyMarkdownExporter", () => {
 			const exporter = new PrintFriendlyMarkdownExporter();
 			const result = exporter.export(root);
 
-			expect(result).toContain("# Root");
-			expect(result).toContain("## Level 1");
-			expect(result).toContain("### Level 2");
-			expect(result).toContain("#### Level 3");
-			expect(result).toContain("##### Level 4");
+			expect(result).toContain("# 1. Root");
+			expect(result).toContain("## 1.1 Level 1");
+			expect(result).toContain("### 1.1.1 Level 2");
+			expect(result).toContain("#### 1.1.1.1 Level 3");
+			expect(result).toContain("##### 1.1.1.1.1 Level 4");
 		});
 	});
 
@@ -113,9 +120,9 @@ describe("PrintFriendlyMarkdownExporter", () => {
 			const exporter = new PrintFriendlyMarkdownExporter();
 			const result = exporter.export(rootNode);
 
-			expect(result).toContain("# Root");
+			expect(result).toContain("# 1. Root");
 			expect(result).toContain("Root content");
-			expect(result).toContain("## Child");
+			expect(result).toContain("## 1.1 Child");
 			expect(result).not.toContain("Should not appear");
 		});
 
@@ -126,9 +133,9 @@ describe("PrintFriendlyMarkdownExporter", () => {
 			const exporter = new PrintFriendlyMarkdownExporter();
 			const result = exporter.export(rootNode);
 
-			expect(result).toContain("# Root");
+			expect(result).toContain("# 1. Root");
 			expect(result).toContain("Root content");
-			expect(result).toContain("## Child");
+			expect(result).toContain("## 1.1 Child");
 			expect(result).toContain("Should appear");
 		});
 	});
@@ -179,10 +186,19 @@ console.log("code block");
 			const exporter = new PrintFriendlyMarkdownExporter();
 			const result = exporter.export(rootNode);
 
-			expect(result).toContain("# Root");
-			expect(result).toContain("## Linked Note");
-			expect(result).toContain("[[#Linked Note|summary (ref:Linked Note)]]");
+			expect(result).toContain("# 1. Root");
+			expect(result).toContain("## 1.1 Linked Note");
+			expect(result).toContain("[[#1.1 Linked Note|summary (ref:Linked Note)]]");
 			expect(result).toContain("![[diagram.png]]");
+		});
+
+		it("escapes TOC links for headings with wikilink control characters", () => {
+			const rootNode = createMockExportNode("Root | ] Note", "root.md", 0, "Body");
+			const exporter = new PrintFriendlyMarkdownExporter();
+
+			const result = exporter.export(rootNode);
+
+			expect(result).toContain("- [[#1. Root \\| \\] Note|1. Root \\| \\] Note]]");
 		});
 
 		it("inserts a blank line before closing included note frontmatter", () => {
@@ -214,7 +230,7 @@ console.log("code block");
 			const exporter = new PrintFriendlyMarkdownExporter();
 			const result = exporter.export(rootNode);
 
-			expect(result).toContain("# Test Note");
+			expect(result).toContain("# 1. Test Note");
 			expect(result).not.toContain("undefined");
 		});
 	});
@@ -231,10 +247,10 @@ console.log("code block");
 			const exporter = new PrintFriendlyMarkdownExporter();
 			const result = exporter.export(rootNode);
 
-			expect(result).toContain("# Root");
-			expect(result).toContain("## First Child");
-			expect(result).toContain("## Second Child");
-			expect(result).toContain("## Third Child");
+			expect(result).toContain("# 1. Root");
+			expect(result).toContain("## 1.1 First Child");
+			expect(result).toContain("## 1.2 Second Child");
+			expect(result).toContain("## 1.3 Third Child");
 			expect(result).toContain("First content");
 			expect(result).toContain("Second content");
 			expect(result).toContain("Third content");
@@ -251,9 +267,9 @@ console.log("code block");
 			const exporter = new PrintFriendlyMarkdownExporter();
 			const result = exporter.export(rootNode);
 
-			const alphaIndex = result.indexOf("## Alpha");
-			const betaIndex = result.indexOf("## Beta");
-			const gammaIndex = result.indexOf("## Gamma");
+			const alphaIndex = result.indexOf("## 1.1 Alpha");
+			const betaIndex = result.indexOf("## 1.2 Beta");
+			const gammaIndex = result.indexOf("## 1.3 Gamma");
 
 			expect(alphaIndex).toBeLessThan(betaIndex);
 			expect(betaIndex).toBeLessThan(gammaIndex);
@@ -269,8 +285,8 @@ console.log("code block");
 			const exporter = new PrintFriendlyMarkdownExporter();
 			const result = exporter.export(nodeA);
 
-			expect(result.match(/^# Node A$/m)).toHaveLength(1);
-			expect(result.match(/^## Node B$/m)).toHaveLength(1);
+			expect(result.match(/^# 1\. Node A$/m)).toHaveLength(1);
+			expect(result.match(/^## 1\.1 Node B$/m)).toHaveLength(1);
 			expect(result).toContain("Content A");
 			expect(result).toContain("Content B");
 		});
@@ -286,7 +302,7 @@ console.log("code block");
 
 			const result = exporter.export(rootNode);
 
-			expect(result).toContain('# Note with "quotes" & <brackets>');
+			expect(result).toContain('# 1. Note with "quotes" & <brackets>');
 			expect(result).toContain("Special content");
 		});
 
@@ -297,7 +313,7 @@ console.log("code block");
 
 			const result = exporter.export(rootNode);
 
-			expect(result).toContain(`# ${longTitle}`);
+			expect(result).toContain(`# 1. ${longTitle}`);
 			expect(result).toContain("Long title content");
 		});
 
@@ -307,7 +323,7 @@ console.log("code block");
 
 			const result = exporter.export(rootNode);
 
-			expect(result).toContain("# Lonely Note");
+			expect(result).toContain("# 1. Lonely Note");
 			expect(result).toContain("All alone");
 			expect(result).not.toContain("##"); // No child headings
 		});
@@ -318,7 +334,7 @@ console.log("code block");
 
 			const result = exporter.export(rootNode);
 
-			expect(result).toContain("# A");
+			expect(result).toContain("# 1. A");
 			expect(result).toContain("B");
 		});
 	});
@@ -331,7 +347,28 @@ console.log("code block");
 			const exporter = new PrintFriendlyMarkdownExporter();
 			const result = exporter.export(rootNode);
 
-			expect(result).toBe("# Root\n\nRoot content\n\n## Child\n\nChild content\n\n");
+			expect(result).toBe(
+				[
+					"# Table of contents",
+					"",
+					"- [[#1. Root|1. Root]]",
+					"  - [[#1.1 Child|1.1 Child]]",
+					"",
+					"---",
+					"",
+					"# 1. Root",
+					"",
+					"Root content",
+					"",
+					"---",
+					"",
+					"## 1.1 Child",
+					"",
+					"Child content",
+					"",
+					"",
+				].join("\n")
+			);
 		});
 
 		it("should handle recursive structure correctly", () => {
@@ -343,14 +380,66 @@ console.log("code block");
 			const result = exporter.export(rootNode);
 
 			// Ensure the structure is built recursively
-			expect(result).toContain("# Root");
-			expect(result).toContain("## Child");
-			expect(result).toContain("### Deep");
+			expect(result).toContain("# 1. Root");
+			expect(result).toContain("## 1.1 Child");
+			expect(result).toContain("### 1.1.1 Deep");
 
 			// Ensure all content is included
 			expect(result).toContain("Root content");
 			expect(result).toContain("Child content");
 			expect(result).toContain("Deep content");
+		});
+
+		it("can disable numbering, dividers, and the table of contents", () => {
+			const child = createMockExportNode("Child", "child.md", 1, "Child content");
+			const rootNode = createMockExportNode("Root", "root.md", 0, "Root content", [child]);
+			const exporter = new PrintFriendlyMarkdownExporter();
+
+			const result = exporter.export(rootNode, {
+				includeTableOfContents: false,
+				numberHeadings: false,
+				insertSectionDividers: false,
+				insertPageBreaksBetweenSections: false,
+			});
+
+			expect(result).toBe("# Root\n\nRoot content\n\n## Child\n\nChild content\n\n");
+		});
+
+		it("can insert page breaks between sections and replace dividers", () => {
+			const child = createMockExportNode("Child", "child.md", 1, "Child content");
+			const rootNode = createMockExportNode("Root", "root.md", 0, "Root content", [child]);
+			const exporter = new PrintFriendlyMarkdownExporter();
+
+			const result = exporter.export(rootNode, {
+				includeTableOfContents: true,
+				numberHeadings: true,
+				insertSectionDividers: true,
+				insertPageBreaksBetweenSections: true,
+			});
+
+			expect(result).toBe(
+				[
+					"# Table of contents",
+					"",
+					"- [[#1. Root|1. Root]]",
+					"  - [[#1.1 Child|1.1 Child]]",
+					"",
+					'<div style="page-break-after: always;"></div>',
+					"",
+					"# 1. Root",
+					"",
+					"Root content",
+					"",
+					'<div style="page-break-after: always;"></div>',
+					"",
+					"## 1.1 Child",
+					"",
+					"Child content",
+					"",
+					"",
+				].join("\n")
+			);
+			expect(result).not.toContain("\n\n---\n\n");
 		});
 	});
 });

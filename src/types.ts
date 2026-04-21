@@ -31,6 +31,20 @@ export type LinkTraversalMode = "outgoing" | "incoming" | "both";
 export type ExportTarget = "clipboard" | "new-note";
 
 /**
+ * Defines formatting options for print-friendly Markdown exports.
+ */
+export interface PrintFriendlyMarkdownOptions {
+	/** Whether to prepend a linked table of contents. */
+	includeTableOfContents: boolean;
+	/** Whether to prefix note headings with hierarchical section numbers. */
+	numberHeadings: boolean;
+	/** Whether to insert thematic breaks between exported note sections. */
+	insertSectionDividers: boolean;
+	/** Whether to insert HTML page breaks between exported note sections. */
+	insertPageBreaksBetweenSections: boolean;
+}
+
+/**
  * Defines the settings for the Smart Export plugin.
  */
 export interface SmartExportSettings {
@@ -64,4 +78,12 @@ export interface SmartExportSettings {
 	ignoredTraversalPropertyRules: string[];
 	/** Vault-relative folder used to resolve custom LLM Markdown templates. */
 	llmMarkdownTemplateDirectory: string;
+	/** Whether print-friendly exports should include a table of contents. */
+	printFriendlyIncludeTableOfContents: boolean;
+	/** Whether print-friendly exports should number note headings. */
+	printFriendlyNumberHeadings: boolean;
+	/** Whether print-friendly exports should insert dividers between note sections. */
+	printFriendlyInsertSectionDividers: boolean;
+	/** Whether print-friendly exports should insert page breaks between note sections. */
+	printFriendlyInsertPageBreaks: boolean;
 }
