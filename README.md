@@ -91,7 +91,7 @@ Settings location: **Obsidian → Settings → Smart Export**
 
 Exclusion details (folders/tags/properties): [Exclusion rules](docs/exclude-folders.md)
 
-### 4.6 Markdown templates
+### 4.6 Using Markdown templates
 
 For Markdown template exports, Smart Export can load a custom template from your vault:
 
