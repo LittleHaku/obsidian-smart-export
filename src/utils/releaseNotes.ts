@@ -26,8 +26,15 @@ export function getReleaseNotesBetweenVersions(
 	fromVersion: string,
 	toVersion: string
 ): ReleaseNotesEntry[] {
-	const fromIndex = RELEASE_NOTES.findIndex((note) => note.version === fromVersion);
-	const toIndex = RELEASE_NOTES.findIndex((note) => note.version === toVersion);
+	const normalizedFromVersion = normalizeStoredPluginVersion(fromVersion);
+	const normalizedToVersion = normalizeStoredPluginVersion(toVersion);
+
+	if (!normalizedFromVersion || !normalizedToVersion) {
+		return getLatestReleaseNotes();
+	}
+
+	const fromIndex = RELEASE_NOTES.findIndex((note) => note.version === normalizedFromVersion);
+	const toIndex = RELEASE_NOTES.findIndex((note) => note.version === normalizedToVersion);
 
 	if (fromIndex === -1 || toIndex === -1) {
 		return getLatestReleaseNotes();

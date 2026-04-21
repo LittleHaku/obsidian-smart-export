@@ -35,11 +35,18 @@ describe("releaseNotes", () => {
 	it("returns the latest release notes and upgrade ranges", () => {
 		expect(getLatestReleaseNotes(RELEASE_NOTES.length)).toEqual(RELEASE_NOTES);
 		expect(getLatestReleaseNotes(1)).toEqual([RELEASE_NOTES[0]]);
+		expect(getReleaseNotesBetweenVersions(" 1.9.0-beta.1 ", " 1.9.0 ")).toEqual([
+			RELEASE_NOTES[1],
+			RELEASE_NOTES[2],
+		]);
 		expect(getReleaseNotesBetweenVersions("1.9.0-beta.1", "1.9.0")).toEqual([
 			RELEASE_NOTES[1],
 			RELEASE_NOTES[2],
 		]);
 		expect(getReleaseNotesBetweenVersions("1.10.0", "1.10.0")).toEqual([RELEASE_NOTES[0]]);
+		expect(getReleaseNotesBetweenVersions("   ", "1.10.0")).toEqual(
+			getLatestReleaseNotes(RELEASE_NOTES.length)
+		);
 		expect(getReleaseNotesBetweenVersions("1.8.0", "1.10.0")).toEqual(
 			getLatestReleaseNotes(RELEASE_NOTES.length)
 		);
