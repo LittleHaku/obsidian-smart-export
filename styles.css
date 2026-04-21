@@ -305,6 +305,8 @@ Modern, clean styling for the export modal interface
 }
 
 .smart-export-whats-new-category {
+	font-size: 14px;
+	line-height: 1.5;
 	font-weight: 700;
 	margin-top: 8px;
 	margin-bottom: 4px;
