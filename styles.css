@@ -262,12 +262,12 @@ Modern, clean styling for the export modal interface
 	margin-left: 6px;
 }
 
-.modal.smart-export-whats-new-modal {
+.smart-export-whats-new-modal {
 	width: 600px;
 	max-width: calc(100vw - 40px);
 }
 
-.modal.smart-export-whats-new-modal .modal-content {
+.smart-export-whats-new-modal .modal-content {
 	padding: 16px;
 }
 
@@ -432,13 +432,13 @@ Modern, clean styling for the export modal interface
 		font-size: var(--font-ui-small);
 	}
 
-	.modal.smart-export-whats-new-modal {
+	.smart-export-whats-new-modal {
 		width: calc(100vw - 40px);
 		max-width: calc(100vw - 40px);
 		margin: 0 auto;
 	}
 
-	.modal.smart-export-whats-new-modal .modal-content {
+	.smart-export-whats-new-modal .modal-content {
 		padding: 12px;
 	}
 
