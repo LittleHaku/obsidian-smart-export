@@ -1,5 +1,6 @@
 import { App, Modal } from "obsidian";
 import { ReleaseNotesEntry } from "../constants/releaseNotes";
+import { openExternalUrl } from "../utils/externalLink";
 
 interface ReleaseNotesModalOptions {
 	fundingUrl?: string;
@@ -194,7 +195,7 @@ export class ReleaseNotesModal extends Modal {
 				text: "Buy me a coffee",
 			});
 			supportButton.addEventListener("click", () => {
-				window.open(this.options.fundingUrl, "_blank", "noopener,noreferrer");
+				openExternalUrl(this.options.fundingUrl);
 			});
 		}
 
