@@ -211,9 +211,9 @@ Examples:
 - Tag `1.3.0-beta.1` requires `## [1.3.0-beta.1]`
 - Tag `1.3.0` requires `## [1.3.0]`
 
-### Prerelease flow (BRAT testing)
+### Prerelease flow
 
-Use prerelease tags when you want testers to validate a PR-branch build before final release:
+Use prerelease tags when you want testers to validate a build before final release. If the work is still in a PR branch, BRAT can be used as an optional beta-testing path:
 
 ```bash
 pnpm version 1.3.0-beta.1 --no-git-tag-version
