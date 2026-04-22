@@ -1,32 +1,37 @@
 # Smart Export
 
-[![CI/CD](https://github.com/LittleHaku/obsidian-smart-export/actions/workflows/ci.yml/badge.svg)](https://github.com/LittleHaku/obsidian-smart-export/actions/workflows/ci.yml)
-[![codecov](https://codecov.io/gh/LittleHaku/obsidian-smart-export/branch/main/graph/badge.svg)](https://codecov.io/gh/LittleHaku/obsidian-smart-export/branch/main)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Version](https://img.shields.io/github/v/release/LittleHaku/obsidian-smart-export)](https://github.com/LittleHaku/obsidian-smart-export/releases)
-[![Downloads](https://img.shields.io/github/downloads/LittleHaku/obsidian-smart-export/total)](https://github.com/LittleHaku/obsidian-smart-export/releases)
+[![Downloads](https://img.shields.io/badge/dynamic/json?logo=obsidian&color=%23483699&label=Downloads&query=%24%5B%22smart-export%22%5D.downloads&suffix=%20installs&url=https%3A%2F%2Fraw.githubusercontent.com%2Fobsidianmd%2Fobsidian-releases%2Fmaster%2Fcommunity-plugin-stats.json)](https://obsidian.md/plugins?id=smart-export)
 [![Buy Me a Coffee](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-support%20me-orange?logo=buy-me-a-coffee&logoColor=white&style=flat)](https://buymeacoffee.com/littlehaku)
 
-Smart Export follows links from a root note, builds a note tree, and exports it in formats that work well for both humans and LLMs.
+Smart Export turns one Obsidian note into a clean exportable context bundle by following wikilinks to a configurable depth. It is built for people who want readable note packets, print-friendly exports, or structured context for LLM workflows without manually stitching notes together.
 
-## 1 Installation
+## Why Smart Export
 
-### 1.1 BRAT (current installation method)
+- Follow outgoing links, backlinks, or both from a root note.
+- Export as XML, print-friendly Markdown, or Markdown templates such as `LLM-ready`.
+- Exclude folders, tags, and frontmatter-based note groups from traversal.
+- Copy exports to the clipboard or create a new note directly in your vault.
+- Rewrite links between exported notes so navigation still works inside the generated Markdown note.
 
-Use [BRAT (Beta Reviewers Auto-update Tool)](https://github.com/TfTHacker/obsidian42-brat):
+## Installation
+
+### Community Plugins (recommended)
+
+1. Open **Settings → Community plugins**.
+2. Turn off **Restricted mode** if needed.
+3. Click **Browse**, search for **Smart Export**, then install and enable it.
+
+### BRAT (optional beta testing only)
+
+Use [BRAT (Beta Reviewers Auto-update Tool)](https://github.com/TfTHacker/obsidian42-brat) only if you want to test prerelease builds before they reach the Community Plugins catalog.
 
 1. In Obsidian, open **Settings → Community plugins → Browse** and install **BRAT**.
 2. Open BRAT settings and click **Add a beta plugin**.
 3. Paste: `https://github.com/LittleHaku/obsidian-smart-export`
-4. Select the latest release.
+4. Select the latest prerelease you want to test.
 
-### 1.2 Community plugins (when available)
-
-1. Open **Settings → Community plugins**.
-2. Turn off **Restricted mode**.
-3. Click **Browse**, search for **Smart Export**, then install and enable it.
-
-## 2 Quick Start
+## Quick Start
 
 1. Open command palette (`Cmd/Ctrl+P`) and run `Smart Export: Open export` (or click the ribbon icon).
 2. Select a root note.
@@ -36,28 +41,32 @@ Use [BRAT (Beta Reviewers Auto-update Tool)](https://github.com/TfTHacker/obsidi
 
 `Export to new note` prompts for a vault-relative folder and note name, then creates the Markdown note using your default folder/open preferences from settings.
 
-## 3 Features
+## Export Formats
+
+- **XML** for structured machine-readable exports.
+- **LLM-ready Markdown** for prompt and context workflows.
+- **Print-friendly Markdown** for readable note bundles, PDF export, and linked tables of contents.
+- **Custom Markdown templates** loaded from your vault.
+
+## Core Features
 
 - Smart note discovery using breadth-first traversal.
 - Link direction modes: outgoing, incoming, or both.
 - Dual depth controls:
-  - content depth (full content)
-  - title depth (title-only context)
-- Folder exclusion (`Ignored folders`) for traversal with comma-separated wildcard/path patterns.
-- Tag/property exclusion rules for traversal (`Hide notes with tags`, `Hide notes with property rules`).
-- Output formats: XML, Markdown templates, Print-friendly Markdown.
-- Multiple Markdown templates (built-in + custom folder templates) with placeholder support.
-- Export delivery options: copy to clipboard or create a new note in the vault after choosing folder and note name.
-- Markdown-based exports rewrite links to exported notes into Obsidian heading links so they stay navigable inside the generated note.
-- Print-friendly Markdown can add a linked table of contents, numbered headings, section dividers, or page breaks for easier PDF scanning.
-- After plugin updates, Smart Export shows a one-time what's new modal with release highlights and quick actions.
+  - content depth for full note content
+  - title depth for title-only context
+- Folder exclusion with comma-separated wildcard or path patterns.
+- Tag and property exclusion rules for traversal.
+- Linked table of contents, numbered headings, section dividers, and page breaks for print-friendly Markdown.
+- Built-in and custom Markdown templates with placeholder support.
 - Token estimate display before export.
+- One-time in-app "What's new" modal after plugin updates.
 
-## 4 Settings
+## Settings
 
 Settings location: **Obsidian → Settings → Smart Export**
 
-### 4.1 Export defaults
+### Export defaults
 
 - **Default content depth**: `1-20`
 - **Default title depth**: `1-20`
@@ -66,24 +75,24 @@ Settings location: **Obsidian → Settings → Smart Export**
 - **Default link direction**
 - **Default export note folder**: vault-relative folder for new export notes (leave empty to use the source note folder)
 
-### 4.2 Traversal exclusions
+### Traversal exclusions
 
 - **Ignored folders**: comma-separated folders/patterns (for example `templates, assets*, /archive`) excluded from traversal/export. Leading `/` anchors to vault root.
 - **Hide notes with tags**: comma-separated tag patterns (for example `archive*, #draft, projects/*/old`) excluded from traversal/export.
 - **Hide notes with property rules**: comma-separated rules using `key` or `key=value` (for example `status=done, published=true, archived`) excluded from traversal/export.
 
-### 4.3 Markdown templates
+### Markdown templates
 
 - **Markdown template folder**: vault-relative folder for custom Markdown templates, with folder autocomplete
 
-### 4.4 Print-friendly Markdown
+### Print-friendly Markdown
 
 - **Include table of contents**: adds a linked table of contents to print-friendly exports
 - **Number headings**: prefixes exported note headings with section numbers such as `1.` and `1.1`
 - **Insert section dividers**: adds divider lines between note sections in print-friendly exports
 - **Insert page breaks**: starts each note section after the first on a new page and replaces section dividers
 
-### 4.5 Export modal behavior
+### Export modal behavior
 
 - **Auto-select current note**
 - **Close modal after export**
@@ -92,7 +101,7 @@ Settings location: **Obsidian → Settings → Smart Export**
 
 Exclusion details (folders/tags/properties): [Exclusion rules](docs/exclude-folders.md)
 
-### 4.6 Using Markdown templates
+## Using Markdown Templates
 
 For Markdown template exports, Smart Export can load a custom template from your vault:
 
@@ -126,13 +135,13 @@ Placeholder reference: [`templates/README.md`](templates/README.md)
 `{{metadata_yaml}}` includes the full YAML block with `---` delimiters and keys like
 `export_timestamp`, `starting_note`, `total_notes_exported`, and `missing_notes_count`.
 
-## 5 Keyboard Shortcut
+## Keyboard Shortcuts
 
 - Primary command: `Smart Export: Open export`
 - Quick command: `Smart Export: Quick export current note` (uses default settings and follows your configured default export target)
 - Assign your own shortcut in **Settings → Hotkeys**.
 
-## 6 Documentation
+## Documentation
 
 - [Documentation index](docs/README.md)
 - [API reference](docs/api-reference.md)
@@ -144,9 +153,9 @@ Placeholder reference: [`templates/README.md`](templates/README.md)
 - [Contributing guide](CONTRIBUTING.md)
 - [Roadmap and feature backlog (GitHub Issues)](https://github.com/LittleHaku/obsidian-smart-export/issues)
 
-## 7 Example Output
+## Example Output
 
-### 7.1 XML (excerpt)
+### XML (excerpt)
 
 ```xml
 <obsidian_export>
@@ -157,7 +166,7 @@ Placeholder reference: [`templates/README.md`](templates/README.md)
 </obsidian_export>
 ```
 
-### 7.2 LLM Markdown (excerpt)
+### LLM Markdown (excerpt)
 
 ```markdown
 # Smart Export Vault
@@ -166,15 +175,15 @@ Placeholder reference: [`templates/README.md`](templates/README.md)
 - Total Notes: 5
 ```
 
-## 8 Troubleshooting
+## Troubleshooting
 
-### 8.1 Empty export or missing notes
+### Empty export or missing notes
 
 - Ensure the root note exists.
 - Ensure links resolve to real notes.
 - Check that excluded folders are not filtering expected notes.
 
-### 8.2 Export too large
+### Export too large
 
 - Use **Export to new note** to avoid clipboard limits for large exports.
 - Set **Default export target** to `New note` if your quick-export hotkey should create files instead of using the clipboard.
@@ -182,7 +191,7 @@ Placeholder reference: [`templates/README.md`](templates/README.md)
 - Switch to Print-friendly Markdown.
 - Start from a more specific root note.
 
-## 9 Contributing
+## Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md).
 
@@ -209,7 +218,7 @@ Benchmark:
 pnpm benchmark
 ```
 
-## 10 Support
+## Support
 
 - Star the repo.
 - Report bugs and request features in [GitHub Issues](https://github.com/LittleHaku/obsidian-smart-export/issues).
@@ -217,6 +226,6 @@ pnpm benchmark
 
 [![Star History Chart](https://api.star-history.com/image?repos=LittleHaku/obsidian-smart-export&type=date&legend=top-left)](https://www.star-history.com/?repos=LittleHaku%2Fobsidian-smart-export&type=date&legend=top-left)
 
-## 11 License
+## License
 
 MIT License. See [LICENSE](LICENSE).

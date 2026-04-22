@@ -71,7 +71,7 @@ When upgrading between two known versions, the modal may include both the previo
 release and the new release in the same view instead of showing only strictly unseen
 entries. This matches the intended "what's new" recap behavior.
 
-## Prerelease flow (for BRAT testing)
+## Prerelease flow (optional BRAT beta testing)
 
 Use this flow when a feature is still in a PR branch and should be tested without a final release:
 
@@ -95,7 +95,7 @@ git tag -a 1.3.0-beta.1 -m "1.3.0 beta 1"
 git push origin 1.3.0-beta.1
 ```
 
-5. Share release for BRAT testing.
+5. Share the prerelease for BRAT beta testing or other manual prerelease install flows.
 
 ## Final release flow
 
