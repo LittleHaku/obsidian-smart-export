@@ -67,6 +67,10 @@ describe("releaseNotes", () => {
 		expect(compareVersions("1.9.0-canary.1", "1.9.0-beta.1")).toBe(1);
 		expect(compareVersions("1.9.0-alpha.1", "1.9.0-beta.1")).toBe(-1);
 		expect(compareVersions("1.9.0-beta.1", "1.9.0-beta.1")).toBe(0);
+		expect(compareVersions("1.10.0-beta.1-hotfix.1", "1.10.0-beta.1-hotfix.2")).toBe(-1);
+		expect(compareVersions("1.10.0-beta.1-hotfix.1", "1.10.0-beta.1")).toBe(1);
+		expect(compareVersions("1.10.0+build.1", "1.10.0+build.2")).toBe(0);
+		expect(compareVersions("1.10.0-beta.1+build.1", "1.10.0-beta.1")).toBe(0);
 	});
 
 	it("uses per-release auto-display settings and upgrade-path logic", () => {

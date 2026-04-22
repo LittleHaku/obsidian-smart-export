@@ -52,7 +52,18 @@ export function getReleaseNotesBetweenVersions(
 
 export function compareVersions(firstVersion: string, secondVersion: string): number {
 	const parseVersion = (version: string) => {
-		const [corePart, prereleasePart] = version.split("-", 2);
+		// Ignore build metadata and preserve the full prerelease suffix after
+		// the first hyphen so semver-like variants keep all identifiers.
+		const versionWithoutBuildMetadata = version.split("+", 1)[0];
+		const prereleaseSeparatorIndex = versionWithoutBuildMetadata.indexOf("-");
+		const corePart =
+			prereleaseSeparatorIndex === -1
+				? versionWithoutBuildMetadata
+				: versionWithoutBuildMetadata.slice(0, prereleaseSeparatorIndex);
+		const prereleasePart =
+			prereleaseSeparatorIndex === -1
+				? ""
+				: versionWithoutBuildMetadata.slice(prereleaseSeparatorIndex + 1);
 		const core = corePart.split(".").map((part) => Number.parseInt(part, 10) || 0);
 		const prerelease = prereleasePart ? prereleasePart.split(".") : [];
 		return { core, prerelease };
