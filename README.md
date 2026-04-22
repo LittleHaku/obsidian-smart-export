@@ -6,6 +6,8 @@
 
 Smart Export turns one Obsidian note into a clean exportable context bundle by following wikilinks to a configurable depth. It is built for people who want readable note packets, print-friendly exports, or structured context for LLM workflows without manually stitching notes together.
 
+Landing page: [smart-export.vercel.app](https://smart-export.vercel.app/)
+
 ## Why Smart Export
 
 - Follow outgoing links, backlinks, or both from a root note.
