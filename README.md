@@ -10,7 +10,7 @@ Smart Export turns one Obsidian note into a clean exportable context bundle by f
 
 - Follow outgoing links, backlinks, or both from a root note.
 - Export as XML, print-friendly Markdown, or Markdown templates such as `LLM-ready`.
-- Exclude folders, tags, and frontmatter-based note groups from traversal.
+- Exclude folders, tags, and notes based on frontmatter properties (property rules) from traversal.
 - Copy exports to the clipboard or create a new note directly in your vault.
 - Rewrite links between exported notes so navigation still works inside the generated Markdown note.
 
@@ -44,9 +44,8 @@ Use [BRAT (Beta Reviewers Auto-update Tool)](https://github.com/TfTHacker/obsidi
 ## Export Formats
 
 - **XML** for structured machine-readable exports.
-- **LLM-ready Markdown** for prompt and context workflows.
+- **Markdown templates** for prompt and context workflows, including the built-in `LLM-ready` template and custom templates loaded from your vault.
 - **Print-friendly Markdown** for readable note bundles, PDF export, and linked tables of contents.
-- **Custom Markdown templates** loaded from your vault.
 
 ## Core Features
 
