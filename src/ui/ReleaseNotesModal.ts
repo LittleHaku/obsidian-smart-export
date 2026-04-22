@@ -179,6 +179,7 @@ export class ReleaseNotesModal extends Modal {
 		});
 
 		if (this.options.fundingUrl) {
+			const fundingUrl = this.options.fundingUrl;
 			const supportButton = buttonsEl.createEl("button", {
 				cls: "smart-export-support-button-small",
 				attr: {
@@ -195,7 +196,7 @@ export class ReleaseNotesModal extends Modal {
 				text: "Buy me a coffee",
 			});
 			supportButton.addEventListener("click", () => {
-				openExternalUrl(this.options.fundingUrl);
+				openExternalUrl(fundingUrl);
 			});
 		}
 
