@@ -44,12 +44,8 @@ describe("releaseNotes", () => {
 			RELEASE_NOTES[2],
 		]);
 		expect(getReleaseNotesBetweenVersions("1.10.0", "1.10.0")).toEqual([RELEASE_NOTES[0]]);
-		expect(getReleaseNotesBetweenVersions("   ", "1.10.0")).toEqual(
-			getLatestReleaseNotes(RELEASE_NOTES.length)
-		);
-		expect(getReleaseNotesBetweenVersions("1.8.0", "1.10.0")).toEqual(
-			getLatestReleaseNotes(RELEASE_NOTES.length)
-		);
+		expect(getReleaseNotesBetweenVersions("   ", "1.10.0")).toEqual(getLatestReleaseNotes());
+		expect(getReleaseNotesBetweenVersions("1.8.0", "1.10.0")).toEqual(getLatestReleaseNotes());
 	});
 
 	it("compares versions using semantic version segments", () => {
