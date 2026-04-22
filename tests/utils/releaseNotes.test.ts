@@ -77,8 +77,11 @@ describe("releaseNotes", () => {
 		expect(shouldAutoDisplayReleaseNotesForUpdate("1.9.0", "1.10.0")).toBe(true);
 		expect(shouldAutoDisplayReleaseNotesForUpdate("1.8.0", "1.9.0")).toBe(true);
 		expect(shouldAutoDisplayReleaseNotesForUpdate("1.9.0-beta.1", "1.9.0")).toBe(true);
+		expect(shouldAutoDisplayReleaseNotesForUpdate(" 1.9.0-beta.1 ", " 1.9.0 ")).toBe(true);
 		expect(shouldAutoDisplayReleaseNotesForUpdate("1.10.0", "1.10.0")).toBe(true);
 		expect(shouldAutoDisplayReleaseNotesForUpdate("1.10.0", "1.9.0")).toBe(false);
+		expect(shouldAutoDisplayReleaseNotesForUpdate("   ", "1.9.0-beta.1")).toBe(false);
+		expect(shouldAutoDisplayReleaseNotesForUpdate("1.9.0", "   ")).toBe(true);
 		expect(shouldAutoDisplayReleaseNotesForUpdate("2.0.0", "1.9.0-beta.1")).toBe(false);
 		expect(shouldAutoDisplayReleaseNotesForUpdate("99.0.0", "100.0.0")).toBe(true);
 	});

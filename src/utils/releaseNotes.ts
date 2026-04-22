@@ -154,23 +154,34 @@ export function shouldAutoDisplayReleaseNotesForUpdate(
 	fromVersion: string,
 	toVersion: string
 ): boolean {
-	const versionComparison = compareVersions(toVersion, fromVersion);
+	const normalizedFromVersion = normalizeStoredPluginVersion(fromVersion);
+	const normalizedToVersion = normalizeStoredPluginVersion(toVersion);
+
+	if (!normalizedToVersion) {
+		return true;
+	}
+
+	if (!normalizedFromVersion) {
+		return isReleaseAutoDisplayEnabled(normalizedToVersion);
+	}
+
+	const versionComparison = compareVersions(normalizedToVersion, normalizedFromVersion);
 	if (versionComparison < 0) {
 		return false;
 	}
 
 	if (versionComparison === 0) {
-		return isReleaseAutoDisplayEnabled(toVersion);
+		return isReleaseAutoDisplayEnabled(normalizedToVersion);
 	}
 
 	const notesInUpgradePath = RELEASE_NOTES.filter(
 		(note) =>
-			compareVersions(note.version, fromVersion) > 0 &&
-			compareVersions(note.version, toVersion) <= 0
+			compareVersions(note.version, normalizedFromVersion) > 0 &&
+			compareVersions(note.version, normalizedToVersion) <= 0
 	);
 
 	if (notesInUpgradePath.length === 0) {
-		return isReleaseAutoDisplayEnabled(toVersion);
+		return isReleaseAutoDisplayEnabled(normalizedToVersion);
 	}
 
 	return notesInUpgradePath.some((note) => note.showOnUpdate !== false);
