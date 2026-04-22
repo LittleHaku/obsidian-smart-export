@@ -71,9 +71,9 @@ When upgrading between two known versions, the modal may include both the previo
 release and the new release in the same view instead of showing only strictly unseen
 entries. This matches the intended "what's new" recap behavior.
 
-## Prerelease flow (optional BRAT beta testing)
+## Prerelease flow
 
-Use this flow when a feature is still in a PR branch and should be tested without a final release:
+Use this flow when a feature should be tested before a final release. If the work is still in a PR branch, BRAT can be used as an optional beta-testing path:
 
 1. On your branch, bump version to a prerelease:
 
