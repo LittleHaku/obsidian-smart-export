@@ -71,7 +71,7 @@ Markdown link rewriting in exported note content:
 2. Wikilinks pointing to exported notes are rewritten into same-note links inside the generated note.
 3. Note-level links target exported note headings (`[[#Heading]]`), while heading-specific links can target generated same-note block anchors (`[[#^block-id]]`) so the export lands on the referenced section.
 4. Aliased wikilinks append `ref:<target>` so the target remains readable in Obsidian/PDF contexts.
-5. Image embeds (`![[...]]`) and code spans/fences are preserved without rewriting.
+5. Image embeds (`![[...]]`), inline code spans, and fenced code blocks are preserved without rewriting.
 
 Print-friendly Markdown formatting:
 
