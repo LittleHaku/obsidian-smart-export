@@ -4,14 +4,25 @@ import { escapeWikiLinkValue } from "./wikiLinkEscaping";
 
 const MARKDOWN_EXTENSION_REGEX = /\.md$/i;
 const HEADING_OR_BLOCK_REF_SEPARATOR_REGEX = /[#^]/;
+const TRAILING_HEADING_HASHES_REGEX = /[ \t]+#+[ \t]*$/;
+const TRAILING_BLOCK_ID_REGEX = /[ \t]+\^([A-Za-z0-9-]+)[ \t]*$/;
+const SYNTHETIC_HEADING_BLOCK_ID_PREFIX = "smart-export";
 
 interface ExportedNoteReference {
 	headingTarget: string;
+	requestedHeadingLookupKeys: Set<string>;
+	headingBlockTargets: Map<string, string>;
 }
 
 interface ExportedMarkdownLinkIndex {
+	noteReferencesById: Map<string, ExportedNoteReference>;
 	pathReferences: Map<string, ExportedNoteReference>;
 	titleReferences: Map<string, ExportedNoteReference | null>;
+}
+
+interface ParsedLinkTarget {
+	baseTarget: string;
+	headingLookupKey: string | null;
 }
 
 function countRepeatedCharacter(content: string, startIndex: number, character: string): number {
@@ -196,9 +207,358 @@ function normalizeLookupKey(value: string): string {
 	return normalizePath(trimmedValue).toLowerCase();
 }
 
-function getTargetLookupKey(linkTarget: string): string {
-	const [baseTarget] = linkTarget.split(HEADING_OR_BLOCK_REF_SEPARATOR_REGEX, 1);
-	return normalizeLookupKey(baseTarget);
+function normalizeHeadingLookupKey(value: string): string {
+	return value.trim().replace(/\s+/g, " ").toLowerCase();
+}
+
+function parseLinkTarget(rawTarget: string): ParsedLinkTarget {
+	const separatorIndex = rawTarget.search(HEADING_OR_BLOCK_REF_SEPARATOR_REGEX);
+	if (separatorIndex < 0) {
+		return {
+			baseTarget: rawTarget,
+			headingLookupKey: null,
+		};
+	}
+
+	const separator = rawTarget[separatorIndex];
+	const baseTarget = rawTarget.slice(0, separatorIndex).trim();
+	const suffix = rawTarget.slice(separatorIndex + 1).trim();
+
+	return {
+		baseTarget,
+		headingLookupKey:
+			separator === "#" && suffix.length > 0 ? normalizeHeadingLookupKey(suffix) : null,
+	};
+}
+
+function hashString(value: string): string {
+	let hash = 2166136261;
+	for (let index = 0; index < value.length; index += 1) {
+		hash ^= value.charCodeAt(index);
+		hash = Math.imul(hash, 16777619);
+	}
+
+	return (hash >>> 0).toString(36);
+}
+
+function createSyntheticHeadingBlockId(
+	noteId: string,
+	headingLookupKey: string,
+	occurrenceIndex: number
+): string {
+	return `${SYNTHETIC_HEADING_BLOCK_ID_PREFIX}-${hashString(
+		`${noteId}\u0000${headingLookupKey}\u0000${occurrenceIndex}`
+	)}`;
+}
+
+function getLineBodyAndNewline(line: string): { body: string; newline: string } {
+	if (line.endsWith("\r\n")) {
+		return {
+			body: line.slice(0, -2),
+			newline: "\r\n",
+		};
+	}
+
+	if (line.endsWith("\n")) {
+		return {
+			body: line.slice(0, -1),
+			newline: "\n",
+		};
+	}
+
+	return {
+		body: line,
+		newline: "",
+	};
+}
+
+function getFenceInfo(lineBody: string): { character: string; length: number } | null {
+	const markerIndex = findFenceMarkerIndexAtLine(lineBody, 0);
+	const fenceCharacter = lineBody[markerIndex];
+	if ((fenceCharacter !== "`" && fenceCharacter !== "~") || markerIndex < 0) {
+		return null;
+	}
+
+	const fenceLength = countRepeatedCharacter(lineBody, markerIndex, fenceCharacter);
+	if (fenceLength < 3) {
+		return null;
+	}
+
+	return {
+		character: fenceCharacter,
+		length: fenceLength,
+	};
+}
+
+function shouldCloseFence(lineBody: string, fenceCharacter: string, fenceLength: number): boolean {
+	const markerIndex = findFenceMarkerIndexAtLine(lineBody, 0);
+	if (lineBody[markerIndex] !== fenceCharacter) {
+		return false;
+	}
+
+	const markerLength = countRepeatedCharacter(lineBody, markerIndex, fenceCharacter);
+	if (markerLength < fenceLength) {
+		return false;
+	}
+
+	for (
+		let currentIndex = markerIndex + markerLength;
+		currentIndex < lineBody.length;
+		currentIndex += 1
+	) {
+		const character = lineBody[currentIndex];
+		if (character !== " " && character !== "\t") {
+			return false;
+		}
+	}
+
+	return true;
+}
+
+function parseHeadingLine(
+	lineBody: string,
+	noteId: string,
+	headingOccurrences: Map<string, number>
+): {
+	headingLookupKey: string;
+	blockId: string;
+	existingBlockId: string | null;
+	insertionIndex: number;
+} | null {
+	const markerIndex = skipUpToThreeLeadingSpaces(lineBody, 0);
+	const markerLength = countRepeatedCharacter(lineBody, markerIndex, "#");
+	if (markerLength < 1 || markerLength > 6) {
+		return null;
+	}
+
+	const afterMarkerIndex = markerIndex + markerLength;
+	if (lineBody[afterMarkerIndex] !== " " && lineBody[afterMarkerIndex] !== "\t") {
+		return null;
+	}
+
+	const trimmedBody = lineBody.trimEnd();
+	let headingText = trimmedBody.slice(afterMarkerIndex).trim();
+	if (headingText.length === 0) {
+		return null;
+	}
+
+	const existingBlockIdMatch = headingText.match(TRAILING_BLOCK_ID_REGEX);
+	const existingBlockId = existingBlockIdMatch?.[1] ?? null;
+	if (existingBlockIdMatch?.index !== undefined) {
+		headingText = headingText.slice(0, existingBlockIdMatch.index).trimEnd();
+	}
+
+	headingText = headingText.replace(TRAILING_HEADING_HASHES_REGEX, "").trimEnd();
+	if (headingText.length === 0) {
+		return null;
+	}
+
+	const headingLookupKey = normalizeHeadingLookupKey(headingText);
+	const occurrenceIndex = headingOccurrences.get(headingLookupKey) ?? 0;
+	headingOccurrences.set(headingLookupKey, occurrenceIndex + 1);
+
+	const closingHashesMatch = trimmedBody.match(TRAILING_HEADING_HASHES_REGEX);
+	const insertionIndex = existingBlockId
+		? trimmedBody.length
+		: (closingHashesMatch?.index ?? trimmedBody.length);
+
+	return {
+		headingLookupKey,
+		blockId:
+			existingBlockId ?? createSyntheticHeadingBlockId(noteId, headingLookupKey, occurrenceIndex),
+		existingBlockId,
+		insertionIndex,
+	};
+}
+
+function collectWikiLinkInnerContents(content: string): string[] {
+	const links: string[] = [];
+	let currentIndex = 0;
+
+	while (currentIndex < content.length) {
+		const nextSpecialIndex = getNextSpecialTokenIndex(content, currentIndex);
+		if (nextSpecialIndex < 0) {
+			break;
+		}
+
+		currentIndex = nextSpecialIndex;
+
+		if (content[currentIndex] === "`") {
+			const backtickLength = countRepeatedCharacter(content, currentIndex, "`");
+			const isFence = backtickLength >= 3 && isFenceStart(content, currentIndex);
+			const closingIndex = isFence
+				? findClosingCodeFence(content, currentIndex, "`", backtickLength)
+				: findClosingInlineCodeSpan(content, currentIndex, backtickLength);
+			if (closingIndex < 0) {
+				break;
+			}
+
+			currentIndex = isFence ? closingIndex : closingIndex + backtickLength;
+			continue;
+		}
+
+		if (content.startsWith("![[", currentIndex)) {
+			const closingIndex = content.indexOf("]]", currentIndex + 3);
+			if (closingIndex < 0) {
+				break;
+			}
+
+			currentIndex = closingIndex + 2;
+			continue;
+		}
+
+		const closingIndex = content.indexOf("]]", currentIndex + 2);
+		if (closingIndex < 0) {
+			break;
+		}
+
+		links.push(content.slice(currentIndex + 2, closingIndex));
+		currentIndex = closingIndex + 2;
+	}
+
+	return links;
+}
+
+function collectReferencedHeadingBlockTargets(
+	content: string,
+	noteId: string,
+	requestedHeadingLookupKeys: Set<string>
+): Map<string, string> {
+	if (requestedHeadingLookupKeys.size === 0 || content.length === 0) {
+		return new Map();
+	}
+
+	const blockTargets = new Map<string, string>();
+	const headingOccurrences = new Map<string, number>();
+	const lines = content.match(/.*(?:\r?\n|$)/g) ?? [];
+	let isInFrontmatter = false;
+	let currentFence: { character: string; length: number } | null = null;
+	let isFirstLine = true;
+
+	for (const line of lines) {
+		if (line.length === 0) {
+			continue;
+		}
+
+		const { body } = getLineBodyAndNewline(line);
+
+		if (isFirstLine && body === "---") {
+			isInFrontmatter = true;
+			isFirstLine = false;
+			continue;
+		}
+		isFirstLine = false;
+
+		if (isInFrontmatter) {
+			if (body === "---") {
+				isInFrontmatter = false;
+			}
+			continue;
+		}
+
+		if (currentFence) {
+			if (shouldCloseFence(body, currentFence.character, currentFence.length)) {
+				currentFence = null;
+			}
+			continue;
+		}
+
+		const fenceInfo = getFenceInfo(body);
+		if (fenceInfo) {
+			currentFence = fenceInfo;
+			continue;
+		}
+
+		const parsedHeading = parseHeadingLine(body, noteId, headingOccurrences);
+		if (!parsedHeading || !requestedHeadingLookupKeys.has(parsedHeading.headingLookupKey)) {
+			continue;
+		}
+
+		if (!blockTargets.has(parsedHeading.headingLookupKey)) {
+			blockTargets.set(parsedHeading.headingLookupKey, parsedHeading.blockId);
+		}
+	}
+
+	return blockTargets;
+}
+
+function annotateReferencedHeadingsForExport(
+	content: string,
+	noteId: string,
+	linkIndex: ExportedMarkdownLinkIndex
+): string {
+	const noteReference = linkIndex.noteReferencesById.get(noteId);
+	if (!noteReference || noteReference.headingBlockTargets.size === 0) {
+		return content;
+	}
+
+	const headingOccurrences = new Map<string, number>();
+	const lines = content.match(/.*(?:\r?\n|$)/g) ?? [];
+	const rewrittenLines: string[] = [];
+	let isInFrontmatter = false;
+	let currentFence: { character: string; length: number } | null = null;
+	let isFirstLine = true;
+
+	for (const line of lines) {
+		if (line.length === 0) {
+			continue;
+		}
+
+		const { body, newline } = getLineBodyAndNewline(line);
+
+		if (isFirstLine && body === "---") {
+			isInFrontmatter = true;
+			rewrittenLines.push(line);
+			isFirstLine = false;
+			continue;
+		}
+		isFirstLine = false;
+
+		if (isInFrontmatter) {
+			rewrittenLines.push(line);
+			if (body === "---") {
+				isInFrontmatter = false;
+			}
+			continue;
+		}
+
+		if (currentFence) {
+			rewrittenLines.push(line);
+			if (shouldCloseFence(body, currentFence.character, currentFence.length)) {
+				currentFence = null;
+			}
+			continue;
+		}
+
+		const fenceInfo = getFenceInfo(body);
+		if (fenceInfo) {
+			currentFence = fenceInfo;
+			rewrittenLines.push(line);
+			continue;
+		}
+
+		const parsedHeading = parseHeadingLine(body, noteId, headingOccurrences);
+		if (!parsedHeading) {
+			rewrittenLines.push(line);
+			continue;
+		}
+
+		const expectedBlockId = noteReference.headingBlockTargets.get(parsedHeading.headingLookupKey);
+		if (
+			!expectedBlockId ||
+			parsedHeading.blockId !== expectedBlockId ||
+			parsedHeading.existingBlockId
+		) {
+			rewrittenLines.push(line);
+			continue;
+		}
+
+		rewrittenLines.push(
+			`${body.slice(0, parsedHeading.insertionIndex)} ^${parsedHeading.blockId}${body.slice(parsedHeading.insertionIndex)}${newline}`
+		);
+	}
+
+	return rewrittenLines.join("");
 }
 
 function rewriteWikiLink(innerContent: string, linkIndex: ExportedMarkdownLinkIndex): string {
@@ -211,11 +571,25 @@ function rewriteWikiLink(innerContent: string, linkIndex: ExportedMarkdownLinkIn
 		return `[[${innerContent}]]`;
 	}
 
-	if (rawTarget.startsWith("#") || rawTarget.startsWith("^")) {
+	if (rawTarget.startsWith("#")) {
 		return `[[${innerContent}]]`;
 	}
 
-	const lookupKey = getTargetLookupKey(rawTarget);
+	if (rawTarget.startsWith("^")) {
+		const localBlockTarget = rawTarget.slice(1).trim();
+		if (localBlockTarget.length === 0) {
+			return `[[${innerContent}]]`;
+		}
+
+		const label =
+			alias.length > 0
+				? `${escapeWikiLinkValue(alias)}`
+				: `^${escapeWikiLinkValue(localBlockTarget)}`;
+		return `[[#^${escapeWikiLinkValue(localBlockTarget)}|${label}]]`;
+	}
+
+	const parsedTarget = parseLinkTarget(rawTarget);
+	const lookupKey = normalizeLookupKey(parsedTarget.baseTarget);
 	const resolvedReference =
 		linkIndex.pathReferences.get(lookupKey) ?? linkIndex.titleReferences.get(lookupKey) ?? null;
 
@@ -224,6 +598,15 @@ function rewriteWikiLink(innerContent: string, linkIndex: ExportedMarkdownLinkIn
 	}
 
 	const label = alias.length > 0 ? `${alias} (ref:${rawTarget})` : rawTarget;
+	if (parsedTarget.headingLookupKey) {
+		const headingBlockTarget = resolvedReference.headingBlockTargets.get(
+			parsedTarget.headingLookupKey
+		);
+		if (headingBlockTarget) {
+			return `[[#^${escapeWikiLinkValue(headingBlockTarget)}|${escapeWikiLinkValue(label)}]]`;
+		}
+	}
+
 	return `[[#${escapeWikiLinkValue(resolvedReference.headingTarget)}|${escapeWikiLinkValue(label)}]]`;
 }
 
@@ -264,13 +647,17 @@ export function buildExportedMarkdownLinkIndex(
 	notes: ExportNode[],
 	getHeadingTarget: (note: ExportNode, index: number) => string
 ): ExportedMarkdownLinkIndex {
+	const noteReferencesById = new Map<string, ExportedNoteReference>();
 	const pathReferences = new Map<string, ExportedNoteReference>();
 	const titleReferences = new Map<string, ExportedNoteReference | null>();
 
 	for (const [index, note] of notes.entries()) {
 		const reference = {
 			headingTarget: getHeadingTarget(note, index),
+			requestedHeadingLookupKeys: new Set<string>(),
+			headingBlockTargets: new Map<string, string>(),
 		};
+		noteReferencesById.set(note.id, reference);
 		const pathLookupKey = normalizeLookupKey(note.id);
 		const titleLookupKey = normalizeLookupKey(note.title);
 
@@ -290,7 +677,38 @@ export function buildExportedMarkdownLinkIndex(
 		titleReferences.set(titleLookupKey, null);
 	}
 
+	for (const note of notes) {
+		for (const innerContent of collectWikiLinkInnerContents(note.content ?? "")) {
+			const separatorIndex = innerContent.indexOf("|");
+			const rawTarget =
+				separatorIndex >= 0 ? innerContent.slice(0, separatorIndex).trim() : innerContent.trim();
+			if (rawTarget.length === 0 || rawTarget.startsWith("#") || rawTarget.startsWith("^")) {
+				continue;
+			}
+
+			const parsedTarget = parseLinkTarget(rawTarget);
+			if (!parsedTarget.headingLookupKey) {
+				continue;
+			}
+
+			const lookupKey = normalizeLookupKey(parsedTarget.baseTarget);
+			const resolvedReference =
+				pathReferences.get(lookupKey) ?? titleReferences.get(lookupKey) ?? null;
+			resolvedReference?.requestedHeadingLookupKeys.add(parsedTarget.headingLookupKey);
+		}
+	}
+
+	for (const note of notes) {
+		const reference = noteReferencesById.get(note.id)!;
+		reference.headingBlockTargets = collectReferencedHeadingBlockTargets(
+			note.content ?? "",
+			note.id,
+			reference.requestedHeadingLookupKeys
+		);
+	}
+
 	return {
+		noteReferencesById,
 		pathReferences,
 		titleReferences,
 	};
@@ -298,13 +716,17 @@ export function buildExportedMarkdownLinkIndex(
 
 export function rewriteMarkdownLinksForExport(
 	content: string,
-	linkIndex: ExportedMarkdownLinkIndex
+	linkIndex: ExportedMarkdownLinkIndex,
+	currentNoteId?: string
 ): string {
 	if (content.length === 0) {
 		return content;
 	}
 
 	content = normalizeFrontmatterSpacingForExport(content);
+	if (currentNoteId) {
+		content = annotateReferencedHeadingsForExport(content, currentNoteId, linkIndex);
+	}
 
 	const rewrittenParts: string[] = [];
 	let currentIndex = 0;

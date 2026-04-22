@@ -108,7 +108,7 @@ export class PrintFriendlyMarkdownExporter {
 		chunks.push(`${prefix} ${headingLabel}\n\n`);
 
 		if (node.content && node.includeContent) {
-			chunks.push(`${rewriteMarkdownLinksForExport(node.content, linkIndex)}\n\n`);
+			chunks.push(`${rewriteMarkdownLinksForExport(node.content, linkIndex, node.id)}\n\n`);
 		}
 
 		for (const child of node.children) {

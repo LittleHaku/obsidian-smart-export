@@ -236,6 +236,36 @@ describe("BFSTraversal", () => {
 		expect(rootNode?.children[0].title).toBe("A");
 	});
 
+	it("should traverse outgoing links that target a heading in another note", async () => {
+		mockFiles["heading-root.md"] = createMockTFile("heading-root.md", "heading-root");
+		mockFileContents["heading-root.md"] = "[[A#Section]]";
+		mockFileLinks["heading-root.md"] = [createLink("A#Section")];
+		mockFileFrontmatterLinks["heading-root.md"] = [];
+		rebuildResolvedLinks();
+
+		const rootNode = await bfsTraversal.traverse("heading-root.md");
+
+		expect(rootNode).not.toBeNull();
+		expect(rootNode?.children.length).toBe(1);
+		expect(rootNode?.children[0].title).toBe("A");
+		expect(bfsTraversal.getMissingNotes()).toEqual([]);
+	});
+
+	it("should traverse outgoing links that target a block in another note", async () => {
+		mockFiles["block-root.md"] = createMockTFile("block-root.md", "block-root");
+		mockFileContents["block-root.md"] = "[[A^block-id]]";
+		mockFileLinks["block-root.md"] = [createLink("A^block-id")];
+		mockFileFrontmatterLinks["block-root.md"] = [];
+		rebuildResolvedLinks();
+
+		const rootNode = await bfsTraversal.traverse("block-root.md");
+
+		expect(rootNode).not.toBeNull();
+		expect(rootNode?.children.length).toBe(1);
+		expect(rootNode?.children[0].title).toBe("A");
+		expect(bfsTraversal.getMissingNotes()).toEqual([]);
+	});
+
 	it("should track multiple missing notes across different depths", async () => {
 		// Add a note with multiple missing links
 		mockFiles["multi-missing.md"] = createMockTFile("multi-missing.md", "multi-missing");

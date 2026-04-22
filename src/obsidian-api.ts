@@ -1,6 +1,11 @@
 import { App, TFile, Reference, getAllTags } from "obsidian";
 import { normalizeNoteTag } from "./utils/noteFilters";
 
+function getBaseLinkTarget(link: string): string {
+	const headingOrBlockSeparatorIndex = link.search(/[#^]/);
+	return headingOrBlockSeparatorIndex >= 0 ? link.slice(0, headingOrBlockSeparatorIndex) : link;
+}
+
 /**
  * A wrapper class for the Obsidian API to provide a stable, testable interface
  * for interacting with the vault.
@@ -94,7 +99,17 @@ export class ObsidianAPI {
 	 * @returns {TFile | null} The resolved TFile or null if it cannot be resolved.
 	 */
 	public resolveLink(link: string, sourcePath: string): TFile | null {
-		return this.app.metadataCache.getFirstLinkpathDest(link, sourcePath);
+		const resolvedFile = this.app.metadataCache.getFirstLinkpathDest(link, sourcePath);
+		if (resolvedFile) {
+			return resolvedFile;
+		}
+
+		const baseLinkTarget = getBaseLinkTarget(link).trim();
+		if (baseLinkTarget.length === 0 || baseLinkTarget === link) {
+			return null;
+		}
+
+		return this.app.metadataCache.getFirstLinkpathDest(baseLinkTarget, sourcePath);
 	}
 
 	/**

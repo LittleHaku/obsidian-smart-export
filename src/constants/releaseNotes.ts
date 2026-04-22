@@ -13,6 +13,15 @@ export interface ReleaseNotesEntry {
 
 export const RELEASE_NOTES: ReleaseNotesEntry[] = [
 	{
+		version: "1.10.1-beta.1",
+		date: "2026-04-22",
+		showOnUpdate: false,
+		fixed: [
+			"Markdown exports now include notes referenced through heading and block links such as [[note#heading]] and [[note^block]] during traversal.",
+			"Markdown exports now preserve referenced note headings by rewriting [[note#heading]] links to generated same-note block anchors with valid Obsidian same-note link syntax when the target heading is included in the export.",
+		],
+	},
+	{
 		version: "1.10.0",
 		date: "2026-04-21",
 		showOnUpdate: true,

@@ -14,7 +14,7 @@ Landing page: [smart-export.vercel.app](https://smart-export.vercel.app/)
 - Export as XML, print-friendly Markdown, or Markdown templates such as `LLM-ready`.
 - Exclude folders, tags, and notes based on frontmatter properties (property rules) from traversal.
 - Copy exports to the clipboard or create a new note directly in your vault.
-- Rewrite links between exported notes so navigation still works inside the generated Markdown note.
+- Rewrite links between exported notes, and preserve referenced exported headings when possible, so navigation still works inside the generated Markdown note.
 
 ## Installation
 

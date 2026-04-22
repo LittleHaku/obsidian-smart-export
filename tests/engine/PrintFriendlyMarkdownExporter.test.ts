@@ -192,6 +192,25 @@ console.log("code block");
 			expect(result).toContain("![[diagram.png]]");
 		});
 
+		it("rewrites exported heading links to the referenced heading anchor", () => {
+			const child = createMockExportNode(
+				"Linked Note",
+				"Linked Note.md",
+				1,
+				"## Risks\n\nChild content"
+			);
+			const rootNode = createMockExportNode("Root", "root.md", 0, "See [[Linked Note#Risks]].", [
+				child,
+			]);
+
+			const exporter = new PrintFriendlyMarkdownExporter();
+			const result = exporter.export(rootNode);
+			const headingAnchorMatch = result.match(/## Risks \^(smart-export-[a-z0-9]+)\n/);
+
+			expect(headingAnchorMatch).not.toBeNull();
+			expect(result).toContain(`[[#^${headingAnchorMatch?.[1]}|Linked Note#Risks]]`);
+		});
+
 		it("escapes TOC links for headings with wikilink control characters", () => {
 			const rootNode = createMockExportNode("Root | ] Note", "root.md", 0, "Body");
 			const exporter = new PrintFriendlyMarkdownExporter();

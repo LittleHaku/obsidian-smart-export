@@ -125,7 +125,11 @@ export class LlmMarkdownExporter {
 		);
 		return allNotes
 			.map((note) => {
-				const rewrittenContent = rewriteMarkdownLinksForExport(note.content ?? "", linkIndex);
+				const rewrittenContent = rewriteMarkdownLinksForExport(
+					note.content ?? "",
+					linkIndex,
+					note.id
+				);
 				const headingLabel = headingLabels.get(note.id)!;
 				return `## ${headingLabel}\n\n${rewrittenContent}`;
 			})

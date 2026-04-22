@@ -68,9 +68,10 @@ Markdown template selection and resolution:
 Markdown link rewriting in exported note content:
 
 1. Markdown-based exports (`llm-markdown`, `print-friendly-markdown`) render each exported note as a distinct heading within the generated note.
-2. Wikilinks pointing to exported notes are rewritten into Obsidian same-note heading links (`[[#Heading]]`) that the exported note can navigate directly.
-3. Aliased wikilinks append `ref:<target>` so the target remains readable in Obsidian/PDF contexts.
-4. Image embeds (`![[...]]`) and code spans/fences are preserved without rewriting.
+2. Wikilinks pointing to exported notes are rewritten into same-note links inside the generated note.
+3. Note-level links target exported note headings (`[[#Heading]]`), while heading-specific links can target generated same-note block anchors (`[[#^block-id]]`) so the export lands on the referenced section.
+4. Aliased wikilinks append `ref:<target>` so the target remains readable in Obsidian/PDF contexts.
+5. Image embeds (`![[...]]`) and code spans/fences are preserved without rewriting.
 
 Print-friendly Markdown formatting:
 

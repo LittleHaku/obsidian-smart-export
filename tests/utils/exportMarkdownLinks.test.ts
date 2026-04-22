@@ -6,13 +6,18 @@ import {
 	rewriteMarkdownLinksForExport,
 } from "../../src/utils/exportMarkdownLinks";
 
-function createMockExportNode(title: string, id: string, children: ExportNode[] = []): ExportNode {
+function createMockExportNode(
+	title: string,
+	id: string,
+	children: ExportNode[] = [],
+	content: string = ""
+): ExportNode {
 	return {
 		id,
 		title,
 		depth: 0,
 		includeContent: true,
-		content: "",
+		content,
 		children,
 		tokenCount: 0,
 		lastModified: new Date("2026-03-13T00:00:00.000Z"),
@@ -131,18 +136,166 @@ describe("exportMarkdownLinks", () => {
 	});
 
 	it("supports exported links with heading or block suffixes", () => {
-		const child = createMockExportNode("Child", "notes/Child.md");
-		const labels = buildExportedHeadingLabels([child]);
+		const root = createMockExportNode(
+			"Root",
+			"root.md",
+			[],
+			"See [[Child#Section]], [[Child^block]], [[#Local Section]], [[^local-block]], and [[|summary]]."
+		);
+		const child = createMockExportNode("Child", "notes/Child.md", [], "## Section\n\nContent");
+		const labels = buildExportedHeadingLabels([root, child]);
 		const index = buildExportedMarkdownLinkIndex(
-			[child],
+			[root, child],
+			(note) => labels.get(note.id) ?? note.title
+		);
+
+		expect(rewriteMarkdownLinksForExport("See [[Child#Section]].", index)).toMatch(
+			/^See \[\[#\^smart-export-[a-z0-9]+\|Child#Section\]\]\.$/
+		);
+		expect(rewriteMarkdownLinksForExport("See [[Child^block]].", index)).toBe(
+			"See [[#Child|Child^block]]."
+		);
+	});
+
+	it("only annotates referenced headings outside fenced code blocks", () => {
+		const root = createMockExportNode("Root", "root.md", [], "See [[Child#Section]].");
+		const child = createMockExportNode(
+			"Child",
+			"notes/Child.md",
+			[],
+			["```md", "## Section", "```", "## Section", "Content"].join("\n")
+		);
+		const labels = buildExportedHeadingLabels([root, child]);
+		const index = buildExportedMarkdownLinkIndex(
+			[root, child],
+			(note) => labels.get(note.id) ?? note.title
+		);
+
+		const annotatedContent = rewriteMarkdownLinksForExport(child.content ?? "", index, child.id);
+
+		expect(annotatedContent).toContain(["```md", "## Section", "```"].join("\n"));
+		expect(annotatedContent).toMatch(/## Section \^smart-export-[a-z0-9]+\nContent/);
+	});
+
+	it("reuses existing block ids for referenced exported headings", () => {
+		const root = createMockExportNode("Root", "root.md", [], "See [[Child#Section]].");
+		const child = createMockExportNode(
+			"Child",
+			"notes/Child.md",
+			[],
+			"## Section ^keep-section\n\nContent"
+		);
+		const labels = buildExportedHeadingLabels([root, child]);
+		const index = buildExportedMarkdownLinkIndex(
+			[root, child],
+			(note) => labels.get(note.id) ?? note.title
+		);
+
+		expect(rewriteMarkdownLinksForExport("See [[Child#Section]].", index)).toBe(
+			"See [[#^keep-section|Child#Section]]."
+		);
+		expect(rewriteMarkdownLinksForExport(child.content ?? "", index, child.id)).toContain(
+			"## Section ^keep-section"
+		);
+	});
+
+	it("annotates referenced headings after frontmatter without modifying the frontmatter block", () => {
+		const root = createMockExportNode("Root", "root.md", [], "See [[Child#Section]].");
+		const child = createMockExportNode(
+			"Child",
+			"notes/Child.md",
+			[],
+			["---", "summary: test", "---", "## Section", "Content"].join("\n")
+		);
+		const labels = buildExportedHeadingLabels([root, child]);
+		const index = buildExportedMarkdownLinkIndex(
+			[root, child],
+			(note) => labels.get(note.id) ?? note.title
+		);
+
+		const annotatedContent = rewriteMarkdownLinksForExport(child.content ?? "", index, child.id);
+
+		expect(annotatedContent).toContain(["---", "summary: test", "", "---"].join("\n"));
+		expect(annotatedContent).toMatch(/## Section \^smart-export-[a-z0-9]+\nContent/);
+	});
+
+	it("ignores malformed embeds when indexing referenced export headings", () => {
+		const root = createMockExportNode("Root", "root.md", [], "![[diagram.png");
+		const child = createMockExportNode("Child", "notes/Child.md", [], "## Section\n\nContent");
+		const labels = buildExportedHeadingLabels([root, child]);
+		const index = buildExportedMarkdownLinkIndex(
+			[root, child],
 			(note) => labels.get(note.id) ?? note.title
 		);
 
 		expect(rewriteMarkdownLinksForExport("See [[Child#Section]].", index)).toBe(
 			"See [[#Child|Child#Section]]."
 		);
-		expect(rewriteMarkdownLinksForExport("See [[Child^block]].", index)).toBe(
-			"See [[#Child|Child^block]]."
+	});
+
+	it("ignores malformed wikilinks when indexing referenced export headings", () => {
+		const root = createMockExportNode("Root", "root.md", [], "[[Child#Section");
+		const child = createMockExportNode("Child", "notes/Child.md", [], "## Section\n\nContent");
+		const labels = buildExportedHeadingLabels([root, child]);
+		const index = buildExportedMarkdownLinkIndex(
+			[root, child],
+			(note) => labels.get(note.id) ?? note.title
+		);
+
+		expect(rewriteMarkdownLinksForExport("See [[Child#Section]].", index)).toBe(
+			"See [[#Child|Child#Section]]."
+		);
+	});
+
+	it("ignores unterminated inline code spans when indexing referenced export headings", () => {
+		const root = createMockExportNode("Root", "root.md", [], "Inline `[[Child#Section]]");
+		const child = createMockExportNode("Child", "notes/Child.md", [], "## Section\n\nContent");
+		const labels = buildExportedHeadingLabels([root, child]);
+		const index = buildExportedMarkdownLinkIndex(
+			[root, child],
+			(note) => labels.get(note.id) ?? note.title
+		);
+
+		expect(rewriteMarkdownLinksForExport("See [[Child#Section]].", index)).toBe(
+			"See [[#Child|Child#Section]]."
+		);
+	});
+
+	it("skips malformed heading lines that only contain an existing block id", () => {
+		const root = createMockExportNode("Root", "root.md", [], "See [[Child#Section]].");
+		const child = createMockExportNode(
+			"Child",
+			"notes/Child.md",
+			[],
+			["## ^empty", "## Section", "Content"].join("\n")
+		);
+		const labels = buildExportedHeadingLabels([root, child]);
+		const index = buildExportedMarkdownLinkIndex(
+			[root, child],
+			(note) => labels.get(note.id) ?? note.title
+		);
+
+		expect(rewriteMarkdownLinksForExport("See [[Child#Section]].", index)).toMatch(
+			/^See \[\[#\^smart-export-[a-z0-9]+\|Child#Section\]\]\.$/
+		);
+	});
+
+	it("skips malformed heading lines that collapse after trimming closing hashes", () => {
+		const root = createMockExportNode("Root", "root.md", [], "See [[Child#Section]].");
+		const child = createMockExportNode(
+			"Child",
+			"notes/Child.md",
+			[],
+			["## ###", "## Section", "Content"].join("\n")
+		);
+		const labels = buildExportedHeadingLabels([root, child]);
+		const index = buildExportedMarkdownLinkIndex(
+			[root, child],
+			(note) => labels.get(note.id) ?? note.title
+		);
+
+		expect(rewriteMarkdownLinksForExport("See [[Child#Section]].", index)).toMatch(
+			/^See \[\[#\^smart-export-[a-z0-9]+\|Child#Section\]\]\.$/
 		);
 	});
 
@@ -158,8 +311,19 @@ describe("exportMarkdownLinks", () => {
 			"See [[#Heading|alias]]."
 		);
 		expect(rewriteMarkdownLinksForExport("See [[^block|alias]].", index)).toBe(
-			"See [[^block|alias]]."
+			"See [[#^block|alias]]."
 		);
+	});
+
+	it("rewrites bare same-note block links to explicit same-note block syntax", () => {
+		const child = createMockExportNode("Child", "notes/Child.md");
+		const labels = buildExportedHeadingLabels([child]);
+		const index = buildExportedMarkdownLinkIndex(
+			[child],
+			(note) => labels.get(note.id) ?? note.title
+		);
+
+		expect(rewriteMarkdownLinksForExport("See [[^block]].", index)).toBe("See [[#^block|^block]].");
 	});
 
 	it("preserves image embeds and code spans", () => {
