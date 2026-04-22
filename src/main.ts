@@ -18,6 +18,7 @@ import { TEMPLATE_DOCS_URL } from "./constants/templateDocs";
 import { ReleaseNotesEntry } from "./constants/releaseNotes";
 import { ReleaseNotesModal } from "./ui/ReleaseNotesModal";
 import { normalizeFolderFilterList } from "./utils/folderFilters";
+import { normalizeFundingUrl } from "./utils/fundingUrl";
 import { normalizePropertyFilterList, normalizeTagFilterList } from "./utils/noteFilters";
 import {
 	createExportNote,
@@ -382,8 +383,9 @@ export default class SmartExportPlugin extends Plugin {
 			if (!currentVersion) {
 				return;
 			}
-			const manifest = this.manifest as { fundingUrl?: unknown };
-			const fundingUrl = typeof manifest.fundingUrl === "string" ? manifest.fundingUrl : undefined;
+			const fundingUrl = normalizeFundingUrl(
+				(this.manifest as { fundingUrl?: unknown }).fundingUrl
+			);
 
 			if (!this.hasPersistedData) {
 				this.lastSeenVersion = currentVersion;
