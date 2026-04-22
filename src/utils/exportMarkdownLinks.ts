@@ -172,6 +172,7 @@ function findClosingCodeFence(
 function getNextSpecialTokenIndex(content: string, currentIndex: number): number {
 	const candidateIndexes = [
 		content.indexOf("`", currentIndex),
+		content.indexOf("~", currentIndex),
 		content.indexOf("![[", currentIndex),
 		content.indexOf("[[", currentIndex),
 	].filter((index) => index >= 0);
@@ -383,17 +384,36 @@ function collectWikiLinkInnerContents(content: string): string[] {
 
 		currentIndex = nextSpecialIndex;
 
-		if (content[currentIndex] === "`") {
-			const backtickLength = countRepeatedCharacter(content, currentIndex, "`");
-			const isFence = backtickLength >= 3 && isFenceStart(content, currentIndex);
-			const closingIndex = isFence
-				? findClosingCodeFence(content, currentIndex, "`", backtickLength)
-				: findClosingInlineCodeSpan(content, currentIndex, backtickLength);
-			if (closingIndex < 0) {
-				break;
+		if (content[currentIndex] === "`" || content[currentIndex] === "~") {
+			const markerCharacter = content[currentIndex];
+			const markerLength = countRepeatedCharacter(content, currentIndex, markerCharacter);
+			const isFence = markerLength >= 3 && isFenceStart(content, currentIndex);
+			if (isFence) {
+				const closingIndex = findClosingCodeFence(
+					content,
+					currentIndex,
+					markerCharacter,
+					markerLength
+				);
+				if (closingIndex < 0) {
+					break;
+				}
+
+				currentIndex = closingIndex;
+				continue;
 			}
 
-			currentIndex = isFence ? closingIndex : closingIndex + backtickLength;
+			if (markerCharacter === "`") {
+				const closingIndex = findClosingInlineCodeSpan(content, currentIndex, markerLength);
+				if (closingIndex < 0) {
+					break;
+				}
+
+				currentIndex = closingIndex + markerLength;
+				continue;
+			}
+
+			currentIndex += markerLength;
 			continue;
 		}
 
@@ -743,20 +763,42 @@ export function rewriteMarkdownLinksForExport(
 			currentIndex = nextSpecialIndex;
 		}
 
-		if (content[currentIndex] === "`") {
-			const backtickLength = countRepeatedCharacter(content, currentIndex, "`");
-			const isFence = backtickLength >= 3 && isFenceStart(content, currentIndex);
-			const closingIndex = isFence
-				? findClosingCodeFence(content, currentIndex, "`", backtickLength)
-				: findClosingInlineCodeSpan(content, currentIndex, backtickLength);
-			if (closingIndex < 0) {
-				rewrittenParts.push(content.slice(currentIndex));
-				break;
+		if (content[currentIndex] === "`" || content[currentIndex] === "~") {
+			const markerCharacter = content[currentIndex];
+			const markerLength = countRepeatedCharacter(content, currentIndex, markerCharacter);
+			const isFence = markerLength >= 3 && isFenceStart(content, currentIndex);
+			if (isFence) {
+				const closingIndex = findClosingCodeFence(
+					content,
+					currentIndex,
+					markerCharacter,
+					markerLength
+				);
+				if (closingIndex < 0) {
+					rewrittenParts.push(content.slice(currentIndex));
+					break;
+				}
+
+				rewrittenParts.push(content.slice(currentIndex, closingIndex));
+				currentIndex = closingIndex;
+				continue;
 			}
 
-			const sliceEnd = isFence ? closingIndex : closingIndex + backtickLength;
-			rewrittenParts.push(content.slice(currentIndex, sliceEnd));
-			currentIndex = sliceEnd;
+			if (markerCharacter === "`") {
+				const closingIndex = findClosingInlineCodeSpan(content, currentIndex, markerLength);
+				if (closingIndex < 0) {
+					rewrittenParts.push(content.slice(currentIndex));
+					break;
+				}
+
+				const sliceEnd = closingIndex + markerLength;
+				rewrittenParts.push(content.slice(currentIndex, sliceEnd));
+				currentIndex = sliceEnd;
+				continue;
+			}
+
+			rewrittenParts.push(content.slice(currentIndex, currentIndex + markerLength));
+			currentIndex += markerLength;
 			continue;
 		}
 

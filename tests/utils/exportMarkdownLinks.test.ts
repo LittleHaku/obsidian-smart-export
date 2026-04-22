@@ -177,6 +177,26 @@ describe("exportMarkdownLinks", () => {
 		expect(annotatedContent).toMatch(/## Section \^smart-export-[a-z0-9]+\nContent/);
 	});
 
+	it("only annotates referenced headings outside tilde fenced code blocks", () => {
+		const root = createMockExportNode("Root", "root.md", [], "See [[Child#Section]].");
+		const child = createMockExportNode(
+			"Child",
+			"notes/Child.md",
+			[],
+			["~~~md", "## Section", "~~~", "## Section", "Content"].join("\n")
+		);
+		const labels = buildExportedHeadingLabels([root, child]);
+		const index = buildExportedMarkdownLinkIndex(
+			[root, child],
+			(note) => labels.get(note.id) ?? note.title
+		);
+
+		const annotatedContent = rewriteMarkdownLinksForExport(child.content ?? "", index, child.id);
+
+		expect(annotatedContent).toContain(["~~~md", "## Section", "~~~"].join("\n"));
+		expect(annotatedContent).toMatch(/## Section \^smart-export-[a-z0-9]+\nContent/);
+	});
+
 	it("reuses existing block ids for referenced exported headings", () => {
 		const root = createMockExportNode("Root", "root.md", [], "See [[Child#Section]].");
 		const child = createMockExportNode(
@@ -373,6 +393,20 @@ describe("exportMarkdownLinks", () => {
 			["```md", 'const literalFence = "```";', "[[Child]]", "```", "Outside [[#Child|Child]]"].join(
 				"\n"
 			)
+		);
+	});
+
+	it("keeps rewriting disabled inside tilde fenced code blocks", () => {
+		const child = createMockExportNode("Child", "Child.md");
+		const labels = buildExportedHeadingLabels([child]);
+		const index = buildExportedMarkdownLinkIndex(
+			[child],
+			(note) => labels.get(note.id) ?? note.title
+		);
+		const content = ["~~~md", "[[Child]]", "~~~", "Outside [[Child]]"].join("\n");
+
+		expect(rewriteMarkdownLinksForExport(content, index)).toBe(
+			["~~~md", "[[Child]]", "~~~", "Outside [[#Child|Child]]"].join("\n")
 		);
 	});
 
