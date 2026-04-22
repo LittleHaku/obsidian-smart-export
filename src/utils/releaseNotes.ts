@@ -154,7 +154,12 @@ export function shouldAutoDisplayReleaseNotesForUpdate(
 	fromVersion: string,
 	toVersion: string
 ): boolean {
-	if (compareVersions(toVersion, fromVersion) <= 0) {
+	const versionComparison = compareVersions(toVersion, fromVersion);
+	if (versionComparison < 0) {
+		return false;
+	}
+
+	if (versionComparison === 0) {
 		return isReleaseAutoDisplayEnabled(toVersion);
 	}
 

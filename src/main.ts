@@ -408,14 +408,15 @@ export default class SmartExportPlugin extends Plugin {
 				return;
 			}
 
-			const isUpgrade = compareVersions(currentVersion, this.lastSeenVersion) > 0;
+			const versionComparison = compareVersions(currentVersion, this.lastSeenVersion);
+			const isUpgrade = versionComparison > 0;
 			if (isUpgrade) {
 				if (!shouldAutoDisplayReleaseNotesForUpdate(this.lastSeenVersion, currentVersion)) {
 					this.lastSeenVersion = currentVersion;
 					await this.savePluginData();
 					return;
 				}
-			} else if (!isReleaseAutoDisplayEnabled(currentVersion)) {
+			} else if (versionComparison < 0 || !isReleaseAutoDisplayEnabled(currentVersion)) {
 				this.lastSeenVersion = currentVersion;
 				await this.savePluginData();
 				return;
