@@ -15,7 +15,10 @@ import { ExportModal } from "./ui/ExportModal";
 import { FolderPathSuggest } from "./ui/FolderPathSuggest";
 import { ExportTarget, LinkTraversalMode, SmartExportSettings } from "./types";
 import { TEMPLATE_DOCS_URL } from "./constants/templateDocs";
+import { ReleaseNotesEntry } from "./constants/releaseNotes";
+import { ReleaseNotesModal } from "./ui/ReleaseNotesModal";
 import { normalizeFolderFilterList } from "./utils/folderFilters";
+import { normalizeFundingUrl } from "./utils/fundingUrl";
 import { normalizePropertyFilterList, normalizeTagFilterList } from "./utils/noteFilters";
 import {
 	createExportNote,
@@ -36,10 +39,49 @@ import {
 	getPrintFriendlyMarkdownOptions,
 	normalizePrintFriendlyMarkdownOption,
 } from "./utils/printFriendlyMarkdownOptions";
+import {
+	compareVersions,
+	getLatestReleaseNotes,
+	getReleaseNotesBetweenVersions,
+	isReleaseAutoDisplayEnabled,
+	normalizeStoredPluginVersion,
+	shouldAutoDisplayReleaseNotesForUpdate,
+} from "./utils/releaseNotes";
 
 const DEFAULT_OUTPUT_CHOICE_XML = "format:xml";
 const DEFAULT_OUTPUT_CHOICE_PRINT_FRIENDLY = "format:print-friendly-markdown";
 const DEFAULT_OUTPUT_CHOICE_LLM_PREFIX = "template:";
+
+interface StoredPluginData {
+	settings?: Partial<SmartExportSettings>;
+	lastSeenVersion?: unknown;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+	return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
+function extractStoredSettings(storedData: unknown): Partial<SmartExportSettings> | null {
+	if (!isRecord(storedData)) {
+		return null;
+	}
+
+	if ("settings" in storedData) {
+		return isRecord(storedData.settings)
+			? (storedData.settings as Partial<SmartExportSettings>)
+			: null;
+	}
+
+	return storedData as Partial<SmartExportSettings>;
+}
+
+function extractStoredLastSeenVersion(storedData: unknown): string | null {
+	if (!isRecord(storedData)) {
+		return null;
+	}
+
+	return normalizeStoredPluginVersion((storedData as StoredPluginData).lastSeenVersion);
+}
 
 /**
  * Converts settings input into a normalized folder filter list.
@@ -155,6 +197,8 @@ const DEFAULT_SETTINGS: SmartExportSettings = {
  */
 export default class SmartExportPlugin extends Plugin {
 	settings: SmartExportSettings;
+	private hasPersistedData = false;
+	private lastSeenVersion: string | null = null;
 
 	/**
 	 * This method is called when the plugin is first loaded.
@@ -196,6 +240,10 @@ export default class SmartExportPlugin extends Plugin {
 
 		// This adds a settings tab so the user can configure various aspects of the plugin
 		this.addSettingTab(new SmartExportSettingTab(this.app, this));
+
+		this.app.workspace.onLayoutReady(() => {
+			void this.maybeShowReleaseNotes();
+		});
 	}
 
 	/**
@@ -205,7 +253,13 @@ export default class SmartExportPlugin extends Plugin {
 	onunload() {}
 
 	async loadSettings() {
-		const storedSettings = (await this.loadData()) as Partial<SmartExportSettings> | null;
+		const storedData = (await this.loadData()) as
+			| StoredPluginData
+			| Partial<SmartExportSettings>
+			| null;
+		this.hasPersistedData = storedData !== null;
+		this.lastSeenVersion = extractStoredLastSeenVersion(storedData);
+		const storedSettings = extractStoredSettings(storedData);
 		this.settings = { ...DEFAULT_SETTINGS, ...(storedSettings ?? {}) };
 		this.settings.defaultContentDepth = Math.min(
 			20,
@@ -292,7 +346,95 @@ export default class SmartExportPlugin extends Plugin {
 	}
 
 	async saveSettings() {
-		await this.saveData(this.settings);
+		await this.savePluginData();
+	}
+
+	private async savePluginData(): Promise<void> {
+		await this.saveData({
+			settings: this.settings,
+			lastSeenVersion: this.lastSeenVersion,
+		});
+		this.hasPersistedData = true;
+	}
+
+	private openReleaseNotesModal(
+		releaseNotes: ReleaseNotesEntry[],
+		currentVersion: string,
+		fundingUrl?: string
+	): void {
+		new ReleaseNotesModal(this.app, releaseNotes, {
+			fundingUrl,
+			onClose: () => {
+				void (async () => {
+					this.lastSeenVersion = currentVersion;
+					try {
+						await this.savePluginData();
+					} catch (error) {
+						console.error("Failed to persist release notes seen state", error);
+					}
+				})();
+			},
+		}).open();
+	}
+
+	private async maybeShowReleaseNotes(): Promise<void> {
+		try {
+			const currentVersion = normalizeStoredPluginVersion(this.manifest.version);
+			if (!currentVersion) {
+				return;
+			}
+			const fundingUrl = normalizeFundingUrl(
+				(this.manifest as { fundingUrl?: unknown }).fundingUrl
+			);
+
+			if (!this.hasPersistedData) {
+				this.lastSeenVersion = currentVersion;
+				await this.savePluginData();
+				return;
+			}
+
+			if (!this.lastSeenVersion) {
+				if (!isReleaseAutoDisplayEnabled(currentVersion)) {
+					this.lastSeenVersion = currentVersion;
+					await this.savePluginData();
+					return;
+				}
+
+				this.openReleaseNotesModal(getLatestReleaseNotes(), currentVersion, fundingUrl);
+				return;
+			}
+
+			if (this.lastSeenVersion === currentVersion) {
+				return;
+			}
+
+			const versionComparison = compareVersions(currentVersion, this.lastSeenVersion);
+			const isUpgrade = versionComparison > 0;
+			if (isUpgrade) {
+				if (!shouldAutoDisplayReleaseNotesForUpdate(this.lastSeenVersion, currentVersion)) {
+					this.lastSeenVersion = currentVersion;
+					await this.savePluginData();
+					return;
+				}
+			} else if (versionComparison < 0 || !isReleaseAutoDisplayEnabled(currentVersion)) {
+				this.lastSeenVersion = currentVersion;
+				await this.savePluginData();
+				return;
+			}
+
+			const releaseNotes = isUpgrade
+				? getReleaseNotesBetweenVersions(this.lastSeenVersion, currentVersion)
+				: getLatestReleaseNotes();
+			if (releaseNotes.length === 0) {
+				this.lastSeenVersion = currentVersion;
+				await this.savePluginData();
+				return;
+			}
+
+			this.openReleaseNotesModal(releaseNotes, currentVersion, fundingUrl);
+		} catch (error) {
+			console.error("Failed to prepare release notes", error);
+		}
 	}
 
 	private async quickExportCurrentNote(rootFile: TFile): Promise<void> {

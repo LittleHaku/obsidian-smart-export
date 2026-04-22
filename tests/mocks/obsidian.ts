@@ -8,6 +8,9 @@ export class MetadataCache {}
 export class LinkCache {}
 export class Position {}
 export class Loc {}
+export class Modal {}
+
+export function openExternal(_url: string): void {}
 
 interface MockTagCache {
 	tag: string;

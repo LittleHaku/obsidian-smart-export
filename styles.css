@@ -262,6 +262,108 @@ Modern, clean styling for the export modal interface
 	margin-left: 6px;
 }
 
+.smart-export-whats-new-modal {
+	width: 600px;
+	max-width: calc(100vw - 40px);
+}
+
+.smart-export-whats-new-modal .modal-content {
+	padding: 16px;
+}
+
+.smart-export-whats-new-scroll {
+	max-height: min(70vh, 520px);
+	overflow-y: auto;
+	padding-right: 8px;
+	padding-bottom: 16px;
+}
+
+.smart-export-whats-new-version {
+	margin-bottom: 16px;
+}
+
+.smart-export-whats-new-version:last-child {
+	margin-bottom: 0;
+}
+
+.smart-export-whats-new-version h3 {
+	display: block;
+	font-size: 14px;
+	font-weight: 600;
+	color: var(--text-normal);
+	background: var(--background-secondary);
+	margin: 0 0 4px 0;
+	padding: 6px 10px;
+	border-radius: 6px;
+}
+
+.smart-export-whats-new-info {
+	margin-bottom: 12px;
+	color: var(--text-normal);
+	font-size: 14px;
+	line-height: 1.5;
+}
+
+.smart-export-whats-new-category {
+	font-size: 14px;
+	line-height: 1.5;
+	font-weight: 700;
+	margin-top: 8px;
+	margin-bottom: 4px;
+}
+
+.smart-export-whats-new-features {
+	list-style: disc;
+	margin: 0;
+	padding-left: 16px;
+}
+
+.smart-export-whats-new-features li {
+	margin-bottom: 4px;
+	color: var(--text-normal);
+	font-size: 14px;
+	line-height: 1.5;
+}
+
+.smart-export-whats-new-highlight {
+	background: var(--text-highlight-bg);
+	color: var(--text-normal);
+	padding: 0 2px;
+	border-radius: 3px;
+	font-weight: 600;
+}
+
+.smart-export-whats-new-divider {
+	border-top: 1px solid var(--background-modifier-border);
+	margin-bottom: 16px;
+}
+
+.smart-export-whats-new-support-text {
+	color: var(--text-muted);
+	font-size: 14px;
+	margin-bottom: 12px;
+}
+
+.smart-export-whats-new-buttons {
+	display: flex;
+	gap: 8px;
+	margin-top: 12px;
+	justify-content: center;
+}
+
+.smart-export-support-button-small {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	font-size: 12px;
+}
+
+.smart-export-support-button-icon {
+	display: inline-flex;
+	font-size: 14px;
+	line-height: 1;
+}
+
 /* Setting Enhancements */
 .smart-export-modal .setting-item {
 	border: none;
@@ -330,5 +432,28 @@ Modern, clean styling for the export modal interface
 
 	.smart-export-description {
 		font-size: var(--font-ui-small);
+	}
+
+	.smart-export-whats-new-modal {
+		width: calc(100vw - 40px);
+		max-width: calc(100vw - 40px);
+		margin: 0 auto;
+	}
+
+	.smart-export-whats-new-modal .modal-content {
+		padding: 12px;
+	}
+
+	.smart-export-whats-new-scroll {
+		max-height: min(60vh, 360px);
+		padding-right: 4px;
+	}
+
+	.smart-export-whats-new-info,
+	.smart-export-whats-new-features li,
+	.smart-export-whats-new-category,
+	.smart-export-whats-new-version h3 {
+		font-size: 15px;
+		line-height: 1.6;
 	}
 }

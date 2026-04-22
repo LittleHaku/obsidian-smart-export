@@ -51,6 +51,26 @@ Use section types consistently:
 - `Changed`: behavior/performance/UX refinements to features being shipped in that same version.
 - `Fixed`: regressions/bugs from an already shipped version (not just in-progress branch work).
 
+## Update modal rule
+
+Smart Export's in-app "What's new" modal does not read `CHANGELOG.md` at runtime.
+It uses bundled structured release-note data from:
+
+- `src/constants/releaseNotes.ts`
+
+When preparing a release, keep these in sync:
+
+1. Add or update the matching section in `CHANGELOG.md`.
+2. Add the corresponding bundled entry in `src/constants/releaseNotes.ts`.
+
+Treat `CHANGELOG.md` as the human-readable release history and `src/constants/releaseNotes.ts`
+as the runtime source for the post-update modal.
+
+The post-update modal intentionally uses a grouped recap window for version ranges.
+When upgrading between two known versions, the modal may include both the previous
+release and the new release in the same view instead of showing only strictly unseen
+entries. This matches the intended "what's new" recap behavior.
+
 ## Prerelease flow (for BRAT testing)
 
 Use this flow when a feature is still in a PR branch and should be tested without a final release:
