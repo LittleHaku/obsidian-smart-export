@@ -61,7 +61,7 @@ Use [BRAT (Beta Reviewers Auto-update Tool)](https://github.com/TfTHacker/obsidi
 - Linked table of contents, numbered headings, section dividers, and page breaks for print-friendly Markdown.
 - Built-in and custom Markdown templates with placeholder support.
 - Token estimate display before export.
-- One-time in-app "What's new" modal after plugin updates.
+- One-time in-app "What's new in Smart Export" modal after plugin updates.
 
 ## Settings
 

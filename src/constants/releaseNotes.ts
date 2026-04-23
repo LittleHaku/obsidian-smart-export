@@ -13,6 +13,14 @@ export interface ReleaseNotesEntry {
 
 export const RELEASE_NOTES: ReleaseNotesEntry[] = [
 	{
+		version: "1.10.3",
+		date: "2026-04-23",
+		showOnUpdate: true,
+		changed: [
+			"The post-update modal title now names Smart Export explicitly, so release notes clearly identify which plugin was updated.",
+		],
+	},
+	{
 		version: "1.10.2",
 		date: "2026-04-23",
 		showOnUpdate: true,

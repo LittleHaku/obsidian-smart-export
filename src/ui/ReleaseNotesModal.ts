@@ -5,6 +5,7 @@ import { openExternalUrl } from "../utils/externalLink";
 interface ReleaseNotesModalOptions {
 	fundingUrl?: string;
 	onClose?: () => void;
+	pluginName?: string;
 }
 
 export class ReleaseNotesModal extends Modal {
@@ -100,10 +101,11 @@ export class ReleaseNotesModal extends Modal {
 
 	onOpen(): void {
 		const { contentEl, modalEl, titleEl } = this;
+		const pluginName = this.options.pluginName?.trim();
 
 		contentEl.empty();
 		modalEl.addClass("smart-export-whats-new-modal");
-		titleEl.setText("What's new");
+		titleEl.setText(pluginName ? `What's new in ${pluginName}` : "What's new");
 
 		const scrollContainer = contentEl.createDiv({
 			cls: "smart-export-whats-new-scroll",
@@ -171,7 +173,9 @@ export class ReleaseNotesModal extends Modal {
 		});
 		supportContainer.createEl("p", {
 			cls: "smart-export-whats-new-support-text",
-			text: "If this plugin is useful in your workflow, you can support development here.",
+			text: pluginName
+				? `If ${pluginName} is useful in your workflow, you can support development here.`
+				: "If this plugin is useful in your workflow, you can support development here.",
 		});
 
 		const buttonsEl = contentEl.createDiv({
