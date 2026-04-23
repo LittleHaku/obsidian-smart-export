@@ -23,6 +23,7 @@ interface ExportedMarkdownLinkIndex {
 interface ParsedLinkTarget {
 	baseTarget: string;
 	headingLookupKey: string | null;
+	blockTarget: string | null;
 }
 
 function countRepeatedCharacter(content: string, startIndex: number, character: string): number {
@@ -218,6 +219,7 @@ function parseLinkTarget(rawTarget: string): ParsedLinkTarget {
 		return {
 			baseTarget: rawTarget,
 			headingLookupKey: null,
+			blockTarget: null,
 		};
 	}
 
@@ -229,6 +231,7 @@ function parseLinkTarget(rawTarget: string): ParsedLinkTarget {
 		baseTarget,
 		headingLookupKey:
 			separator === "#" && suffix.length > 0 ? normalizeHeadingLookupKey(suffix) : null,
+		blockTarget: separator === "^" && suffix.length > 0 ? suffix : null,
 	};
 }
 
@@ -618,6 +621,10 @@ function rewriteWikiLink(innerContent: string, linkIndex: ExportedMarkdownLinkIn
 	}
 
 	const label = alias.length > 0 ? `${alias} (ref:${rawTarget})` : rawTarget;
+	if (parsedTarget.blockTarget) {
+		return `[[#^${escapeWikiLinkValue(parsedTarget.blockTarget)}|${escapeWikiLinkValue(label)}]]`;
+	}
+
 	if (parsedTarget.headingLookupKey) {
 		const headingBlockTarget = resolvedReference.headingBlockTargets.get(
 			parsedTarget.headingLookupKey

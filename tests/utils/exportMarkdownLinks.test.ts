@@ -153,7 +153,21 @@ describe("exportMarkdownLinks", () => {
 			/^See \[\[#\^smart-export-[a-z0-9]+\|Child#Section\]\]\.$/
 		);
 		expect(rewriteMarkdownLinksForExport("See [[Child^block]].", index)).toBe(
-			"See [[#Child|Child^block]]."
+			"See [[#^block|Child^block]]."
+		);
+	});
+
+	it("preserves exported cross-note block links with aliases", () => {
+		const root = createMockExportNode("Root", "root.md");
+		const child = createMockExportNode("Child", "notes/Child.md", [], "Paragraph ^important-block");
+		const labels = buildExportedHeadingLabels([root, child]);
+		const index = buildExportedMarkdownLinkIndex(
+			[root, child],
+			(note) => labels.get(note.id) ?? note.title
+		);
+
+		expect(rewriteMarkdownLinksForExport("See [[Child^important-block|summary]].", index)).toBe(
+			"See [[#^important-block|summary (ref:Child^important-block)]]."
 		);
 	});
 
