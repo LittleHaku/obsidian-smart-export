@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.10.2] - 2026-04-23
+
+### Fixed
+
+- Markdown exports now preserve cross-note block links such as `[[note^block]]` by rewriting them to same-note block anchors instead of falling back to note-level links
+- Aliased cross-note block links such as `[[note^block|alias]]` now preserve readable `ref:` context while still pointing to the referenced exported block anchor
+
 ## [1.10.1] - 2026-04-23
 
 ### Fixed
