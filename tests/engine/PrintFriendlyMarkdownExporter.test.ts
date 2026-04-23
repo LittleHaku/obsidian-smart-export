@@ -211,6 +211,28 @@ console.log("code block");
 			expect(result).toContain(`[[#^${headingAnchorMatch?.[1]}|Linked Note#Risks]]`);
 		});
 
+		it("preserves exported cross-note block links as block anchors", () => {
+			const child = createMockExportNode(
+				"Linked Note",
+				"Linked Note.md",
+				1,
+				"Important paragraph ^important-block"
+			);
+			const rootNode = createMockExportNode(
+				"Root",
+				"root.md",
+				0,
+				"See [[Linked Note^important-block|summary]].",
+				[child]
+			);
+
+			const exporter = new PrintFriendlyMarkdownExporter();
+			const result = exporter.export(rootNode);
+
+			expect(result).toContain("[[#^important-block|summary (ref:Linked Note^important-block)]]");
+			expect(result).toContain("Important paragraph ^important-block");
+		});
+
 		it("escapes TOC links for headings with wikilink control characters", () => {
 			const rootNode = createMockExportNode("Root | ] Note", "root.md", 0, "Body");
 			const exporter = new PrintFriendlyMarkdownExporter();

@@ -240,6 +240,28 @@ console.log("code block");
 			expect(result).toContain(`[[#^${headingAnchorMatch?.[1]}|Child Note#Risks]]`);
 		});
 
+		it("preserves exported cross-note block links as block anchors", () => {
+			const child = createMockExportNode(
+				"Child Note",
+				"notes/Child Note.md",
+				1,
+				"Important paragraph ^important-block"
+			);
+			const rootNode = createMockExportNode(
+				"Root",
+				"root.md",
+				0,
+				"See [[Child Note^important-block|summary]].",
+				[child]
+			);
+			const exporter = new LlmMarkdownExporter();
+
+			const result = exporter.export(rootNode, "TestVault");
+
+			expect(result).toContain("[[#^important-block|summary (ref:Child Note^important-block)]]");
+			expect(result).toContain("Important paragraph ^important-block");
+		});
+
 		it("inserts a blank line before closing included note frontmatter", () => {
 			const rootNode = createMockExportNode(
 				"Root",
