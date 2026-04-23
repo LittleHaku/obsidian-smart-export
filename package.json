@@ -1,6 +1,6 @@
 {
 	"name": "smart-export",
-	"version": "1.10.1-beta.1",
+	"version": "1.10.1",
 	"description": "Plugin that exports linked notes by following wikilinks to a configurable depth, optimized for human-readable and LLM-friendly outputs.",
 	"main": "main.js",
 	"scripts": {
