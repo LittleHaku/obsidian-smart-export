@@ -364,6 +364,7 @@ export default class SmartExportPlugin extends Plugin {
 	): void {
 		new ReleaseNotesModal(this.app, releaseNotes, {
 			fundingUrl,
+			pluginName: this.manifest.name,
 			onClose: () => {
 				void (async () => {
 					this.lastSeenVersion = currentVersion;

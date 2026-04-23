@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- The post-update modal title now names Smart Export explicitly, so release notes clearly identify which plugin was updated
+
 ## [1.10.2] - 2026-04-23
 
 ### Fixed
