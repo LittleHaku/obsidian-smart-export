@@ -18,32 +18,45 @@ describe("releaseNotes", () => {
 	});
 
 	it("returns release notes for a normalized version", () => {
-		expect(getReleaseNotes(" 1.10.0 ")).toEqual(RELEASE_NOTES[0]);
-		expect(getReleaseNotes("1.9.0")).toEqual(RELEASE_NOTES[1]);
-		expect(getReleaseNotes("1.9.0-beta.1")).toEqual(RELEASE_NOTES[2]);
+		expect(getReleaseNotes(" 1.10.1 ")).toEqual(RELEASE_NOTES[0]);
+		expect(getReleaseNotes("1.10.1-beta.1")).toEqual(RELEASE_NOTES[1]);
+		expect(getReleaseNotes("1.10.0")).toEqual(RELEASE_NOTES[2]);
+		expect(getReleaseNotes("1.9.0")).toEqual(RELEASE_NOTES[3]);
+		expect(getReleaseNotes("1.9.0-beta.1")).toEqual(RELEASE_NOTES[4]);
 		expect(getReleaseNotes("   ")).toBeNull();
 		expect(getReleaseNotes("1.8.0")).toBeNull();
 	});
 
 	it("tracks the current stable release notes payload", () => {
 		const releaseNotes = RELEASE_NOTES[0];
-		expect(releaseNotes.version).toBe("1.10.0");
-		expect(releaseNotes.date).toBe("2026-04-21");
-		expect(releaseNotes.new?.some((item) => item.includes("what's new modal"))).toBe(true);
+		expect(releaseNotes.version).toBe("1.10.1");
+		expect(releaseNotes.date).toBe("2026-04-23");
+		expect(
+			releaseNotes.fixed?.some((item) =>
+				item.includes("heading and block links such as [[note#heading]] and [[note^block]]")
+			)
+		).toBe(true);
+	});
+
+	it("keeps the current beta release notes payload for upgrade recaps", () => {
+		const releaseNotes = RELEASE_NOTES[1];
+		expect(releaseNotes.version).toBe("1.10.1-beta.1");
+		expect(releaseNotes.date).toBe("2026-04-22");
+		expect(releaseNotes.showOnUpdate).toBe(false);
 	});
 
 	it("returns the latest release notes and upgrade ranges", () => {
 		expect(getLatestReleaseNotes(RELEASE_NOTES.length)).toEqual(RELEASE_NOTES);
 		expect(getLatestReleaseNotes(1)).toEqual([RELEASE_NOTES[0]]);
 		expect(getReleaseNotesBetweenVersions(" 1.9.0-beta.1 ", " 1.9.0 ")).toEqual([
-			RELEASE_NOTES[1],
-			RELEASE_NOTES[2],
+			RELEASE_NOTES[3],
+			RELEASE_NOTES[4],
 		]);
 		expect(getReleaseNotesBetweenVersions("1.9.0-beta.1", "1.9.0")).toEqual([
-			RELEASE_NOTES[1],
-			RELEASE_NOTES[2],
+			RELEASE_NOTES[3],
+			RELEASE_NOTES[4],
 		]);
-		expect(getReleaseNotesBetweenVersions("1.10.0", "1.10.0")).toEqual([RELEASE_NOTES[0]]);
+		expect(getReleaseNotesBetweenVersions("1.10.0", "1.10.0")).toEqual([RELEASE_NOTES[2]]);
 		expect(getReleaseNotesBetweenVersions("   ", "1.10.0")).toEqual(getLatestReleaseNotes());
 		expect(getReleaseNotesBetweenVersions("1.8.0", "1.10.0")).toEqual(getLatestReleaseNotes());
 	});
@@ -70,10 +83,13 @@ describe("releaseNotes", () => {
 	});
 
 	it("uses per-release auto-display settings and upgrade-path logic", () => {
+		expect(isReleaseAutoDisplayEnabled("1.10.1")).toBe(true);
+		expect(isReleaseAutoDisplayEnabled("1.10.1-beta.1")).toBe(false);
 		expect(isReleaseAutoDisplayEnabled("1.10.0")).toBe(true);
 		expect(isReleaseAutoDisplayEnabled("1.9.0")).toBe(true);
 		expect(isReleaseAutoDisplayEnabled("1.9.0-beta.1")).toBe(false);
 		expect(isReleaseAutoDisplayEnabled("0.1.0")).toBe(true);
+		expect(shouldAutoDisplayReleaseNotesForUpdate("1.10.0", "1.10.1")).toBe(true);
 		expect(shouldAutoDisplayReleaseNotesForUpdate("1.9.0", "1.10.0")).toBe(true);
 		expect(shouldAutoDisplayReleaseNotesForUpdate("1.8.0", "1.9.0")).toBe(true);
 		expect(shouldAutoDisplayReleaseNotesForUpdate("1.9.0-beta.1", "1.9.0")).toBe(true);

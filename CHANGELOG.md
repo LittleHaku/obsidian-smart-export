@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.10.1] - 2026-04-23
+
+### Fixed
+
+- Markdown exports now include notes referenced through heading and block links such as `[[note#heading]]` and `[[note^block]]` during traversal
+- Markdown exports now preserve referenced note headings by rewriting `[[note#heading]]` links to generated same-note block anchors with valid Obsidian same-note link syntax when the target heading is included in the export
+
+## [1.10.1-beta.1] - 2026-04-22
+
+### Fixed
+
+- Markdown exports now include notes referenced through heading and block links such as `[[note#heading]]` and `[[note^block]]` during traversal
+- Markdown exports now preserve referenced note headings by rewriting `[[note#heading]]` links to generated same-note block anchors with valid Obsidian same-note link syntax when the target heading is included in the export
+
 ## [1.10.0] - 2026-04-21
 
 ### Added

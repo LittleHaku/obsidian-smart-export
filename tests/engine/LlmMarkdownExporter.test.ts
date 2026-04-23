@@ -221,6 +221,25 @@ console.log("code block");
 			expect(result).toContain("summary (ref:Missing note)");
 		});
 
+		it("rewrites exported heading links to the referenced heading anchor", () => {
+			const child = createMockExportNode(
+				"Child Note",
+				"notes/Child Note.md",
+				1,
+				"## Risks\n\nChild content"
+			);
+			const rootNode = createMockExportNode("Root", "root.md", 0, "See [[Child Note#Risks]].", [
+				child,
+			]);
+			const exporter = new LlmMarkdownExporter();
+
+			const result = exporter.export(rootNode, "TestVault");
+			const headingAnchorMatch = result.match(/## Risks \^(smart-export-[a-z0-9]+)\n/);
+
+			expect(headingAnchorMatch).not.toBeNull();
+			expect(result).toContain(`[[#^${headingAnchorMatch?.[1]}|Child Note#Risks]]`);
+		});
+
 		it("inserts a blank line before closing included note frontmatter", () => {
 			const rootNode = createMockExportNode(
 				"Root",
@@ -266,7 +285,7 @@ console.log("code block");
 
 			expect(result).toContain("This export contains a knowledge graph");
 			expect(result).toContain("breadth-first order");
-			expect(result).toContain("same-note heading links");
+			expect(result).toContain("same-note links");
 			expect(result).toContain("Missing notes (referenced but not found)");
 		});
 	});
@@ -380,7 +399,7 @@ Missing: {{missing_notes}}
 			);
 
 			expect(result).toContain("This export contains a knowledge graph");
-			expect(result).toContain("same-note heading links");
+			expect(result).toContain("same-note links");
 		});
 	});
 
