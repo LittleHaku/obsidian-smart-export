@@ -5,6 +5,7 @@ export const DEFAULT_PRINT_FRIENDLY_MARKDOWN_OPTIONS: PrintFriendlyMarkdownOptio
 	numberHeadings: true,
 	insertSectionDividers: true,
 	insertPageBreaksBetweenSections: false,
+	normalizeContentHeadings: true,
 };
 
 export function getPrintFriendlyMarkdownOptions(
@@ -14,6 +15,7 @@ export function getPrintFriendlyMarkdownOptions(
 		| "printFriendlyNumberHeadings"
 		| "printFriendlyInsertSectionDividers"
 		| "printFriendlyInsertPageBreaks"
+		| "printFriendlyNormalizeContentHeadings"
 	>
 ): PrintFriendlyMarkdownOptions {
 	return {
@@ -21,6 +23,7 @@ export function getPrintFriendlyMarkdownOptions(
 		numberHeadings: settings.printFriendlyNumberHeadings,
 		insertSectionDividers: settings.printFriendlyInsertSectionDividers,
 		insertPageBreaksBetweenSections: settings.printFriendlyInsertPageBreaks,
+		normalizeContentHeadings: settings.printFriendlyNormalizeContentHeadings,
 	};
 }
 

@@ -111,10 +111,9 @@ export class PrintFriendlyMarkdownExporter {
 
 		if (node.content && node.includeContent) {
 			const rewrittenContent = rewriteMarkdownLinksForExport(node.content, linkIndex, node.id);
-			const normalizedContent = normalizeMarkdownHeadingsBelowParent(
-				rewrittenContent,
-				headingLevel
-			);
+			const normalizedContent = options.normalizeContentHeadings
+				? normalizeMarkdownHeadingsBelowParent(rewrittenContent, headingLevel)
+				: rewrittenContent;
 			chunks.push(`${normalizedContent}\n\n`);
 		}
 

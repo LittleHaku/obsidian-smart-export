@@ -40,6 +40,7 @@ Defined in `src/main.ts` (`SmartExportSettings` + settings tab):
   - `Number headings`
   - `Insert section dividers`
   - `Insert page breaks`
+  - `Normalize content headings`
 - Section `Export modal behavior`
   - `Auto-select current note`
   - `Close modal after export`
@@ -53,7 +54,7 @@ Format dispatch is implemented in `src/engine/exportOutput.ts`:
 - `llm-markdown` via `LlmMarkdownExporter`
 - `print-friendly-markdown` via `PrintFriendlyMarkdownExporter`
   - Uses settings-controlled formatting for table of contents links, heading numbering, note dividers, and page breaks.
-  - Normalizes included note content headings below each exported note title heading.
+  - Normalizes included note content headings below each exported note title heading by default. This can be disabled with `Normalize content headings`.
 
 Invalid stored/selected format values normalize to `xml`.
 

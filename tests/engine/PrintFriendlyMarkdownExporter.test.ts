@@ -474,9 +474,26 @@ console.log("code block");
 				numberHeadings: false,
 				insertSectionDividers: false,
 				insertPageBreaksBetweenSections: false,
+				normalizeContentHeadings: true,
 			});
 
 			expect(result).toBe("# Root\n\nRoot content\n\n## Child\n\nChild content\n\n");
+		});
+
+		it("can preserve source content headings", () => {
+			const child = createMockExportNode("Child", "child.md", 1, "# Child heading");
+			const rootNode = createMockExportNode("Root", "root.md", 0, "# Root heading", [child]);
+			const exporter = new PrintFriendlyMarkdownExporter();
+
+			const result = exporter.export(rootNode, {
+				includeTableOfContents: false,
+				numberHeadings: false,
+				insertSectionDividers: false,
+				insertPageBreaksBetweenSections: false,
+				normalizeContentHeadings: false,
+			});
+
+			expect(result).toBe("# Root\n\n# Root heading\n\n## Child\n\n# Child heading\n\n");
 		});
 
 		it("can insert page breaks between sections and replace dividers", () => {
@@ -489,6 +506,7 @@ console.log("code block");
 				numberHeadings: true,
 				insertSectionDividers: true,
 				insertPageBreaksBetweenSections: true,
+				normalizeContentHeadings: true,
 			});
 
 			expect(result).toBe(

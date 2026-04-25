@@ -92,8 +92,9 @@ Settings location: **Obsidian → Settings → Smart Export**
 - **Number headings**: prefixes exported note headings with section numbers such as `1.` and `1.1`
 - **Insert section dividers**: adds divider lines between note sections in print-friendly exports
 - **Insert page breaks**: starts each note section after the first on a new page and replaces section dividers
+- **Normalize content headings**: shifts headings inside included notes below the exported note title heading
 
-Included note content headings are normalized below the exported note title heading so nested note sections remain visually subordinate in print-friendly output.
+By default, included note content headings are normalized below the exported note title heading so nested note sections remain visually subordinate in print-friendly output. Turn off **Normalize content headings** to preserve source heading levels exactly.
 
 ### Export modal behavior
 

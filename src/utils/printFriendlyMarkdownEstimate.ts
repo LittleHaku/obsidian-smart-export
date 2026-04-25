@@ -1,5 +1,6 @@
 import { ExportNode, PrintFriendlyMarkdownOptions } from "../types";
 import { DEFAULT_PRINT_FRIENDLY_MARKDOWN_OPTIONS } from "./printFriendlyMarkdownOptions";
+import { normalizeMarkdownHeadingsBelowParent } from "./markdownHeadingNormalization";
 import {
 	buildPrintFriendlyMarkdownStructure,
 	escapePrintFriendlyWikiLinkValue,
@@ -87,7 +88,8 @@ function estimateBodyLength(
 	total += depth + 1 + " ".length + headingLabel.length + "\n\n".length;
 
 	if (node.content && node.includeContent && selectedNodeIds.has(node.id)) {
-		total += estimateContentLengthAfterNormalization(node.content) + "\n\n".length;
+		total +=
+			estimateContentLengthAfterNormalization(node.content, depth + 1, options) + "\n\n".length;
 	}
 
 	let childRenderedCount = renderedCount + 1;
@@ -110,17 +112,32 @@ function estimateBodyLength(
 	return total;
 }
 
-function estimateContentLengthAfterNormalization(content: string): number {
+function estimateContentLengthAfterNormalization(
+	content: string,
+	parentHeadingLevel: number,
+	options: PrintFriendlyMarkdownOptions
+): number {
 	if (!(content.startsWith("---\n") || content.startsWith("---\r\n"))) {
-		return content.length;
+		return options.normalizeContentHeadings
+			? normalizeMarkdownHeadingsBelowParent(content, parentHeadingLevel).length
+			: content.length;
 	}
 
 	const newline = content.startsWith("---\r\n") ? "\r\n" : "\n";
 	const lines = content.split(/\r?\n/);
 	const closingIndex = lines.indexOf("---", 1);
 	if (closingIndex < 0 || lines[closingIndex - 1] === "") {
-		return content.length;
+		return options.normalizeContentHeadings
+			? normalizeMarkdownHeadingsBelowParent(content, parentHeadingLevel).length
+			: content.length;
 	}
 
-	return content.length + newline.length;
+	const normalizedFrontmatterContent = [
+		...lines.slice(0, closingIndex),
+		"",
+		...lines.slice(closingIndex),
+	].join(newline);
+	return options.normalizeContentHeadings
+		? normalizeMarkdownHeadingsBelowParent(normalizedFrontmatterContent, parentHeadingLevel).length
+		: normalizedFrontmatterContent.length;
 }

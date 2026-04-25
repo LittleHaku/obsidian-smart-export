@@ -98,6 +98,7 @@ describe("exportOutput", () => {
 				numberHeadings: true,
 				insertSectionDividers: true,
 				insertPageBreaksBetweenSections: true,
+				normalizeContentHeadings: true,
 			},
 		});
 
@@ -116,6 +117,7 @@ describe("exportOutput", () => {
 				numberHeadings: false,
 				insertSectionDividers: false,
 				insertPageBreaksBetweenSections: false,
+				normalizeContentHeadings: false,
 			},
 		});
 

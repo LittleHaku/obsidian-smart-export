@@ -54,6 +54,7 @@ describe("printFriendlyMarkdownStructure", () => {
 			numberHeadings: false,
 			insertSectionDividers: true,
 			insertPageBreaksBetweenSections: false,
+			normalizeContentHeadings: true,
 		};
 
 		const { headingLabels } = buildPrintFriendlyMarkdownStructure(rootNode, options);
@@ -70,6 +71,7 @@ describe("printFriendlyMarkdownStructure", () => {
 				numberHeadings: true,
 				insertSectionDividers: false,
 				insertPageBreaksBetweenSections: true,
+				normalizeContentHeadings: true,
 			})
 		).toBe(PRINT_FRIENDLY_PAGE_BREAK_MARKUP);
 		expect(
@@ -78,6 +80,7 @@ describe("printFriendlyMarkdownStructure", () => {
 				numberHeadings: true,
 				insertSectionDividers: true,
 				insertPageBreaksBetweenSections: false,
+				normalizeContentHeadings: true,
 			})
 		).toBe(PRINT_FRIENDLY_SECTION_DIVIDER);
 		expect(
@@ -86,6 +89,7 @@ describe("printFriendlyMarkdownStructure", () => {
 				numberHeadings: false,
 				insertSectionDividers: false,
 				insertPageBreaksBetweenSections: false,
+				normalizeContentHeadings: false,
 			})
 		).toBe("");
 	});

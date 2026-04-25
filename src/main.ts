@@ -188,6 +188,8 @@ const DEFAULT_SETTINGS: SmartExportSettings = {
 	printFriendlyInsertSectionDividers: DEFAULT_PRINT_FRIENDLY_MARKDOWN_OPTIONS.insertSectionDividers,
 	printFriendlyInsertPageBreaks:
 		DEFAULT_PRINT_FRIENDLY_MARKDOWN_OPTIONS.insertPageBreaksBetweenSections,
+	printFriendlyNormalizeContentHeadings:
+		DEFAULT_PRINT_FRIENDLY_MARKDOWN_OPTIONS.normalizeContentHeadings,
 };
 
 /**
@@ -342,6 +344,13 @@ export default class SmartExportPlugin extends Plugin {
 		this.settings.printFriendlyInsertPageBreaks = normalizePrintFriendlyMarkdownOption(
 			storedPrintFriendlyInsertPageBreaks,
 			DEFAULT_PRINT_FRIENDLY_MARKDOWN_OPTIONS.insertPageBreaksBetweenSections
+		);
+		const storedPrintFriendlyNormalizeContentHeadings = (
+			storedSettings as { printFriendlyNormalizeContentHeadings?: unknown } | null
+		)?.printFriendlyNormalizeContentHeadings;
+		this.settings.printFriendlyNormalizeContentHeadings = normalizePrintFriendlyMarkdownOption(
+			storedPrintFriendlyNormalizeContentHeadings,
+			DEFAULT_PRINT_FRIENDLY_MARKDOWN_OPTIONS.normalizeContentHeadings
 		);
 	}
 
@@ -830,6 +839,18 @@ class SmartExportSettingTab extends PluginSettingTab {
 					.setValue(this.plugin.settings.printFriendlyInsertPageBreaks)
 					.onChange(async (value) => {
 						this.plugin.settings.printFriendlyInsertPageBreaks = value;
+						await this.plugin.saveSettings();
+					})
+			);
+
+		new Setting(containerEl)
+			.setName("Normalize content headings")
+			.setDesc("Shift headings inside included notes below the exported note title heading.")
+			.addToggle((toggle) =>
+				toggle
+					.setValue(this.plugin.settings.printFriendlyNormalizeContentHeadings)
+					.onChange(async (value) => {
+						this.plugin.settings.printFriendlyNormalizeContentHeadings = value;
 						await this.plugin.saveSettings();
 					})
 			);

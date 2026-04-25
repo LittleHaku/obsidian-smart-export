@@ -42,6 +42,8 @@ export interface PrintFriendlyMarkdownOptions {
 	insertSectionDividers: boolean;
 	/** Whether to insert HTML page breaks between exported note sections. */
 	insertPageBreaksBetweenSections: boolean;
+	/** Whether included note content headings should be shifted below exported note headings. */
+	normalizeContentHeadings: boolean;
 }
 
 /**
@@ -86,4 +88,6 @@ export interface SmartExportSettings {
 	printFriendlyInsertSectionDividers: boolean;
 	/** Whether print-friendly exports should insert page breaks between note sections. */
 	printFriendlyInsertPageBreaks: boolean;
+	/** Whether print-friendly exports should normalize included note content headings. */
+	printFriendlyNormalizeContentHeadings: boolean;
 }
