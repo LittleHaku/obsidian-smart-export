@@ -52,6 +52,7 @@ describe("estimatePrintFriendlyMarkdownCharacterCount", () => {
 			numberHeadings: false,
 			insertSectionDividers: false,
 			insertPageBreaksBetweenSections: false,
+			normalizeContentHeadings: false,
 		};
 		const exporter = new PrintFriendlyMarkdownExporter();
 		const selectedNodeIds = new Set<string>(["root.md"]);
@@ -61,6 +62,17 @@ describe("estimatePrintFriendlyMarkdownCharacterCount", () => {
 			applyContentSelection(rootNode, selectedNodeIds),
 			options
 		).length;
+
+		expect(estimatedLength).toBe(actualLength);
+	});
+
+	it("matches exporter length when content headings are normalized", () => {
+		const child = createMockExportNode("Child", "child.md", 1, "# Child section");
+		const rootNode = createMockExportNode("Root", "root.md", 0, "# Root section", [child]);
+		const exporter = new PrintFriendlyMarkdownExporter();
+
+		const estimatedLength = estimateSelectedLength(rootNode, ["root.md", "child.md"]);
+		const actualLength = exporter.export(rootNode).length;
 
 		expect(estimatedLength).toBe(actualLength);
 	});
@@ -121,6 +133,50 @@ describe("estimatePrintFriendlyMarkdownCharacterCount", () => {
 
 		const estimatedLength = estimateSelectedLength(rootNode, ["root.md"]);
 		const actualLength = exporter.export(rootNode).length;
+
+		expect(estimatedLength).toBe(actualLength);
+	});
+
+	it("matches exporter length for unclosed frontmatter when content heading normalization is disabled", () => {
+		const rootNode = createMockExportNode(
+			"Root",
+			"root.md",
+			0,
+			["---", "summary: test", "# Preserved"].join("\n")
+		);
+		const options: PrintFriendlyMarkdownOptions = {
+			includeTableOfContents: true,
+			numberHeadings: true,
+			insertSectionDividers: true,
+			insertPageBreaksBetweenSections: false,
+			normalizeContentHeadings: false,
+		};
+		const exporter = new PrintFriendlyMarkdownExporter();
+
+		const estimatedLength = estimateSelectedLength(rootNode, ["root.md"], options);
+		const actualLength = exporter.export(rootNode, options).length;
+
+		expect(estimatedLength).toBe(actualLength);
+	});
+
+	it("matches exporter length for frontmatter spacing when content heading normalization is disabled", () => {
+		const rootNode = createMockExportNode(
+			"Root",
+			"root.md",
+			0,
+			["---", "summary: test", "---", "# Preserved"].join("\n")
+		);
+		const options: PrintFriendlyMarkdownOptions = {
+			includeTableOfContents: true,
+			numberHeadings: true,
+			insertSectionDividers: true,
+			insertPageBreaksBetweenSections: false,
+			normalizeContentHeadings: false,
+		};
+		const exporter = new PrintFriendlyMarkdownExporter();
+
+		const estimatedLength = estimateSelectedLength(rootNode, ["root.md"], options);
+		const actualLength = exporter.export(rootNode, options).length;
 
 		expect(estimatedLength).toBe(actualLength);
 	});

@@ -18,19 +18,31 @@ describe("releaseNotes", () => {
 	});
 
 	it("returns release notes for a normalized version", () => {
-		expect(getReleaseNotes(" 1.10.3 ")).toEqual(RELEASE_NOTES[0]);
-		expect(getReleaseNotes("1.10.2")).toEqual(RELEASE_NOTES[1]);
-		expect(getReleaseNotes("1.10.1")).toEqual(RELEASE_NOTES[2]);
-		expect(getReleaseNotes("1.10.1-beta.1")).toEqual(RELEASE_NOTES[3]);
-		expect(getReleaseNotes("1.10.0")).toEqual(RELEASE_NOTES[4]);
-		expect(getReleaseNotes("1.9.0")).toEqual(RELEASE_NOTES[5]);
-		expect(getReleaseNotes("1.9.0-beta.1")).toEqual(RELEASE_NOTES[6]);
+		expect(getReleaseNotes(" 1.11.0 ")).toEqual(RELEASE_NOTES[0]);
+		expect(getReleaseNotes("1.10.3")).toEqual(RELEASE_NOTES[1]);
+		expect(getReleaseNotes("1.10.2")).toEqual(RELEASE_NOTES[2]);
+		expect(getReleaseNotes("1.10.1")).toEqual(RELEASE_NOTES[3]);
+		expect(getReleaseNotes("1.10.1-beta.1")).toEqual(RELEASE_NOTES[4]);
+		expect(getReleaseNotes("1.10.0")).toEqual(RELEASE_NOTES[5]);
+		expect(getReleaseNotes("1.9.0")).toEqual(RELEASE_NOTES[6]);
+		expect(getReleaseNotes("1.9.0-beta.1")).toEqual(RELEASE_NOTES[7]);
 		expect(getReleaseNotes("   ")).toBeNull();
 		expect(getReleaseNotes("1.8.0")).toBeNull();
 	});
 
 	it("tracks the current stable release notes payload", () => {
 		const releaseNotes = RELEASE_NOTES[0];
+		expect(releaseNotes.version).toBe("1.11.0");
+		expect(releaseNotes.date).toBe("2026-04-25");
+		expect(
+			releaseNotes.changed?.some((item) =>
+				item.includes("normalize included note content headings")
+			)
+		).toBe(true);
+	});
+
+	it("keeps the previous stable release notes payload for upgrade recaps", () => {
+		const releaseNotes = RELEASE_NOTES[1];
 		expect(releaseNotes.version).toBe("1.10.3");
 		expect(releaseNotes.date).toBe("2026-04-23");
 		expect(
@@ -40,29 +52,18 @@ describe("releaseNotes", () => {
 		).toBe(true);
 	});
 
-	it("keeps the previous stable release notes payload for upgrade recaps", () => {
-		const releaseNotes = RELEASE_NOTES[1];
-		expect(releaseNotes.version).toBe("1.10.2");
-		expect(releaseNotes.date).toBe("2026-04-23");
-		expect(
-			releaseNotes.fixed?.some((item) =>
-				item.includes("cross-note block links such as [[note^block]]")
-			)
-		).toBe(true);
-	});
-
 	it("returns the latest release notes and upgrade ranges", () => {
 		expect(getLatestReleaseNotes(RELEASE_NOTES.length)).toEqual(RELEASE_NOTES);
 		expect(getLatestReleaseNotes(1)).toEqual([RELEASE_NOTES[0]]);
 		expect(getReleaseNotesBetweenVersions(" 1.9.0-beta.1 ", " 1.9.0 ")).toEqual([
-			RELEASE_NOTES[5],
 			RELEASE_NOTES[6],
+			RELEASE_NOTES[7],
 		]);
 		expect(getReleaseNotesBetweenVersions("1.9.0-beta.1", "1.9.0")).toEqual([
-			RELEASE_NOTES[5],
 			RELEASE_NOTES[6],
+			RELEASE_NOTES[7],
 		]);
-		expect(getReleaseNotesBetweenVersions("1.10.0", "1.10.0")).toEqual([RELEASE_NOTES[4]]);
+		expect(getReleaseNotesBetweenVersions("1.10.0", "1.10.0")).toEqual([RELEASE_NOTES[5]]);
 		expect(getReleaseNotesBetweenVersions("   ", "1.10.0")).toEqual(getLatestReleaseNotes());
 		expect(getReleaseNotesBetweenVersions("1.8.0", "1.10.0")).toEqual(getLatestReleaseNotes());
 	});
@@ -89,6 +90,7 @@ describe("releaseNotes", () => {
 	});
 
 	it("uses per-release auto-display settings and upgrade-path logic", () => {
+		expect(isReleaseAutoDisplayEnabled("1.11.0")).toBe(true);
 		expect(isReleaseAutoDisplayEnabled("1.10.3")).toBe(true);
 		expect(isReleaseAutoDisplayEnabled("1.10.2")).toBe(true);
 		expect(isReleaseAutoDisplayEnabled("1.10.1")).toBe(true);
@@ -97,6 +99,7 @@ describe("releaseNotes", () => {
 		expect(isReleaseAutoDisplayEnabled("1.9.0")).toBe(true);
 		expect(isReleaseAutoDisplayEnabled("1.9.0-beta.1")).toBe(false);
 		expect(isReleaseAutoDisplayEnabled("0.1.0")).toBe(true);
+		expect(shouldAutoDisplayReleaseNotesForUpdate("1.10.3", "1.11.0")).toBe(true);
 		expect(shouldAutoDisplayReleaseNotesForUpdate("1.10.2", "1.10.3")).toBe(true);
 		expect(shouldAutoDisplayReleaseNotesForUpdate("1.10.1", "1.10.2")).toBe(true);
 		expect(shouldAutoDisplayReleaseNotesForUpdate("1.10.0", "1.10.1")).toBe(true);

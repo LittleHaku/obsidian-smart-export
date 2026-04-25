@@ -13,12 +13,14 @@ describe("printFriendlyMarkdownOptions", () => {
 				printFriendlyNumberHeadings: true,
 				printFriendlyInsertSectionDividers: false,
 				printFriendlyInsertPageBreaks: true,
+				printFriendlyNormalizeContentHeadings: false,
 			})
 		).toEqual({
 			includeTableOfContents: false,
 			numberHeadings: true,
 			insertSectionDividers: false,
 			insertPageBreaksBetweenSections: true,
+			normalizeContentHeadings: false,
 		});
 	});
 
