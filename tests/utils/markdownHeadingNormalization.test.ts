@@ -20,6 +20,41 @@ describe("normalizeMarkdownHeadingsBelowParent", () => {
 		);
 	});
 
+	it("normalizes setext headings below the parent heading level", () => {
+		const content = [
+			"Overview",
+			"===",
+			"",
+			"Details",
+			"---",
+			"",
+			"  Indented overview",
+			"  ===  ",
+			"",
+			"Not a setext underline",
+			"--- nope",
+			"",
+			"# ATX heading",
+			"---",
+		].join("\n");
+
+		expect(normalizeMarkdownHeadingsBelowParent(content, 2)).toBe(
+			[
+				"### Overview",
+				"",
+				"#### Details",
+				"",
+				"  ### Indented overview",
+				"",
+				"Not a setext underline",
+				"--- nope",
+				"",
+				"### ATX heading",
+				"---",
+			].join("\n")
+		);
+	});
+
 	it("leaves non-headings unchanged", () => {
 		const content = ["#NoSpace", "    # Indented code", "``", "# Heading"].join("\n");
 
@@ -36,6 +71,12 @@ describe("normalizeMarkdownHeadingsBelowParent", () => {
 		);
 	});
 
+	it("preserves frontmatter setext-like lines", () => {
+		const content = ["---", "title: Not a heading", "---", "Body"].join("\n");
+
+		expect(normalizeMarkdownHeadingsBelowParent(content, 1)).toBe(content);
+	});
+
 	it("treats unterminated frontmatter as frontmatter", () => {
 		const content = ["---", "# Not normalized"].join("\n");
 
@@ -50,6 +91,8 @@ describe("normalizeMarkdownHeadingsBelowParent", () => {
 			"````",
 			"# Heading",
 			"~~~",
+			"Setext-looking code",
+			"===",
 			"# Tilde code",
 			"~~~ js",
 			"# Still tilde code",
@@ -65,6 +108,8 @@ describe("normalizeMarkdownHeadingsBelowParent", () => {
 				"````",
 				"## Heading",
 				"~~~",
+				"Setext-looking code",
+				"===",
 				"# Tilde code",
 				"~~~ js",
 				"# Still tilde code",

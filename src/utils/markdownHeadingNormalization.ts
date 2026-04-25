@@ -153,6 +153,61 @@ function normalizeHeadingLine(lineBody: string, parentHeadingLevel: number): str
 	return `${lineBody.slice(0, markerIndex)}${"#".repeat(normalizedHeadingLevel)}${lineBody.slice(afterMarkerIndex)}`;
 }
 
+function isAtxHeadingLine(lineBody: string): boolean {
+	const markerIndex = skipUpToThreeLeadingSpaces(lineBody);
+	const markerLength = countRepeatedCharacter(lineBody, markerIndex, "#");
+	if (markerLength < 1 || markerLength > MAX_MARKDOWN_HEADING_LEVEL) {
+		return false;
+	}
+
+	const afterMarkerIndex = markerIndex + markerLength;
+	return lineBody[afterMarkerIndex] === " " || lineBody[afterMarkerIndex] === "\t";
+}
+
+function getSetextHeadingLevel(lineBody: string): 1 | 2 | null {
+	const markerIndex = skipUpToThreeLeadingSpaces(lineBody);
+	const markerCharacter = lineBody[markerIndex];
+	if (markerCharacter !== "=" && markerCharacter !== "-") {
+		return null;
+	}
+
+	const markerLength = countRepeatedCharacter(lineBody, markerIndex, markerCharacter);
+	for (
+		let currentIndex = markerIndex + markerLength;
+		currentIndex < lineBody.length;
+		currentIndex += 1
+	) {
+		const character = lineBody[currentIndex];
+		if (character !== " " && character !== "\t") {
+			return null;
+		}
+	}
+
+	return markerCharacter === "=" ? 1 : 2;
+}
+
+function isSetextHeadingTextCandidate(lineBody: string): boolean {
+	const markerIndex = skipUpToThreeLeadingSpaces(lineBody);
+	if (lineBody.slice(markerIndex).trim().length === 0) {
+		return false;
+	}
+
+	return !isAtxHeadingLine(lineBody) && getFenceInfo(lineBody) === null;
+}
+
+function normalizeSetextHeadingLine(
+	lineBody: string,
+	setextHeadingLevel: 1 | 2,
+	parentHeadingLevel: number
+): string {
+	const markerIndex = skipUpToThreeLeadingSpaces(lineBody);
+	const normalizedHeadingLevel = Math.min(
+		MAX_MARKDOWN_HEADING_LEVEL,
+		parentHeadingLevel + setextHeadingLevel
+	);
+	return `${lineBody.slice(0, markerIndex)}${"#".repeat(normalizedHeadingLevel)} ${lineBody.slice(markerIndex).trim()}`;
+}
+
 /**
  * Shifts included note content headings below the generated note title heading.
  * Frontmatter and fenced code blocks are preserved because their leading # text is not document structure.
@@ -170,6 +225,7 @@ export function normalizeMarkdownHeadingsBelowParent(
 	let isInFrontmatter = false;
 	let isFirstLine = true;
 	let currentFence: { character: string; length: number } | null = null;
+	let setextCandidateIndex: number | null = null;
 
 	for (const line of lines) {
 		if (line.length === 0) {
@@ -177,17 +233,32 @@ export function normalizeMarkdownHeadingsBelowParent(
 		}
 
 		const { body, newline } = getLineBodyAndNewline(line);
+		const setextHeadingLevel = getSetextHeadingLevel(body);
+		if (setextHeadingLevel && setextCandidateIndex !== null) {
+			const candidateLine = normalizedLines[setextCandidateIndex];
+			const { body: candidateBody, newline: candidateNewline } =
+				getLineBodyAndNewline(candidateLine);
+			normalizedLines[setextCandidateIndex] = `${normalizeSetextHeadingLine(
+				candidateBody,
+				setextHeadingLevel,
+				parentHeadingLevel
+			)}${candidateNewline}`;
+			setextCandidateIndex = null;
+			continue;
+		}
 
 		if (isFirstLine && body === "---") {
 			isInFrontmatter = true;
 			isFirstLine = false;
 			normalizedLines.push(line);
+			setextCandidateIndex = null;
 			continue;
 		}
 		isFirstLine = false;
 
 		if (isInFrontmatter) {
 			normalizedLines.push(line);
+			setextCandidateIndex = null;
 			if (body === "---") {
 				isInFrontmatter = false;
 			}
@@ -196,6 +267,7 @@ export function normalizeMarkdownHeadingsBelowParent(
 
 		if (currentFence) {
 			normalizedLines.push(line);
+			setextCandidateIndex = null;
 			if (shouldCloseFence(body, currentFence.character, currentFence.length)) {
 				currentFence = null;
 			}
@@ -206,10 +278,13 @@ export function normalizeMarkdownHeadingsBelowParent(
 		if (fenceInfo) {
 			currentFence = fenceInfo;
 			normalizedLines.push(line);
+			setextCandidateIndex = null;
 			continue;
 		}
 
-		normalizedLines.push(`${normalizeHeadingLine(body, parentHeadingLevel)}${newline}`);
+		const normalizedLine = `${normalizeHeadingLine(body, parentHeadingLevel)}${newline}`;
+		normalizedLines.push(normalizedLine);
+		setextCandidateIndex = isSetextHeadingTextCandidate(body) ? normalizedLines.length - 1 : null;
 	}
 
 	return normalizedLines.join("");
