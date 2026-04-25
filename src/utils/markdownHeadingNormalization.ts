@@ -41,8 +41,58 @@ function skipUpToThreeLeadingSpaces(content: string): number {
 	return currentIndex;
 }
 
+function tryConsumeListMarker(content: string, startIndex: number): number {
+	const unorderedMarker = content[startIndex];
+	if (
+		(unorderedMarker === "-" || unorderedMarker === "+" || unorderedMarker === "*") &&
+		(content[startIndex + 1] === " " || content[startIndex + 1] === "\t")
+	) {
+		let currentIndex = startIndex + 2;
+		while (content[currentIndex] === " " || content[currentIndex] === "\t") {
+			currentIndex += 1;
+		}
+
+		return currentIndex;
+	}
+
+	let currentIndex = startIndex;
+	while (content[currentIndex] >= "0" && content[currentIndex] <= "9") {
+		currentIndex += 1;
+	}
+
+	if (
+		currentIndex > startIndex &&
+		(content[currentIndex] === "." || content[currentIndex] === ")") &&
+		(content[currentIndex + 1] === " " || content[currentIndex + 1] === "\t")
+	) {
+		currentIndex += 2;
+		while (content[currentIndex] === " " || content[currentIndex] === "\t") {
+			currentIndex += 1;
+		}
+
+		return currentIndex;
+	}
+
+	return -1;
+}
+
+function findFenceMarkerIndex(lineBody: string): number {
+	let currentIndex = skipUpToThreeLeadingSpaces(lineBody);
+
+	while (true) {
+		const listMarkerEnd = tryConsumeListMarker(lineBody, currentIndex);
+		if (listMarkerEnd < 0) {
+			break;
+		}
+
+		currentIndex = skipUpToThreeLeadingSpaces(lineBody.slice(listMarkerEnd)) + listMarkerEnd;
+	}
+
+	return currentIndex;
+}
+
 function getFenceInfo(lineBody: string): { character: string; length: number } | null {
-	const markerIndex = skipUpToThreeLeadingSpaces(lineBody);
+	const markerIndex = findFenceMarkerIndex(lineBody);
 	const fenceCharacter = lineBody[markerIndex];
 	if (fenceCharacter !== "`" && fenceCharacter !== "~") {
 		return null;
@@ -60,7 +110,7 @@ function getFenceInfo(lineBody: string): { character: string; length: number } |
 }
 
 function shouldCloseFence(lineBody: string, fenceCharacter: string, fenceLength: number): boolean {
-	const markerIndex = skipUpToThreeLeadingSpaces(lineBody);
+	const markerIndex = findFenceMarkerIndex(lineBody);
 	if (lineBody[markerIndex] !== fenceCharacter) {
 		return false;
 	}

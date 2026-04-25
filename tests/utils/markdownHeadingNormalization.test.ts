@@ -73,4 +73,44 @@ describe("normalizeMarkdownHeadingsBelowParent", () => {
 			].join("\n")
 		);
 	});
+
+	it("preserves fenced code block headings when the opening fence starts a list item", () => {
+		const content = [
+			"-   ```ts",
+			"  # Still code",
+			"  ```",
+			"# Heading",
+			"1.   ~~~js",
+			"   # Still numbered code",
+			"   ~~~",
+			"+\t```md",
+			"  # Still tabbed list code",
+			"  ```",
+			"2)\t~~~",
+			"   # Still paren list code",
+			"   ~~~",
+			"-not a list marker",
+			"# Final",
+		].join("\n");
+
+		expect(normalizeMarkdownHeadingsBelowParent(content, 1)).toBe(
+			[
+				"-   ```ts",
+				"  # Still code",
+				"  ```",
+				"## Heading",
+				"1.   ~~~js",
+				"   # Still numbered code",
+				"   ~~~",
+				"+\t```md",
+				"  # Still tabbed list code",
+				"  ```",
+				"2)\t~~~",
+				"   # Still paren list code",
+				"   ~~~",
+				"-not a list marker",
+				"## Final",
+			].join("\n")
+		);
+	});
 });
