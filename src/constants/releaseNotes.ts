@@ -13,6 +13,15 @@ export interface ReleaseNotesEntry {
 
 export const RELEASE_NOTES: ReleaseNotesEntry[] = [
 	{
+		version: "1.11.0",
+		date: "2026-04-25",
+		showOnUpdate: true,
+		changed: [
+			"Print-friendly Markdown exports now normalize included note content headings below each exported note title heading by default so nested source headings do not visually outrank their note section.",
+			"New print-friendly Markdown setting Normalize content headings can preserve source heading levels exactly when disabled.",
+		],
+	},
+	{
 		version: "1.10.3",
 		date: "2026-04-23",
 		showOnUpdate: true,
