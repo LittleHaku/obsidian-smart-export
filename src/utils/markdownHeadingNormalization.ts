@@ -76,10 +76,19 @@ function tryConsumeListMarker(content: string, startIndex: number): number {
 	return -1;
 }
 
-function findFenceMarkerIndex(lineBody: string): number {
+function findMarkdownContentStart(lineBody: string): number {
 	let currentIndex = skipUpToThreeLeadingSpaces(lineBody);
 
 	while (true) {
+		if (lineBody[currentIndex] === ">") {
+			currentIndex += 1;
+			if (lineBody[currentIndex] === " ") {
+				currentIndex += 1;
+			}
+			currentIndex += skipUpToThreeLeadingSpaces(lineBody.slice(currentIndex));
+			continue;
+		}
+
 		const listMarkerEnd = tryConsumeListMarker(lineBody, currentIndex);
 		if (listMarkerEnd < 0) {
 			break;
@@ -92,7 +101,7 @@ function findFenceMarkerIndex(lineBody: string): number {
 }
 
 function getFenceInfo(lineBody: string): { character: string; length: number } | null {
-	const markerIndex = findFenceMarkerIndex(lineBody);
+	const markerIndex = findMarkdownContentStart(lineBody);
 	const fenceCharacter = lineBody[markerIndex];
 	if (fenceCharacter !== "`" && fenceCharacter !== "~") {
 		return null;
@@ -110,7 +119,7 @@ function getFenceInfo(lineBody: string): { character: string; length: number } |
 }
 
 function shouldCloseFence(lineBody: string, fenceCharacter: string, fenceLength: number): boolean {
-	const markerIndex = findFenceMarkerIndex(lineBody);
+	const markerIndex = findMarkdownContentStart(lineBody);
 	if (lineBody[markerIndex] !== fenceCharacter) {
 		return false;
 	}
@@ -135,7 +144,7 @@ function shouldCloseFence(lineBody: string, fenceCharacter: string, fenceLength:
 }
 
 function normalizeHeadingLine(lineBody: string, parentHeadingLevel: number): string {
-	const markerIndex = skipUpToThreeLeadingSpaces(lineBody);
+	const markerIndex = findMarkdownContentStart(lineBody);
 	const markerLength = countRepeatedCharacter(lineBody, markerIndex, "#");
 	if (markerLength < 1 || markerLength > MAX_MARKDOWN_HEADING_LEVEL) {
 		return lineBody;
@@ -154,7 +163,7 @@ function normalizeHeadingLine(lineBody: string, parentHeadingLevel: number): str
 }
 
 function isAtxHeadingLine(lineBody: string): boolean {
-	const markerIndex = skipUpToThreeLeadingSpaces(lineBody);
+	const markerIndex = findMarkdownContentStart(lineBody);
 	const markerLength = countRepeatedCharacter(lineBody, markerIndex, "#");
 	if (markerLength < 1 || markerLength > MAX_MARKDOWN_HEADING_LEVEL) {
 		return false;
@@ -165,7 +174,7 @@ function isAtxHeadingLine(lineBody: string): boolean {
 }
 
 function getSetextHeadingLevel(lineBody: string): 1 | 2 | null {
-	const markerIndex = skipUpToThreeLeadingSpaces(lineBody);
+	const markerIndex = findMarkdownContentStart(lineBody);
 	const markerCharacter = lineBody[markerIndex];
 	if (markerCharacter !== "=" && markerCharacter !== "-") {
 		return null;
@@ -187,7 +196,7 @@ function getSetextHeadingLevel(lineBody: string): 1 | 2 | null {
 }
 
 function isSetextHeadingTextCandidate(lineBody: string): boolean {
-	const markerIndex = skipUpToThreeLeadingSpaces(lineBody);
+	const markerIndex = findMarkdownContentStart(lineBody);
 	if (lineBody.slice(markerIndex).trim().length === 0) {
 		return false;
 	}
@@ -200,7 +209,7 @@ function normalizeSetextHeadingLine(
 	setextHeadingLevel: 1 | 2,
 	parentHeadingLevel: number
 ): string {
-	const markerIndex = skipUpToThreeLeadingSpaces(lineBody);
+	const markerIndex = findMarkdownContentStart(lineBody);
 	const normalizedHeadingLevel = Math.min(
 		MAX_MARKDOWN_HEADING_LEVEL,
 		parentHeadingLevel + setextHeadingLevel
@@ -236,13 +245,12 @@ export function normalizeMarkdownHeadingsBelowParent(
 		const setextHeadingLevel = getSetextHeadingLevel(body);
 		if (setextHeadingLevel && setextCandidateIndex !== null) {
 			const candidateLine = normalizedLines[setextCandidateIndex];
-			const { body: candidateBody, newline: candidateNewline } =
-				getLineBodyAndNewline(candidateLine);
+			const { body: candidateBody } = getLineBodyAndNewline(candidateLine);
 			normalizedLines[setextCandidateIndex] = `${normalizeSetextHeadingLine(
 				candidateBody,
 				setextHeadingLevel,
 				parentHeadingLevel
-			)}${candidateNewline}`;
+			)}${newline}`;
 			setextCandidateIndex = null;
 			continue;
 		}

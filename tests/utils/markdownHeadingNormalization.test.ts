@@ -36,6 +36,11 @@ describe("normalizeMarkdownHeadingsBelowParent", () => {
 			"",
 			"# ATX heading",
 			"---",
+			"> Quote overview",
+			"> ===",
+			"",
+			"- List details",
+			"  ---",
 		].join("\n");
 
 		expect(normalizeMarkdownHeadingsBelowParent(content, 2)).toBe(
@@ -51,6 +56,37 @@ describe("normalizeMarkdownHeadingsBelowParent", () => {
 				"",
 				"### ATX heading",
 				"---",
+				"> ### Quote overview",
+				"",
+				"- #### List details",
+			].join("\n")
+		);
+	});
+
+	it("normalizes atx headings inside markdown container prefixes", () => {
+		const content = [
+			"> # Callout title",
+			"> [!warning]",
+			"> ## Callout detail",
+			"- # Step",
+			"  - ## Nested step",
+			"1. # Numbered step",
+			"> - # Quoted list step",
+			"> > ## Nested quote detail",
+			"> #NoSpace",
+		].join("\n");
+
+		expect(normalizeMarkdownHeadingsBelowParent(content, 1)).toBe(
+			[
+				"> ## Callout title",
+				"> [!warning]",
+				"> ### Callout detail",
+				"- ## Step",
+				"  - ### Nested step",
+				"1. ## Numbered step",
+				"> - ## Quoted list step",
+				"> > ### Nested quote detail",
+				"> #NoSpace",
 			].join("\n")
 		);
 	});
@@ -128,6 +164,9 @@ describe("normalizeMarkdownHeadingsBelowParent", () => {
 			"1.   ~~~js",
 			"   # Still numbered code",
 			"   ~~~",
+			"> ```md",
+			"> # Still quoted code",
+			"> ```",
 			"+\t```md",
 			"  # Still tabbed list code",
 			"  ```",
@@ -147,6 +186,9 @@ describe("normalizeMarkdownHeadingsBelowParent", () => {
 				"1.   ~~~js",
 				"   # Still numbered code",
 				"   ~~~",
+				"> ```md",
+				"> # Still quoted code",
+				"> ```",
 				"+\t```md",
 				"  # Still tabbed list code",
 				"  ```",
