@@ -53,6 +53,7 @@ Format dispatch is implemented in `src/engine/exportOutput.ts`:
 - `llm-markdown` via `LlmMarkdownExporter`
 - `print-friendly-markdown` via `PrintFriendlyMarkdownExporter`
   - Uses settings-controlled formatting for table of contents links, heading numbering, note dividers, and page breaks.
+  - Normalizes included note content headings below each exported note title heading.
 
 Invalid stored/selected format values normalize to `xml`.
 

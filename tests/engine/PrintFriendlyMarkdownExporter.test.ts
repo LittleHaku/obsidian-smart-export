@@ -164,6 +164,7 @@ console.log("code block");
 
 			const result = exporter.export(rootNode);
 
+			expect(result).toContain("## This is a heading in content");
 			expect(result).toContain("**bold**");
 			expect(result).toContain("*italic*");
 			expect(result).toContain("- List item 1");
@@ -205,10 +206,42 @@ console.log("code block");
 
 			const exporter = new PrintFriendlyMarkdownExporter();
 			const result = exporter.export(rootNode);
-			const headingAnchorMatch = result.match(/## Risks \^(smart-export-[a-z0-9]+)\n/);
+			const headingAnchorMatch = result.match(/#### Risks \^(smart-export-[a-z0-9]+)\n/);
 
 			expect(headingAnchorMatch).not.toBeNull();
 			expect(result).toContain(`[[#^${headingAnchorMatch?.[1]}|Linked Note#Risks]]`);
+		});
+
+		it("normalizes content headings below the exported note title", () => {
+			const child = createMockExportNode(
+				"Child",
+				"child.md",
+				1,
+				[
+					"# Overview",
+					"",
+					"## Details",
+					"",
+					"```md",
+					"# Code heading",
+					"```",
+					"",
+					"   # Indented heading",
+					"",
+					"####### Not a heading",
+				].join("\n")
+			);
+			const rootNode = createMockExportNode("Root", "root.md", 0, "# Root inner", [child]);
+			const exporter = new PrintFriendlyMarkdownExporter();
+
+			const result = exporter.export(rootNode);
+
+			expect(result).toContain("## Root inner");
+			expect(result).toContain("### Overview");
+			expect(result).toContain("#### Details");
+			expect(result).toContain("```md\n# Code heading\n```");
+			expect(result).toContain("   ### Indented heading");
+			expect(result).toContain("####### Not a heading");
 		});
 
 		it("preserves exported cross-note block links as block anchors", () => {
@@ -253,7 +286,7 @@ console.log("code block");
 
 			const result = exporter.export(rootNode);
 
-			expect(result).toContain(["---", "summary: test", "", "---", "# Inner heading"].join("\n"));
+			expect(result).toContain(["---", "summary: test", "", "---", "## Inner heading"].join("\n"));
 		});
 
 		it("should handle undefined content", () => {

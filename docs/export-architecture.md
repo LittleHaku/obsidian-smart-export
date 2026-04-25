@@ -81,8 +81,9 @@ Print-friendly Markdown formatting:
    - first child: `1.1`
    - first grandchild: `1.1.1`
 3. Cyclic or repeated notes keep the number from their first rendered position and are not emitted again.
-4. Divider lines between note sections are controlled by print-friendly settings.
-5. Optional HTML page breaks can replace divider lines between note sections; if a table of contents is included, this also moves the first note section onto a new page.
+4. Included note content headings are normalized under the exported note title heading. For example, if a note title renders as `### Note title`, a source `# Inner heading` renders as `#### Inner heading`.
+5. Divider lines between note sections are controlled by print-friendly settings.
+6. Optional HTML page breaks can replace divider lines between note sections; if a table of contents is included, this also moves the first note section onto a new page.
 
 Notes:
 

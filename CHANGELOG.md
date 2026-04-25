@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Print-friendly Markdown exports now normalize included note content headings below each exported note title heading so nested source headings do not visually outrank their note section
+
 ## [1.10.3] - 2026-04-23
 
 ### Changed

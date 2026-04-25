@@ -47,7 +47,7 @@ Use [BRAT (Beta Reviewers Auto-update Tool)](https://github.com/TfTHacker/obsidi
 
 - **XML** for structured machine-readable exports.
 - **Markdown templates** for prompt and context workflows, including the built-in `LLM-ready` template and custom templates loaded from your vault.
-- **Print-friendly Markdown** for readable note bundles, PDF export, and linked tables of contents.
+- **Print-friendly Markdown** for readable note bundles, PDF export, linked tables of contents, and normalized nested headings.
 
 ## Core Features
 
@@ -92,6 +92,8 @@ Settings location: **Obsidian → Settings → Smart Export**
 - **Number headings**: prefixes exported note headings with section numbers such as `1.` and `1.1`
 - **Insert section dividers**: adds divider lines between note sections in print-friendly exports
 - **Insert page breaks**: starts each note section after the first on a new page and replaces section dividers
+
+Included note content headings are normalized below the exported note title heading so nested note sections remain visually subordinate in print-friendly output.
 
 ### Export modal behavior
 

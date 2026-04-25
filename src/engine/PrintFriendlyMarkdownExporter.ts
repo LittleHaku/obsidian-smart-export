@@ -4,6 +4,7 @@ import {
 	rewriteMarkdownLinksForExport,
 } from "../utils/exportMarkdownLinks";
 import { DEFAULT_PRINT_FRIENDLY_MARKDOWN_OPTIONS } from "../utils/printFriendlyMarkdownOptions";
+import { normalizeMarkdownHeadingsBelowParent } from "../utils/markdownHeadingNormalization";
 import {
 	buildPrintFriendlyMarkdownStructure,
 	escapePrintFriendlyWikiLinkValue,
@@ -100,7 +101,8 @@ export class PrintFriendlyMarkdownExporter {
 		}
 		visited.add(node.id);
 
-		const prefix = "#".repeat(depth + 1);
+		const headingLevel = depth + 1;
+		const prefix = "#".repeat(headingLevel);
 		const headingLabel = headingLabels.get(node.id)!;
 		if (chunks.length > 0) {
 			chunks.push(getPrintFriendlySectionSeparator(options));
@@ -108,7 +110,12 @@ export class PrintFriendlyMarkdownExporter {
 		chunks.push(`${prefix} ${headingLabel}\n\n`);
 
 		if (node.content && node.includeContent) {
-			chunks.push(`${rewriteMarkdownLinksForExport(node.content, linkIndex, node.id)}\n\n`);
+			const rewrittenContent = rewriteMarkdownLinksForExport(node.content, linkIndex, node.id);
+			const normalizedContent = normalizeMarkdownHeadingsBelowParent(
+				rewrittenContent,
+				headingLevel
+			);
+			chunks.push(`${normalizedContent}\n\n`);
 		}
 
 		for (const child of node.children) {
