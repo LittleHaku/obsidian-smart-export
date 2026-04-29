@@ -55,6 +55,8 @@ Rules can also use slash-delimited JavaScript regex syntax with flags:
 
 Invalid regex rules are ignored so one bad rule does not break an export.
 
+The settings tab includes a live preview with editable sample input and read-only result output. The preview uses the same delimiter, replacement text, and regex rules as exports.
+
 ## Rules
 
 - Redaction applies only to included note content in the final export output.

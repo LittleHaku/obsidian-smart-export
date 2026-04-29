@@ -46,6 +46,7 @@ import {
 	normalizeRedactionDelimiter,
 	normalizeRedactionReplacement,
 	normalizeRedactionRegexPatterns,
+	redactMarkedContent,
 } from "./utils/contentRedaction";
 import {
 	compareVersions,
@@ -59,6 +60,14 @@ import {
 const DEFAULT_OUTPUT_CHOICE_XML = "format:xml";
 const DEFAULT_OUTPUT_CHOICE_PRINT_FRIENDLY = "format:print-friendly-markdown";
 const DEFAULT_OUTPUT_CHOICE_LLM_PREFIX = "template:";
+const DEFAULT_REDACTION_REGEX_SAMPLE_TEXT = [
+	"1. This is a footnote [^1]",
+	"2. See the image ![[vault_pic.png]]",
+	"3. [Link Label](https://obsidian.md)",
+	"4. Visit https://google.com for info",
+	"5. [[Private_Note_Path|Public Alias]]",
+	"6. [Stray] [[Brackets]]",
+].join("\n");
 
 interface StoredPluginData {
 	settings?: Partial<SmartExportSettings>;
@@ -121,6 +130,10 @@ function parsePropertyRuleText(text: string): string[] {
  */
 function parseRedactionRegexText(text: string): string[] {
 	return normalizeRedactionRegexPatterns(text);
+}
+
+function renderRedactionPreview(sampleText: string, settings: SmartExportSettings): string {
+	return redactMarkedContent(sampleText, getContentRedactionOptions(settings));
 }
 
 function normalizeTemplateDirectorySetting(path: string): string {
@@ -807,6 +820,7 @@ class SmartExportSettingTab extends PluginSettingTab {
 			.addToggle((toggle) =>
 				toggle.setValue(this.plugin.settings.redactMarkedSections).onChange(async (value) => {
 					this.plugin.settings.redactMarkedSections = value;
+					updateRedactionPreview();
 					await this.plugin.saveSettings();
 				})
 			);
@@ -820,6 +834,7 @@ class SmartExportSettingTab extends PluginSettingTab {
 					.setValue(this.plugin.settings.redactionDelimiter)
 					.onChange(async (value) => {
 						this.plugin.settings.redactionDelimiter = normalizeRedactionDelimiter(value);
+						updateRedactionPreview();
 						await this.plugin.saveSettings();
 					})
 			);
@@ -833,6 +848,7 @@ class SmartExportSettingTab extends PluginSettingTab {
 					.setValue(this.plugin.settings.redactionReplacement)
 					.onChange(async (value) => {
 						this.plugin.settings.redactionReplacement = normalizeRedactionReplacement(value);
+						updateRedactionPreview();
 						await this.plugin.saveSettings();
 					})
 			);
@@ -854,9 +870,59 @@ class SmartExportSettingTab extends PluginSettingTab {
 					.setValue(this.plugin.settings.redactionRegexPatterns.join("\n"))
 					.onChange((value) => {
 						this.plugin.settings.redactionRegexPatterns = parseRedactionRegexText(value);
+						updateRedactionPreview();
 						debouncedSaveRedactionRegexPatterns();
 					})
 			);
+
+		const previewContainer = containerEl.createDiv({
+			cls: "smart-export-redaction-preview",
+		});
+		new Setting(previewContainer).setName("Test regex redaction").setHeading();
+
+		const previewGrid = previewContainer.createDiv({
+			cls: "smart-export-redaction-preview__grid",
+		});
+		const previewInputGroup = previewGrid.createDiv({
+			cls: "smart-export-redaction-preview__group",
+		});
+		previewInputGroup.createEl("label", {
+			text: "Input text",
+			cls: "smart-export-redaction-preview__label",
+			attr: { for: "smart-export-redaction-preview-input" },
+		});
+		const previewInput = previewInputGroup.createEl("textarea", {
+			cls: "smart-export-redaction-preview__textarea",
+			attr: {
+				id: "smart-export-redaction-preview-input",
+				spellcheck: "false",
+			},
+		});
+		previewInput.value = DEFAULT_REDACTION_REGEX_SAMPLE_TEXT;
+
+		const previewOutputGroup = previewGrid.createDiv({
+			cls: "smart-export-redaction-preview__group",
+		});
+		previewOutputGroup.createEl("label", {
+			text: "Result",
+			cls: "smart-export-redaction-preview__label",
+			attr: { for: "smart-export-redaction-preview-output" },
+		});
+		const previewOutput = previewOutputGroup.createEl("textarea", {
+			cls: "smart-export-redaction-preview__textarea",
+			attr: {
+				id: "smart-export-redaction-preview-output",
+				readonly: "true",
+				spellcheck: "false",
+			},
+		});
+
+		const updateRedactionPreview = (): void => {
+			previewOutput.value = renderRedactionPreview(previewInput.value, this.plugin.settings);
+		};
+
+		previewInput.addEventListener("input", updateRedactionPreview);
+		updateRedactionPreview();
 
 		new Setting(containerEl).setName("Markdown templates").setHeading();
 

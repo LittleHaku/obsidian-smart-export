@@ -414,6 +414,51 @@ Modern, clean styling for the export modal interface
 	display: none;
 }
 
+/* Settings redaction preview */
+.smart-export-redaction-preview {
+	margin: 10px 0 18px 0;
+	padding: 12px 0;
+	border-top: 1px solid var(--background-modifier-border);
+	border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.smart-export-redaction-preview__grid {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+	gap: 12px;
+}
+
+.smart-export-redaction-preview__group {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	min-width: 0;
+}
+
+.smart-export-redaction-preview__label {
+	color: var(--text-muted);
+	font-size: var(--font-ui-small);
+}
+
+.smart-export-redaction-preview__textarea {
+	width: 100%;
+	min-height: 150px;
+	resize: vertical;
+	font-family: var(--font-monospace);
+	font-size: var(--font-ui-small);
+	line-height: 1.45;
+	background: var(--background-primary);
+	color: var(--text-normal);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 6px;
+	padding: 8px;
+}
+
+.smart-export-redaction-preview__textarea[readonly] {
+	background: var(--background-secondary);
+	color: var(--text-muted);
+}
+
 /* Responsive adjustments */
 @media (max-width: 600px) {
 	.smart-export-modal-shell {
@@ -455,5 +500,9 @@ Modern, clean styling for the export modal interface
 	.smart-export-whats-new-version h3 {
 		font-size: 15px;
 		line-height: 1.6;
+	}
+
+	.smart-export-redaction-preview__grid {
+		grid-template-columns: 1fr;
 	}
 }
