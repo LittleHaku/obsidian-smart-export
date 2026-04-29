@@ -82,7 +82,7 @@ describe("contentRedaction", () => {
 				regexPatterns: [
 					"\\[\\^[^\\]]+\\]",
 					"!\\[\\[[^\\]]+\\]\\]",
-					"\\[[^\\]]+\\]\\([^\\)]+\\)",
+					"\\]\\([^\\)]+\\)",
 					"https?:\\/\\/\\S+",
 					"\\[\\[[^\\]|]+\\|",
 					"\\[\\[|\\]\\]|\\[|\\]",
@@ -92,7 +92,7 @@ describe("contentRedaction", () => {
 			[
 				"1. This is a footnote ",
 				"2. See the image ",
-				"3. ",
+				"3. Link Label",
 				"4. Visit  for info",
 				"5. Public Alias",
 				"6. Stray Brackets",

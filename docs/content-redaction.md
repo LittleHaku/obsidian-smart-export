@@ -47,6 +47,13 @@ https?:\/\/\S+
 
 The first two examples redact email addresses and URLs. The final example redacts a full YAML/frontmatter line named `private` when used with multiline matching.
 
+To remove Markdown link destinations while keeping visible labels like `[Link Label](https://obsidian.md)` as `Link Label`, use these rules together:
+
+```text
+\]\([^\)]+\)
+\[\[|\]\]|\[|\]
+```
+
 Rules can also use slash-delimited JavaScript regex syntax with flags:
 
 ```text
