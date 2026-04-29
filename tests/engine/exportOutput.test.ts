@@ -101,6 +101,7 @@ describe("exportOutput", () => {
 				enabled: true,
 				delimiter: ":::",
 				replacement: "REDACTED",
+				regexPatterns: [],
 			},
 		});
 
@@ -109,6 +110,30 @@ describe("exportOutput", () => {
 		expect(output).not.toContain("private");
 		expect(output).not.toContain("secret");
 		expect(tree.content).toBe("Root :::private::: content");
+	});
+
+	it("redacts regex matches before exporting", () => {
+		const tree = createTree();
+		tree.content = "Email hello@example.com";
+		tree.children[0].content = "Visit https://example.com now";
+
+		const output = buildExportOutput({
+			rootNode: tree,
+			vaultPath: "Vault",
+			format: "print-friendly-markdown",
+			contentRedactionOptions: {
+				enabled: false,
+				delimiter: ":::",
+				replacement: "REDACTED",
+				regexPatterns: ["[\\w.%+-]+@[\\w.-]+\\.[A-Za-z]{2,}", "https?:\\/\\/\\S+"],
+			},
+		});
+
+		expect(output).toContain("Email REDACTED");
+		expect(output).toContain("Visit REDACTED now");
+		expect(output).not.toContain("hello@example.com");
+		expect(output).not.toContain("https://example.com");
+		expect(tree.content).toBe("Email hello@example.com");
 	});
 
 	it("builds print-friendly markdown output with page breaks instead of dividers", () => {

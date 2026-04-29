@@ -45,6 +45,7 @@ import {
 	getContentRedactionOptions,
 	normalizeRedactionDelimiter,
 	normalizeRedactionReplacement,
+	normalizeRedactionRegexPatterns,
 } from "./utils/contentRedaction";
 import {
 	compareVersions,
@@ -112,6 +113,14 @@ function parseTagFilterText(text: string): string[] {
  */
 function parsePropertyRuleText(text: string): string[] {
 	return normalizePropertyFilterList([text]);
+}
+
+/**
+ * Converts settings input into a normalized regex redaction list.
+ * Regex rules are newline-separated because many valid expressions contain commas.
+ */
+function parseRedactionRegexText(text: string): string[] {
+	return normalizeRedactionRegexPatterns(text);
 }
 
 function normalizeTemplateDirectorySetting(path: string): string {
@@ -191,6 +200,7 @@ const DEFAULT_SETTINGS: SmartExportSettings = {
 	redactMarkedSections: false,
 	redactionDelimiter: DEFAULT_REDACTION_DELIMITER,
 	redactionReplacement: DEFAULT_REDACTION_REPLACEMENT,
+	redactionRegexPatterns: [],
 	llmMarkdownTemplateDirectory: LLM_MARKDOWN_TEMPLATE_DIRECTORY,
 	printFriendlyIncludeTableOfContents:
 		DEFAULT_PRINT_FRIENDLY_MARKDOWN_OPTIONS.includeTableOfContents,
@@ -299,6 +309,10 @@ export default class SmartExportPlugin extends Plugin {
 		this.settings.redactionReplacement = normalizeRedactionReplacement(
 			(storedSettings as { redactionReplacement?: unknown } | null)?.redactionReplacement ??
 				this.settings.redactionReplacement
+		);
+		this.settings.redactionRegexPatterns = normalizeRedactionRegexPatterns(
+			(storedSettings as { redactionRegexPatterns?: unknown } | null)?.redactionRegexPatterns ??
+				this.settings.redactionRegexPatterns
 		);
 		this.settings.defaultExportFormat = normalizeExportFormat(
 			(storedSettings as { defaultExportFormat?: unknown } | null)?.defaultExportFormat ??
@@ -812,7 +826,7 @@ class SmartExportSettingTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.setName("Redaction replacement")
-			.setDesc("Text inserted in exported notes where a marked section was removed.")
+			.setDesc("Text inserted in exported notes where marked or regex-matched text was removed.")
 			.addText((text) =>
 				text
 					.setPlaceholder(DEFAULT_REDACTION_REPLACEMENT)
@@ -820,6 +834,27 @@ class SmartExportSettingTab extends PluginSettingTab {
 					.onChange(async (value) => {
 						this.plugin.settings.redactionReplacement = normalizeRedactionReplacement(value);
 						await this.plugin.saveSettings();
+					})
+			);
+
+		const debouncedSaveRedactionRegexPatterns = debounce(
+			() => void this.plugin.saveSettings(),
+			500,
+			true
+		);
+
+		new Setting(containerEl)
+			.setName("Regex redaction rules")
+			.setDesc(
+				"Optional JavaScript regex rules, one per line. Matches are replaced during export without editing source notes."
+			)
+			.addTextArea((text) =>
+				text
+					.setPlaceholder("\\b[\\w.%+-]+@[\\w.-]+\\.[A-Za-z]{2,}\\b")
+					.setValue(this.plugin.settings.redactionRegexPatterns.join("\n"))
+					.onChange((value) => {
+						this.plugin.settings.redactionRegexPatterns = parseRedactionRegexText(value);
+						debouncedSaveRedactionRegexPatterns();
 					})
 			);
 

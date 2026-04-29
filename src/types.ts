@@ -56,6 +56,8 @@ export interface ContentRedactionOptions {
 	delimiter: string;
 	/** Text inserted in place of each marked section. */
 	replacement: string;
+	/** Regex patterns whose matches should be redacted during export. */
+	regexPatterns?: string[];
 }
 
 /**
@@ -96,6 +98,8 @@ export interface SmartExportSettings {
 	redactionDelimiter: string;
 	/** Text inserted in place of each marked section. */
 	redactionReplacement: string;
+	/** Regex patterns whose matches should be redacted during export. */
+	redactionRegexPatterns: string[];
 	/** Vault-relative folder used to resolve custom LLM Markdown templates. */
 	llmMarkdownTemplateDirectory: string;
 	/** Whether print-friendly exports should include a table of contents. */
