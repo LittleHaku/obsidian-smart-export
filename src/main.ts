@@ -864,9 +864,9 @@ class SmartExportSettingTab extends PluginSettingTab {
 			);
 
 		new Setting(containerEl)
-			.setName("Apply regex redaction rules")
+			.setName("Apply regular expression redaction rules")
 			.setDesc(
-				"Replace text matching regex rules during export. This only changes the exported output, not the source notes."
+				"Replace text matching regular expression rules during export. This only changes the exported output, not the source notes."
 			)
 			.addToggle((toggle) =>
 				toggle.setValue(this.plugin.settings.redactRegexMatches).onChange(async (value) => {
@@ -877,9 +877,9 @@ class SmartExportSettingTab extends PluginSettingTab {
 			);
 
 		new Setting(containerEl)
-			.setName("Regex replacement")
+			.setName("Regular expression replacement")
 			.setDesc(
-				"Text inserted in exported notes where regex rules match. Leave blank to remove matches."
+				"Text inserted in exported notes where regular expression rules match. Leave blank to remove matches."
 			)
 			.addText((text) =>
 				text
@@ -900,9 +900,9 @@ class SmartExportSettingTab extends PluginSettingTab {
 		);
 
 		new Setting(containerEl)
-			.setName("Regex redaction rules")
+			.setName("Regular expression redaction rules")
 			.setDesc(
-				"Optional JavaScript regex rules, one per line. Matches are replaced during export without editing source notes."
+				"Optional regular expression rules, one per line. Matches are replaced during export without editing source notes."
 			)
 			.addTextArea((text) =>
 				text
@@ -918,7 +918,12 @@ class SmartExportSettingTab extends PluginSettingTab {
 		const previewContainer = containerEl.createDiv({
 			cls: "smart-export-redaction-preview",
 		});
-		new Setting(previewContainer).setName("Test regex redaction").setHeading();
+		new Setting(previewContainer)
+			.setName("Test content redaction")
+			.setDesc(
+				"Preview marked-section and regular expression redaction with the same settings used during export."
+			)
+			.setHeading();
 
 		const previewGrid = previewContainer.createDiv({
 			cls: "smart-export-redaction-preview__grid",
@@ -944,7 +949,7 @@ class SmartExportSettingTab extends PluginSettingTab {
 			cls: "smart-export-redaction-preview__group",
 		});
 		previewOutputGroup.createEl("label", {
-			text: "Result",
+			text: "Redacted result",
 			cls: "smart-export-redaction-preview__label",
 			attr: { for: "smart-export-redaction-preview-output" },
 		});

@@ -4,11 +4,11 @@ Updated: April 29, 2026
 
 ## Overview
 
-Smart Export can replace marked private sections and regex-matched text in exported note content without editing the source notes.
+Smart Export can replace marked private sections and regular-expression-matched text in exported note content without editing the source notes.
 
 Delimiter redaction is opt-in. Enable **Settings -> Smart Export -> Content redaction -> Redact marked sections** before marked sections are changed in exports.
 
-Regex redaction is opt-in separately. Enable **Apply regex redaction rules** before regex rules are applied in exports.
+Regular expression redaction is opt-in separately. Enable **Apply regular expression redaction rules** before regular expression rules are applied in exports.
 
 ## Marker model
 
@@ -33,9 +33,9 @@ Public context. REDACTED More public context.
 
 The delimiter and replacement text are configurable. For example, if the delimiter is `<<private>>`, then `<<private>>secret<<private>>` is replaced by the configured replacement.
 
-## Regex rules
+## Regular expression rules
 
-Regex redaction rules are JavaScript regular expressions, one per line. Matches are replaced with the configured regex replacement text. The default regex replacement is blank, so matches are removed.
+Regular expression redaction rules are one per line. Matches are replaced with the configured regular expression replacement text. The default regular expression replacement is blank, so matches are removed.
 
 Examples:
 
@@ -54,15 +54,15 @@ To remove Markdown link destinations while keeping visible labels like `[Link La
 \[\[|\]\]|\[|\]
 ```
 
-Rules can also use slash-delimited JavaScript regex syntax with flags:
+Rules can also use slash-delimited regular expression syntax with flags:
 
 ```text
 /\bsecret\b/i
 ```
 
-Invalid regex rules are ignored so one bad rule does not break an export.
+Invalid regular expression rules are ignored so one bad rule does not break an export.
 
-The settings tab includes a live preview with editable sample input and read-only result output. The preview uses the same delimiter settings, marked-section replacement, regex toggle, regex replacement, and regex rules as exports.
+The settings tab includes a live preview with editable sample input and read-only redacted output. The preview uses the same delimiter settings, marked-section replacement, regular expression toggle, regular expression replacement, and regular expression rules as exports.
 
 ## Rules
 
@@ -71,8 +71,8 @@ The settings tab includes a live preview with editable sample input and read-onl
 - Matching delimiters can span multiple lines.
 - Multiple marked sections in the same note are redacted independently.
 - An unmatched delimiter is left unchanged so accidental partial markers do not remove the rest of a note.
-- Marked sections and regex rules have independent toggles and replacement text.
-- Regex rules are newline-separated because many valid regular expressions contain commas.
+- Marked sections and regular expression rules have independent toggles and replacement text.
+- Regular expression rules are newline-separated because many valid regular expressions contain commas.
 - Redaction is applied consistently to XML, Markdown template, and print-friendly Markdown exports.
 
 ## Where this is used in code

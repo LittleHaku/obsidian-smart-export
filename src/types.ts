@@ -56,9 +56,9 @@ export interface ContentRedactionOptions {
 	delimiter: string;
 	/** Text inserted in place of each marked section. */
 	markedSectionReplacement: string;
-	/** Whether regex rules should be applied during export. */
+	/** Whether regular expression rules should be applied during export. */
 	regexRulesEnabled: boolean;
-	/** Text inserted in place of each regex match. */
+	/** Text inserted in place of each regular expression match. */
 	regexReplacement: string;
 	/** Regex patterns whose matches should be redacted during export. */
 	regexPatterns?: string[];
@@ -102,9 +102,9 @@ export interface SmartExportSettings {
 	redactionDelimiter: string;
 	/** Text inserted in place of each marked section. */
 	redactionReplacement: string;
-	/** Whether regex redaction rules should be applied during export. */
+	/** Whether regular expression redaction rules should be applied during export. */
 	redactRegexMatches: boolean;
-	/** Text inserted in place of each regex match. */
+	/** Text inserted in place of each regular expression match. */
 	redactionRegexReplacement: string;
 	/** Regex patterns whose matches should be redacted during export. */
 	redactionRegexPatterns: string[];

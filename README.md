@@ -89,10 +89,10 @@ Settings location: **Obsidian → Settings → Smart Export**
 - **Redact marked sections**: replaces private sections during export without editing source notes.
 - **Redaction delimiter**: exact marker used at both ends of private text. Default: `:::`, so `:::private text:::` becomes `REDACTED`.
 - **Marked section replacement**: text inserted in the export for each marked section. Default: `REDACTED`.
-- **Apply regex redaction rules**: enables regex-based export cleanup separately from marked-section redaction.
-- **Regex redaction rules**: optional JavaScript regex rules, one per line, for removing patterned content such as emails, URLs, footnotes, comments, or private YAML lines.
-- **Regex replacement**: text inserted for regex matches. Leave blank to remove matches.
-- **Test regex redaction**: live sample input and result preview for checking regex rules before exporting.
+- **Apply regular expression redaction rules**: enables pattern-based export cleanup separately from marked-section redaction.
+- **Regular expression redaction rules**: optional regular expression rules, one per line, for removing patterned content such as emails, URLs, footnotes, comments, or private YAML lines.
+- **Regular expression replacement**: text inserted for regular expression matches. Leave blank to remove matches.
+- **Test content redaction**: live sample input and redacted result preview for checking delimiter and regular expression redaction before exporting.
 
 ### Markdown templates
 
