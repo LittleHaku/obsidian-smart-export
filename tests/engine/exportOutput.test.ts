@@ -98,9 +98,11 @@ describe("exportOutput", () => {
 			vaultPath: "Vault",
 			format: "print-friendly-markdown",
 			contentRedactionOptions: {
-				enabled: true,
+				markedSectionsEnabled: true,
 				delimiter: ":::",
-				replacement: "REDACTED",
+				markedSectionReplacement: "REDACTED",
+				regexRulesEnabled: false,
+				regexReplacement: "",
 				regexPatterns: [],
 			},
 		});
@@ -122,9 +124,11 @@ describe("exportOutput", () => {
 			vaultPath: "Vault",
 			format: "print-friendly-markdown",
 			contentRedactionOptions: {
-				enabled: false,
+				markedSectionsEnabled: false,
 				delimiter: ":::",
-				replacement: "REDACTED",
+				markedSectionReplacement: "REDACTED",
+				regexRulesEnabled: true,
+				regexReplacement: "REDACTED",
 				regexPatterns: ["[\\w.%+-]+@[\\w.-]+\\.[A-Za-z]{2,}", "https?:\\/\\/\\S+"],
 			},
 		});

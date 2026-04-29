@@ -2,6 +2,7 @@ import { ContentRedactionOptions, ExportNode, SmartExportSettings } from "../typ
 
 export const DEFAULT_REDACTION_DELIMITER = ":::";
 export const DEFAULT_REDACTION_REPLACEMENT = "REDACTED";
+export const DEFAULT_REGEX_REDACTION_REPLACEMENT = "";
 
 interface RegexRedactionRule {
 	pattern: string;
@@ -19,6 +20,10 @@ export function normalizeRedactionDelimiter(value: unknown): string {
 
 export function normalizeRedactionReplacement(value: unknown): string {
 	return typeof value === "string" ? value : DEFAULT_REDACTION_REPLACEMENT;
+}
+
+export function normalizeRegexRedactionReplacement(value: unknown): string {
+	return typeof value === "string" ? value : DEFAULT_REGEX_REDACTION_REPLACEMENT;
 }
 
 function normalizeRegexPatternText(text: string): string[] {
@@ -104,31 +109,38 @@ export function getContentRedactionOptions(
 		| "redactMarkedSections"
 		| "redactionDelimiter"
 		| "redactionReplacement"
+		| "redactRegexMatches"
+		| "redactionRegexReplacement"
 		| "redactionRegexPatterns"
 	>
 ): ContentRedactionOptions {
 	return {
-		enabled: settings.redactMarkedSections,
+		markedSectionsEnabled: settings.redactMarkedSections,
 		delimiter: normalizeRedactionDelimiter(settings.redactionDelimiter),
-		replacement: normalizeRedactionReplacement(settings.redactionReplacement),
+		markedSectionReplacement: normalizeRedactionReplacement(settings.redactionReplacement),
+		regexRulesEnabled: settings.redactRegexMatches,
+		regexReplacement: normalizeRegexRedactionReplacement(settings.redactionRegexReplacement),
 		regexPatterns: normalizeRedactionRegexPatterns(settings.redactionRegexPatterns),
 	};
 }
 
 export function redactMarkedContent(content: string, options: ContentRedactionOptions): string {
-	const regexRules = compileRegexRedactionRules(options.regexPatterns);
-	if (!options.enabled && regexRules.length === 0) {
+	const regexRules = options.regexRulesEnabled
+		? compileRegexRedactionRules(options.regexPatterns)
+		: [];
+	if (!options.markedSectionsEnabled && regexRules.length === 0) {
 		return content;
 	}
 
 	const delimiter = normalizeRedactionDelimiter(options.delimiter);
-	const replacement = normalizeRedactionReplacement(options.replacement);
-	const delimiterRedactedContent = options.enabled
-		? redactDelimitedContent(content, delimiter, replacement)
+	const markedSectionReplacement = normalizeRedactionReplacement(options.markedSectionReplacement);
+	const regexReplacement = normalizeRegexRedactionReplacement(options.regexReplacement);
+	const delimiterRedactedContent = options.markedSectionsEnabled
+		? redactDelimitedContent(content, delimiter, markedSectionReplacement)
 		: content;
 
 	return regexRules.reduce(
-		(redactedContent, rule) => redactedContent.replace(rule.regex, replacement),
+		(redactedContent, rule) => redactedContent.replace(rule.regex, regexReplacement),
 		delimiterRedactedContent
 	);
 }
@@ -166,7 +178,11 @@ export function redactExportTreeContent(
 		return rootNode;
 	}
 
-	if (!options.enabled && normalizeRedactionRegexPatterns(options.regexPatterns).length === 0) {
+	if (
+		!options.markedSectionsEnabled &&
+		(!options.regexRulesEnabled ||
+			normalizeRedactionRegexPatterns(options.regexPatterns).length === 0)
+	) {
 		return rootNode;
 	}
 

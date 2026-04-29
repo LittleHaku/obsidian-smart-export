@@ -2,32 +2,44 @@ import { describe, expect, it } from "vitest";
 import {
 	DEFAULT_REDACTION_DELIMITER,
 	DEFAULT_REDACTION_REPLACEMENT,
+	DEFAULT_REGEX_REDACTION_REPLACEMENT,
 	getContentRedactionOptions,
+	normalizeRegexRedactionReplacement,
 	normalizeRedactionDelimiter,
 	normalizeRedactionRegexPatterns,
 	normalizeRedactionReplacement,
 	redactExportTreeContent,
 	redactMarkedContent,
 } from "../../src/utils/contentRedaction";
-import { ExportNode } from "../../src/types";
+import { ContentRedactionOptions, ExportNode } from "../../src/types";
+
+function createRedactionOptions(
+	overrides: Partial<ContentRedactionOptions> = {}
+): ContentRedactionOptions {
+	return {
+		markedSectionsEnabled: false,
+		delimiter: ":::",
+		markedSectionReplacement: DEFAULT_REDACTION_REPLACEMENT,
+		regexRulesEnabled: false,
+		regexReplacement: DEFAULT_REGEX_REDACTION_REPLACEMENT,
+		regexPatterns: [],
+		...overrides,
+	};
+}
 
 describe("contentRedaction", () => {
 	it("leaves content unchanged when redaction is disabled", () => {
-		expect(
-			redactMarkedContent("Keep :::private::: text", {
-				enabled: false,
-				delimiter: ":::",
-				replacement: "REDACTED",
-			})
-		).toBe("Keep :::private::: text");
+		expect(redactMarkedContent("Keep :::private::: text", createRedactionOptions())).toBe(
+			"Keep :::private::: text"
+		);
 	});
 
 	it("redacts regex matches even when delimiter redaction is disabled", () => {
 		expect(
 			redactMarkedContent("Email hello@example.com and phone +1 555-123-4567.", {
-				enabled: false,
-				delimiter: ":::",
-				replacement: "REDACTED",
+				...createRedactionOptions(),
+				regexRulesEnabled: true,
+				regexReplacement: "REDACTED",
 				regexPatterns: ["[\\w.%+-]+@[\\w.-]+\\.[A-Za-z]{2,}", "\\+?\\d[\\d\\s().-]{7,}\\d"],
 			})
 		).toBe("Email REDACTED and phone REDACTED.");
@@ -36,9 +48,9 @@ describe("contentRedaction", () => {
 	it("supports slash-delimited regex rules with flags", () => {
 		expect(
 			redactMarkedContent("Email email EMAIL", {
-				enabled: false,
-				delimiter: ":::",
-				replacement: "X",
+				...createRedactionOptions(),
+				regexRulesEnabled: true,
+				regexReplacement: "X",
 				regexPatterns: ["/email/i"],
 			})
 		).toBe("X X X");
@@ -47,18 +59,18 @@ describe("contentRedaction", () => {
 	it("adds global matching to slash-delimited regex rules", () => {
 		expect(
 			redactMarkedContent("email email", {
-				enabled: false,
-				delimiter: ":::",
-				replacement: "X",
+				...createRedactionOptions(),
+				regexRulesEnabled: true,
+				regexReplacement: "X",
 				regexPatterns: ["/email/"],
 			})
 		).toBe("X X");
 
 		expect(
 			redactMarkedContent("email email", {
-				enabled: false,
-				delimiter: ":::",
-				replacement: "X",
+				...createRedactionOptions(),
+				regexRulesEnabled: true,
+				regexReplacement: "X",
 				regexPatterns: ["/email/g"],
 			})
 		).toBe("X X");
@@ -76,9 +88,9 @@ describe("contentRedaction", () => {
 
 		expect(
 			redactMarkedContent(content, {
-				enabled: false,
-				delimiter: ":::",
-				replacement: "",
+				...createRedactionOptions(),
+				regexRulesEnabled: true,
+				regexReplacement: "",
 				regexPatterns: [
 					"\\[\\^[^\\]]+\\]",
 					"!\\[\\[[^\\]]+\\]\\]",
@@ -103,9 +115,10 @@ describe("contentRedaction", () => {
 	it("redacts content between matching default delimiters", () => {
 		expect(
 			redactMarkedContent("Keep :::private thing::: visible", {
-				enabled: true,
+				...createRedactionOptions(),
+				markedSectionsEnabled: true,
 				delimiter: ":::",
-				replacement: "REDACTED",
+				markedSectionReplacement: "REDACTED",
 			})
 		).toBe("Keep REDACTED visible");
 	});
@@ -113,9 +126,10 @@ describe("contentRedaction", () => {
 	it("redacts multiline and repeated marked sections", () => {
 		expect(
 			redactMarkedContent("A :::one\nline::: B :::two::: C", {
-				enabled: true,
+				...createRedactionOptions(),
+				markedSectionsEnabled: true,
 				delimiter: ":::",
-				replacement: "[PRIVATE]",
+				markedSectionReplacement: "[PRIVATE]",
 			})
 		).toBe("A [PRIVATE] B [PRIVATE] C");
 	});
@@ -123,17 +137,19 @@ describe("contentRedaction", () => {
 	it("supports a custom delimiter and empty replacement", () => {
 		expect(
 			redactMarkedContent("Keep <<secret<< visible", {
-				enabled: true,
+				...createRedactionOptions(),
+				markedSectionsEnabled: true,
 				delimiter: "<<",
-				replacement: "",
+				markedSectionReplacement: "",
 			})
 		).toBe("Keep  visible");
 
 		expect(
 			redactMarkedContent("Keep [[secret[[ visible", {
-				enabled: true,
+				...createRedactionOptions(),
+				markedSectionsEnabled: true,
 				delimiter: "[[",
-				replacement: "[PRIVATE]",
+				markedSectionReplacement: "[PRIVATE]",
 			})
 		).toBe("Keep [PRIVATE] visible");
 	});
@@ -141,9 +157,10 @@ describe("contentRedaction", () => {
 	it("leaves unmatched delimiters unchanged", () => {
 		expect(
 			redactMarkedContent("Keep :::private thing visible", {
-				enabled: true,
+				...createRedactionOptions(),
+				markedSectionsEnabled: true,
 				delimiter: ":::",
-				replacement: "REDACTED",
+				markedSectionReplacement: "REDACTED",
 			})
 		).toBe("Keep :::private thing visible");
 	});
@@ -151,12 +168,15 @@ describe("contentRedaction", () => {
 	it("combines delimiter and regex redaction", () => {
 		expect(
 			redactMarkedContent("Name :::Ivan::: email hello@example.com", {
-				enabled: true,
+				...createRedactionOptions(),
+				markedSectionsEnabled: true,
 				delimiter: ":::",
-				replacement: "REDACTED",
+				markedSectionReplacement: "REDACTED",
+				regexRulesEnabled: true,
+				regexReplacement: "[EMAIL]",
 				regexPatterns: ["[\\w.%+-]+@[\\w.-]+\\.[A-Za-z]{2,}"],
 			})
-		).toBe("Name REDACTED email REDACTED");
+		).toBe("Name REDACTED email [EMAIL]");
 	});
 
 	it("normalizes blank or invalid delimiter and replacement settings", () => {
@@ -164,6 +184,8 @@ describe("contentRedaction", () => {
 		expect(normalizeRedactionDelimiter(null)).toBe(DEFAULT_REDACTION_DELIMITER);
 		expect(normalizeRedactionReplacement(null)).toBe(DEFAULT_REDACTION_REPLACEMENT);
 		expect(normalizeRedactionReplacement("")).toBe("");
+		expect(normalizeRegexRedactionReplacement(null)).toBe(DEFAULT_REGEX_REDACTION_REPLACEMENT);
+		expect(normalizeRegexRedactionReplacement("")).toBe("");
 	});
 
 	it("normalizes regex pattern settings", () => {
@@ -182,9 +204,9 @@ describe("contentRedaction", () => {
 	it("skips invalid regex rules", () => {
 		expect(
 			redactMarkedContent("Keep email and [", {
-				enabled: false,
-				delimiter: ":::",
-				replacement: "X",
+				...createRedactionOptions(),
+				regexRulesEnabled: true,
+				regexReplacement: "X",
 				regexPatterns: ["[", "email"],
 			})
 		).toBe("Keep X and [");
@@ -193,9 +215,9 @@ describe("contentRedaction", () => {
 	it("treats slash-starting rules without a closing slash as plain regex patterns", () => {
 		expect(
 			redactMarkedContent("Keep / marker", {
-				enabled: false,
-				delimiter: ":::",
-				replacement: "X",
+				...createRedactionOptions(),
+				regexRulesEnabled: true,
+				regexReplacement: "X",
 				regexPatterns: ["/"],
 			})
 		).toBe("Keep X marker");
@@ -204,9 +226,9 @@ describe("contentRedaction", () => {
 	it("skips slash-delimited regex rules with invalid flags", () => {
 		expect(
 			redactMarkedContent("Keep email", {
-				enabled: false,
-				delimiter: ":::",
-				replacement: "X",
+				...createRedactionOptions(),
+				regexRulesEnabled: true,
+				regexReplacement: "X",
 				regexPatterns: ["/email/i\\/"],
 			})
 		).toBe("Keep email");
@@ -218,12 +240,16 @@ describe("contentRedaction", () => {
 				redactMarkedSections: true,
 				redactionDelimiter: " %% ",
 				redactionReplacement: "REMOVED",
+				redactRegexMatches: true,
+				redactionRegexReplacement: "",
 				redactionRegexPatterns: [" email ", "phone"],
 			})
 		).toEqual({
-			enabled: true,
+			markedSectionsEnabled: true,
 			delimiter: "%%",
-			replacement: "REMOVED",
+			markedSectionReplacement: "REMOVED",
+			regexRulesEnabled: true,
+			regexReplacement: "",
 			regexPatterns: ["email", "phone"],
 		});
 	});
@@ -252,10 +278,10 @@ describe("contentRedaction", () => {
 		};
 
 		const redacted = redactExportTreeContent(tree, {
-			enabled: true,
+			...createRedactionOptions(),
+			markedSectionsEnabled: true,
 			delimiter: ":::",
-			replacement: "REDACTED",
-			regexPatterns: [],
+			markedSectionReplacement: "REDACTED",
 		});
 
 		expect(redacted).not.toBe(tree);
@@ -277,10 +303,10 @@ describe("contentRedaction", () => {
 		};
 
 		const redacted = redactExportTreeContent(tree, {
-			enabled: true,
+			...createRedactionOptions(),
+			markedSectionsEnabled: true,
 			delimiter: ":::",
-			replacement: "REDACTED",
-			regexPatterns: [],
+			markedSectionReplacement: "REDACTED",
 		});
 
 		expect(redacted).not.toBe(tree);
@@ -301,10 +327,7 @@ describe("contentRedaction", () => {
 
 		expect(
 			redactExportTreeContent(tree, {
-				enabled: false,
-				delimiter: ":::",
-				replacement: "REDACTED",
-				regexPatterns: [],
+				...createRedactionOptions(),
 			})
 		).toBe(tree);
 	});
@@ -322,9 +345,9 @@ describe("contentRedaction", () => {
 		};
 
 		const redacted = redactExportTreeContent(tree, {
-			enabled: false,
-			delimiter: ":::",
-			replacement: "REDACTED",
+			...createRedactionOptions(),
+			regexRulesEnabled: true,
+			regexReplacement: "REDACTED",
 			regexPatterns: ["[\\w.%+-]+@[\\w.-]+\\.[A-Za-z]{2,}"],
 		});
 

@@ -42,7 +42,9 @@ import {
 import {
 	DEFAULT_REDACTION_DELIMITER,
 	DEFAULT_REDACTION_REPLACEMENT,
+	DEFAULT_REGEX_REDACTION_REPLACEMENT,
 	getContentRedactionOptions,
+	normalizeRegexRedactionReplacement,
 	normalizeRedactionDelimiter,
 	normalizeRedactionReplacement,
 	normalizeRedactionRegexPatterns,
@@ -213,6 +215,8 @@ const DEFAULT_SETTINGS: SmartExportSettings = {
 	redactMarkedSections: false,
 	redactionDelimiter: DEFAULT_REDACTION_DELIMITER,
 	redactionReplacement: DEFAULT_REDACTION_REPLACEMENT,
+	redactRegexMatches: false,
+	redactionRegexReplacement: DEFAULT_REGEX_REDACTION_REPLACEMENT,
 	redactionRegexPatterns: [],
 	llmMarkdownTemplateDirectory: LLM_MARKDOWN_TEMPLATE_DIRECTORY,
 	printFriendlyIncludeTableOfContents:
@@ -322,6 +326,12 @@ export default class SmartExportPlugin extends Plugin {
 		this.settings.redactionReplacement = normalizeRedactionReplacement(
 			(storedSettings as { redactionReplacement?: unknown } | null)?.redactionReplacement ??
 				this.settings.redactionReplacement
+		);
+		this.settings.redactRegexMatches =
+			(storedSettings as { redactRegexMatches?: unknown } | null)?.redactRegexMatches === true;
+		this.settings.redactionRegexReplacement = normalizeRegexRedactionReplacement(
+			(storedSettings as { redactionRegexReplacement?: unknown } | null)
+				?.redactionRegexReplacement ?? this.settings.redactionRegexReplacement
 		);
 		this.settings.redactionRegexPatterns = normalizeRedactionRegexPatterns(
 			(storedSettings as { redactionRegexPatterns?: unknown } | null)?.redactionRegexPatterns ??
@@ -840,14 +850,44 @@ class SmartExportSettingTab extends PluginSettingTab {
 			);
 
 		new Setting(containerEl)
-			.setName("Redaction replacement")
-			.setDesc("Text inserted in exported notes where marked or regex-matched text was removed.")
+			.setName("Marked section replacement")
+			.setDesc("Text inserted in exported notes where a marked section was removed.")
 			.addText((text) =>
 				text
 					.setPlaceholder(DEFAULT_REDACTION_REPLACEMENT)
 					.setValue(this.plugin.settings.redactionReplacement)
 					.onChange(async (value) => {
 						this.plugin.settings.redactionReplacement = normalizeRedactionReplacement(value);
+						updateRedactionPreview();
+						await this.plugin.saveSettings();
+					})
+			);
+
+		new Setting(containerEl)
+			.setName("Apply regex redaction rules")
+			.setDesc(
+				"Replace text matching regex rules during export. This only changes the exported output, not the source notes."
+			)
+			.addToggle((toggle) =>
+				toggle.setValue(this.plugin.settings.redactRegexMatches).onChange(async (value) => {
+					this.plugin.settings.redactRegexMatches = value;
+					updateRedactionPreview();
+					await this.plugin.saveSettings();
+				})
+			);
+
+		new Setting(containerEl)
+			.setName("Regex replacement")
+			.setDesc(
+				"Text inserted in exported notes where regex rules match. Leave blank to remove matches."
+			)
+			.addText((text) =>
+				text
+					.setPlaceholder("Remove matches")
+					.setValue(this.plugin.settings.redactionRegexReplacement)
+					.onChange(async (value) => {
+						this.plugin.settings.redactionRegexReplacement =
+							normalizeRegexRedactionReplacement(value);
 						updateRedactionPreview();
 						await this.plugin.saveSettings();
 					})

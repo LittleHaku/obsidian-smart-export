@@ -51,11 +51,15 @@ export interface PrintFriendlyMarkdownOptions {
  */
 export interface ContentRedactionOptions {
 	/** Whether marked content sections should be redacted during export. */
-	enabled: boolean;
+	markedSectionsEnabled: boolean;
 	/** Exact delimiter that marks the start and end of a redacted section. */
 	delimiter: string;
 	/** Text inserted in place of each marked section. */
-	replacement: string;
+	markedSectionReplacement: string;
+	/** Whether regex rules should be applied during export. */
+	regexRulesEnabled: boolean;
+	/** Text inserted in place of each regex match. */
+	regexReplacement: string;
 	/** Regex patterns whose matches should be redacted during export. */
 	regexPatterns?: string[];
 }
@@ -98,6 +102,10 @@ export interface SmartExportSettings {
 	redactionDelimiter: string;
 	/** Text inserted in place of each marked section. */
 	redactionReplacement: string;
+	/** Whether regex redaction rules should be applied during export. */
+	redactRegexMatches: boolean;
+	/** Text inserted in place of each regex match. */
+	redactionRegexReplacement: string;
 	/** Regex patterns whose matches should be redacted during export. */
 	redactionRegexPatterns: string[];
 	/** Vault-relative folder used to resolve custom LLM Markdown templates. */

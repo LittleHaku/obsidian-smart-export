@@ -67,11 +67,11 @@ Markdown template selection and resolution:
 
 Content redaction:
 
-1. Delimiter redaction is opt-in through settings; regex redaction is active when regex rules are configured.
+1. Delimiter redaction and regex redaction are independently opt-in through settings.
 2. `buildExportOutput(...)` applies redaction to a cloned export tree before invoking the selected exporter.
 3. Redaction only changes included note content in the exported output; it does not mutate the cached traversal tree or source notes.
 4. The configured delimiter marks both start and end of a private section. With the default delimiter, `:::private:::` renders as `REDACTED`.
-5. Regex redaction rules are newline-separated JavaScript regular expressions whose matches are replaced with the configured replacement text.
+5. Regex redaction rules are newline-separated JavaScript regular expressions whose matches are replaced with the configured regex replacement text.
 
 Markdown link rewriting in exported note content:
 
