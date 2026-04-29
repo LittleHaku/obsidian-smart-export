@@ -33,6 +33,7 @@ import { createExportNote } from "../utils/exportNote";
 import { ExportNoteDestinationModal } from "./ExportNoteDestinationModal";
 import { getPrintFriendlyMarkdownOptions } from "../utils/printFriendlyMarkdownOptions";
 import { estimatePrintFriendlyMarkdownCharacterCount } from "../utils/printFriendlyMarkdownEstimate";
+import { getContentRedactionOptions } from "../utils/contentRedaction";
 
 const EXPORT_CHOICE_XML = "format:xml";
 const EXPORT_CHOICE_PRINT_FRIENDLY = "format:print-friendly-markdown";
@@ -516,6 +517,7 @@ export class ExportModal extends Modal {
 			format: this.exportFormat,
 			llmMarkdownTemplate,
 			printFriendlyMarkdownOptions: getPrintFriendlyMarkdownOptions(this.settings),
+			contentRedactionOptions: getContentRedactionOptions(this.settings),
 			missingNotesCount: this.missingNotesCount,
 			onInvalidFormat: () => {
 				new Notice("Unknown export format selected; falling back to XML.");

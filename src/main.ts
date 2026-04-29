@@ -40,6 +40,13 @@ import {
 	normalizePrintFriendlyMarkdownOption,
 } from "./utils/printFriendlyMarkdownOptions";
 import {
+	DEFAULT_REDACTION_DELIMITER,
+	DEFAULT_REDACTION_REPLACEMENT,
+	getContentRedactionOptions,
+	normalizeRedactionDelimiter,
+	normalizeRedactionReplacement,
+} from "./utils/contentRedaction";
+import {
 	compareVersions,
 	getLatestReleaseNotes,
 	getReleaseNotesBetweenVersions,
@@ -181,6 +188,9 @@ const DEFAULT_SETTINGS: SmartExportSettings = {
 	ignoredTraversalFolders: [],
 	ignoredTraversalTagPatterns: [],
 	ignoredTraversalPropertyRules: [],
+	redactMarkedSections: false,
+	redactionDelimiter: DEFAULT_REDACTION_DELIMITER,
+	redactionReplacement: DEFAULT_REDACTION_REPLACEMENT,
 	llmMarkdownTemplateDirectory: LLM_MARKDOWN_TEMPLATE_DIRECTORY,
 	printFriendlyIncludeTableOfContents:
 		DEFAULT_PRINT_FRIENDLY_MARKDOWN_OPTIONS.includeTableOfContents,
@@ -279,6 +289,16 @@ export default class SmartExportPlugin extends Plugin {
 		);
 		this.settings.ignoredTraversalPropertyRules = normalizePropertyFilterList(
 			this.settings.ignoredTraversalPropertyRules
+		);
+		this.settings.redactMarkedSections =
+			(storedSettings as { redactMarkedSections?: unknown } | null)?.redactMarkedSections === true;
+		this.settings.redactionDelimiter = normalizeRedactionDelimiter(
+			(storedSettings as { redactionDelimiter?: unknown } | null)?.redactionDelimiter ??
+				this.settings.redactionDelimiter
+		);
+		this.settings.redactionReplacement = normalizeRedactionReplacement(
+			(storedSettings as { redactionReplacement?: unknown } | null)?.redactionReplacement ??
+				this.settings.redactionReplacement
 		);
 		this.settings.defaultExportFormat = normalizeExportFormat(
 			(storedSettings as { defaultExportFormat?: unknown } | null)?.defaultExportFormat ??
@@ -488,6 +508,7 @@ export default class SmartExportPlugin extends Plugin {
 				format: this.settings.defaultExportFormat,
 				llmMarkdownTemplate,
 				printFriendlyMarkdownOptions: getPrintFriendlyMarkdownOptions(this.settings),
+				contentRedactionOptions: getContentRedactionOptions(this.settings),
 				missingNotesCount: traversal.getMissingNotes().length,
 				onInvalidFormat: () => {
 					new Notice("Unknown export format in settings; falling back to XML.");
@@ -759,6 +780,46 @@ class SmartExportSettingTab extends PluginSettingTab {
 					.onChange((value) => {
 						this.plugin.settings.ignoredTraversalPropertyRules = parsePropertyRuleText(value);
 						debouncedSaveTraversalExclusions();
+					})
+			);
+
+		new Setting(containerEl).setName("Content redaction").setHeading();
+
+		new Setting(containerEl)
+			.setName("Redact marked sections")
+			.setDesc(
+				"Replace text between matching delimiters during export. This only changes the exported output, not the source notes."
+			)
+			.addToggle((toggle) =>
+				toggle.setValue(this.plugin.settings.redactMarkedSections).onChange(async (value) => {
+					this.plugin.settings.redactMarkedSections = value;
+					await this.plugin.saveSettings();
+				})
+			);
+
+		new Setting(containerEl)
+			.setName("Redaction delimiter")
+			.setDesc("Exact marker used at the start and end of private text, for example :::private:::.")
+			.addText((text) =>
+				text
+					.setPlaceholder(DEFAULT_REDACTION_DELIMITER)
+					.setValue(this.plugin.settings.redactionDelimiter)
+					.onChange(async (value) => {
+						this.plugin.settings.redactionDelimiter = normalizeRedactionDelimiter(value);
+						await this.plugin.saveSettings();
+					})
+			);
+
+		new Setting(containerEl)
+			.setName("Redaction replacement")
+			.setDesc("Text inserted in exported notes where a marked section was removed.")
+			.addText((text) =>
+				text
+					.setPlaceholder(DEFAULT_REDACTION_REPLACEMENT)
+					.setValue(this.plugin.settings.redactionReplacement)
+					.onChange(async (value) => {
+						this.plugin.settings.redactionReplacement = normalizeRedactionReplacement(value);
+						await this.plugin.saveSettings();
 					})
 			);
 

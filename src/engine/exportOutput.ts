@@ -1,7 +1,13 @@
 import { LlmMarkdownExporter } from "./LlmMarkdownExporter";
 import { PrintFriendlyMarkdownExporter } from "./PrintFriendlyMarkdownExporter";
 import { XMLExporter } from "./XMLExporter";
-import { ExportNode, PrintFriendlyMarkdownOptions, SmartExportSettings } from "../types";
+import {
+	ContentRedactionOptions,
+	ExportNode,
+	PrintFriendlyMarkdownOptions,
+	SmartExportSettings,
+} from "../types";
+import { redactExportTreeContent } from "../utils/contentRedaction";
 
 const VALID_EXPORT_FORMATS = new Set(["xml", "llm-markdown", "print-friendly-markdown"]);
 
@@ -13,6 +19,7 @@ export interface BuildExportOutputOptions {
 	format: unknown;
 	llmMarkdownTemplate?: string | null;
 	printFriendlyMarkdownOptions?: PrintFriendlyMarkdownOptions | null;
+	contentRedactionOptions?: ContentRedactionOptions | null;
 	missingNotesCount?: number;
 	onInvalidFormat?: (fallbackFormat: ExportFormat) => void;
 }
@@ -33,23 +40,24 @@ export function normalizeExportFormat(value: unknown): ExportFormat {
 export function buildExportOutput(options: BuildExportOutputOptions): string {
 	const missingNotesCount = options.missingNotesCount ?? 0;
 	const normalizedFormat = normalizeExportFormat(options.format);
+	const rootNode = redactExportTreeContent(options.rootNode, options.contentRedactionOptions);
 	if (normalizedFormat !== options.format) {
 		options.onInvalidFormat?.(normalizedFormat);
 	}
 
 	// Record<ExportFormat, ...> keeps dispatch exhaustive at compile time.
 	const exporters: Record<ExportFormat, () => string> = {
-		xml: () => new XMLExporter().export(options.rootNode, options.vaultPath, missingNotesCount),
+		xml: () => new XMLExporter().export(rootNode, options.vaultPath, missingNotesCount),
 		"llm-markdown": () =>
 			new LlmMarkdownExporter().export(
-				options.rootNode,
+				rootNode,
 				options.vaultPath,
 				missingNotesCount,
 				options.llmMarkdownTemplate ?? undefined
 			),
 		"print-friendly-markdown": () =>
 			new PrintFriendlyMarkdownExporter().export(
-				options.rootNode,
+				rootNode,
 				options.printFriendlyMarkdownOptions ?? undefined
 			),
 	};

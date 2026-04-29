@@ -8,6 +8,7 @@ This directory contains public, plugin-specific documentation for Smart Export.
 - [Export architecture](export-architecture.md)
 - [Startup process](startup-process.md)
 - [Exclusion rules](exclude-folders.md)
+- [Content redaction](content-redaction.md)
 - [Versioning and releases](versioning-and-releases.md)
 - [Template placeholders](../templates/README.md)
 

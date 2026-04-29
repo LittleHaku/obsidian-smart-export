@@ -47,6 +47,18 @@ export interface PrintFriendlyMarkdownOptions {
 }
 
 /**
+ * Defines content redaction behavior applied to exported note content.
+ */
+export interface ContentRedactionOptions {
+	/** Whether marked content sections should be redacted during export. */
+	enabled: boolean;
+	/** Exact delimiter that marks the start and end of a redacted section. */
+	delimiter: string;
+	/** Text inserted in place of each marked section. */
+	replacement: string;
+}
+
+/**
  * Defines the settings for the Smart Export plugin.
  */
 export interface SmartExportSettings {
@@ -78,6 +90,12 @@ export interface SmartExportSettings {
 	ignoredTraversalTagPatterns: string[];
 	/** Frontmatter rules that exclude notes from traversal in all link directions. */
 	ignoredTraversalPropertyRules: string[];
+	/** Whether marked content sections should be redacted during export. */
+	redactMarkedSections: boolean;
+	/** Exact delimiter that marks the start and end of a redacted section. */
+	redactionDelimiter: string;
+	/** Text inserted in place of each marked section. */
+	redactionReplacement: string;
 	/** Vault-relative folder used to resolve custom LLM Markdown templates. */
 	llmMarkdownTemplateDirectory: string;
 	/** Whether print-friendly exports should include a table of contents. */

@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.12.0] - 2026-04-29
+
+### Added
+
+- Optional content redaction can replace private sections marked with a configurable delimiter such as `:::private text:::` during export.
+- Redaction is not active by default. Enable it in **Settings -> Smart Export -> Content redaction -> Redact marked sections**, then configure the delimiter and replacement text if needed.
+
 ## [1.11.0] - 2026-04-25
 
 ### Changed

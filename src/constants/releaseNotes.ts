@@ -13,6 +13,15 @@ export interface ReleaseNotesEntry {
 
 export const RELEASE_NOTES: ReleaseNotesEntry[] = [
 	{
+		version: "1.12.0",
+		date: "2026-04-29",
+		showOnUpdate: true,
+		new: [
+			"Optional content redaction can replace private sections marked with a configurable delimiter such as :::private text::: during export.",
+			"Redaction is not active by default. Enable it in Settings -> Smart Export -> Content redaction -> Redact marked sections, then configure the delimiter and replacement text if needed.",
+		],
+	},
+	{
 		version: "1.11.0",
 		date: "2026-04-25",
 		showOnUpdate: true,

@@ -65,6 +65,13 @@ Markdown template selection and resolution:
    - first readable `.md` in `<llmMarkdownTemplateDirectory>/`
    - built-in `default`
 
+Content redaction:
+
+1. Redaction is opt-in through settings.
+2. `buildExportOutput(...)` applies redaction to a cloned export tree before invoking the selected exporter.
+3. Redaction only changes included note content in the exported output; it does not mutate the cached traversal tree or source notes.
+4. The configured delimiter marks both start and end of a private section. With the default delimiter, `:::private:::` renders as `REDACTED`.
+
 Markdown link rewriting in exported note content:
 
 1. Markdown-based exports (`llm-markdown`, `print-friendly-markdown`) render each exported note as a distinct heading within the generated note.
