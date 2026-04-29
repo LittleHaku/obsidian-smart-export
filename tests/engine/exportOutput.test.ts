@@ -88,6 +88,29 @@ describe("exportOutput", () => {
 		expect(output).toContain("\n\n---\n\n");
 	});
 
+	it("redacts marked content before exporting", () => {
+		const tree = createTree();
+		tree.content = "Root :::private::: content";
+		tree.children[0].content = "Child :::secret::: content";
+
+		const output = buildExportOutput({
+			rootNode: tree,
+			vaultPath: "Vault",
+			format: "print-friendly-markdown",
+			contentRedactionOptions: {
+				enabled: true,
+				delimiter: ":::",
+				replacement: "REDACTED",
+			},
+		});
+
+		expect(output).toContain("Root REDACTED content");
+		expect(output).toContain("Child REDACTED content");
+		expect(output).not.toContain("private");
+		expect(output).not.toContain("secret");
+		expect(tree.content).toBe("Root :::private::: content");
+	});
+
 	it("builds print-friendly markdown output with page breaks instead of dividers", () => {
 		const output = buildExportOutput({
 			rootNode: createTree(),

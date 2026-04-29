@@ -13,6 +13,7 @@ Landing page: [smart-export.vercel.app](https://smart-export.vercel.app/)
 - Follow outgoing links, backlinks, or both from a root note.
 - Export as XML, print-friendly Markdown, or Markdown templates such as `LLM-ready`.
 - Exclude folders, tags, and notes based on frontmatter properties (property rules) from traversal.
+- Optionally redact marked private sections from exported note content.
 - Copy exports to the clipboard or create a new note directly in your vault.
 - Rewrite links between exported notes, and preserve referenced exported headings when possible, so navigation still works inside the generated Markdown note.
 
@@ -58,6 +59,7 @@ Use [BRAT (Beta Reviewers Auto-update Tool)](https://github.com/TfTHacker/obsidi
   - title depth for title-only context
 - Folder exclusion with comma-separated wildcard or path patterns.
 - Tag and property exclusion rules for traversal.
+- Optional content redaction for private sections marked with a delimiter such as `:::private text:::`.
 - Linked table of contents, numbered headings, section dividers, and page breaks for print-friendly Markdown.
 - Built-in and custom Markdown templates with placeholder support.
 - Token estimate display before export.
@@ -81,6 +83,12 @@ Settings location: **Obsidian → Settings → Smart Export**
 - **Ignored folders**: comma-separated folders/patterns (for example `templates, assets*, /archive`) excluded from traversal/export. Leading `/` anchors to vault root.
 - **Hide notes with tags**: comma-separated tag patterns (for example `archive*, #draft, projects/*/old`) excluded from traversal/export.
 - **Hide notes with property rules**: comma-separated rules using `key` or `key=value` (for example `status=done, published=true, archived`) excluded from traversal/export.
+
+### Content redaction
+
+- **Redact marked sections**: replaces private sections during export without editing source notes.
+- **Redaction delimiter**: exact marker used at both ends of private text. Default: `:::`, so `:::private text:::` becomes `REDACTED`.
+- **Redaction replacement**: text inserted in the export for each marked section. Default: `REDACTED`.
 
 ### Markdown templates
 
@@ -150,6 +158,7 @@ Placeholder reference: [`templates/README.md`](templates/README.md)
 - [Documentation index](docs/README.md)
 - [API reference](docs/api-reference.md)
 - [Exclusion rules](docs/exclude-folders.md)
+- [Content redaction](docs/content-redaction.md)
 - [Export architecture](docs/export-architecture.md)
 - [Startup process](docs/startup-process.md)
 - [Versioning and releases](docs/versioning-and-releases.md)
