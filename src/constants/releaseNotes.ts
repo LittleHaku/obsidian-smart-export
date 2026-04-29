@@ -13,6 +13,17 @@ export interface ReleaseNotesEntry {
 
 export const RELEASE_NOTES: ReleaseNotesEntry[] = [
 	{
+		version: "1.13.0",
+		date: "2026-04-29",
+		showOnUpdate: true,
+		new: [
+			"Content redaction now supports optional regular expression rules, one per line, for replacing patterned content such as emails, URLs, footnotes, comments, and private metadata in exported note content.",
+			"Content redaction settings now include a live preview for testing delimiter and regular expression rules against sample text before exporting.",
+			"Marked-section redaction and regular expression redaction now have separate toggles and replacement text. Marked sections default to REDACTED, while regular expression matches default to being removed.",
+			"New installs include example regular expression rules and preview input, but both redaction systems remain off until enabled.",
+		],
+	},
+	{
 		version: "1.12.0",
 		date: "2026-04-29",
 		showOnUpdate: true,

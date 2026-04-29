@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.13.0] - 2026-04-29
+
 ### Added
 
 - Content redaction now supports optional regular expression rules, one per line, for replacing patterned content such as emails, URLs, footnotes, comments, and private metadata in exported note content.
