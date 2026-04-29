@@ -62,6 +62,14 @@ import {
 const DEFAULT_OUTPUT_CHOICE_XML = "format:xml";
 const DEFAULT_OUTPUT_CHOICE_PRINT_FRIENDLY = "format:print-friendly-markdown";
 const DEFAULT_OUTPUT_CHOICE_LLM_PREFIX = "template:";
+const DEFAULT_REDACTION_REGEX_PATTERNS = [
+	"\\[\\^[^\\]]+\\]",
+	"!\\[\\[[^\\]]+\\]\\]",
+	"\\]\\([^\\)]+\\)",
+	"https?:\\/\\/\\S+",
+	"\\[\\[[^\\]|]+\\|",
+	"\\[\\[|\\]\\]|\\[|\\]",
+];
 const DEFAULT_REDACTION_REGEX_SAMPLE_TEXT = [
 	"1. This is a footnote [^1]",
 	"2. See the image ![[vault_pic.png]]",
@@ -69,6 +77,7 @@ const DEFAULT_REDACTION_REGEX_SAMPLE_TEXT = [
 	"4. Visit https://google.com for info",
 	"5. [[Private_Note_Path|Public Alias]]",
 	"6. [Stray] [[Brackets]]",
+	"7. Marked private text :::thing:::",
 ].join("\n");
 
 interface StoredPluginData {
@@ -217,7 +226,7 @@ const DEFAULT_SETTINGS: SmartExportSettings = {
 	redactionReplacement: DEFAULT_REDACTION_REPLACEMENT,
 	redactRegexMatches: false,
 	redactionRegexReplacement: DEFAULT_REGEX_REDACTION_REPLACEMENT,
-	redactionRegexPatterns: [],
+	redactionRegexPatterns: DEFAULT_REDACTION_REGEX_PATTERNS,
 	llmMarkdownTemplateDirectory: LLM_MARKDOWN_TEMPLATE_DIRECTORY,
 	printFriendlyIncludeTableOfContents:
 		DEFAULT_PRINT_FRIENDLY_MARKDOWN_OPTIONS.includeTableOfContents,
@@ -906,7 +915,7 @@ class SmartExportSettingTab extends PluginSettingTab {
 			)
 			.addTextArea((text) =>
 				text
-					.setPlaceholder("\\b[\\w.%+-]+@[\\w.-]+\\.[A-Za-z]{2,}\\b")
+					.setPlaceholder(DEFAULT_REDACTION_REGEX_PATTERNS.join("\n"))
 					.setValue(this.plugin.settings.redactionRegexPatterns.join("\n"))
 					.onChange((value) => {
 						this.plugin.settings.redactionRegexPatterns = parseRedactionRegexText(value);

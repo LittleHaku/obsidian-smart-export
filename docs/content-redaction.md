@@ -16,8 +16,21 @@ The redaction delimiter is an exact text marker used for both the start and end 
 
 Default settings:
 
+- Redact marked sections: off
 - Delimiter: `:::`
-- Replacement: `REDACTED`
+- Marked section replacement: `REDACTED`
+- Apply regular expression redaction rules: off
+- Regular expression replacement: blank
+- Regular expression rules:
+
+```text
+\[\^[^\]]+\]
+!\[\[[^\]]+\]\]
+\]\([^\)]+\)
+https?:\/\/\S+
+\[\[[^\]|]+\|
+\[\[|\]\]|\[|\]
+```
 
 Example source note:
 
@@ -35,7 +48,7 @@ The delimiter and replacement text are configurable. For example, if the delimit
 
 ## Regular expression rules
 
-Regular expression redaction rules are one per line. Matches are replaced with the configured regular expression replacement text. The default regular expression replacement is blank, so matches are removed.
+Regular expression redaction rules are one per line. Matches are replaced with the configured regular expression replacement text. The default regular expression replacement is blank, so matches are removed. The default rules are examples only until **Apply regular expression redaction rules** is enabled.
 
 Examples:
 
@@ -62,7 +75,7 @@ Rules can also use slash-delimited regular expression syntax with flags:
 
 Invalid regular expression rules are ignored so one bad rule does not break an export.
 
-The settings tab includes a live preview with editable sample input and read-only redacted output. The preview uses the same delimiter settings, marked-section replacement, regular expression toggle, regular expression replacement, and regular expression rules as exports.
+The settings tab includes a live preview with editable sample input and read-only redacted output. The preview uses the same delimiter settings, marked-section replacement, regular expression toggle, regular expression replacement, and regular expression rules as exports. The default sample includes regular-expression examples and a marked section such as `:::thing:::`.
 
 ## Rules
 
