@@ -1,4 +1,5 @@
 import { ExportNode, PrintFriendlyMarkdownOptions } from "../types";
+import { isSyntheticExportNode } from "../engine/exportTreeComposition";
 import { buildExportedHeadingLabels } from "./exportMarkdownLinks";
 import { DEFAULT_PRINT_FRIENDLY_MARKDOWN_OPTIONS } from "./printFriendlyMarkdownOptions";
 import { escapeWikiLinkValue } from "./wikiLinkEscaping";
@@ -43,7 +44,9 @@ export function flattenUniquePrintFriendlyTree(rootNode: ExportNode): ExportNode
 			continue;
 		}
 		visited.add(note.id);
-		notes.push(note);
+		if (!isSyntheticExportNode(note)) {
+			notes.push(note);
+		}
 		for (const child of note.children) {
 			queue.push(child);
 		}
@@ -83,6 +86,18 @@ function assignSectionNumbers(
 	visited: Set<string>
 ): void {
 	visited.add(node.id);
+
+	if (isSyntheticExportNode(node)) {
+		let childIndex = 0;
+		for (const child of node.children) {
+			if (visited.has(child.id)) {
+				continue;
+			}
+			childIndex += 1;
+			assignSectionNumbers(child, [childIndex], baseHeadingLabels, numberedHeadingLabels, visited);
+		}
+		return;
+	}
 
 	const baseHeadingLabel = baseHeadingLabels.get(node.id)!;
 	numberedHeadingLabels.set(node.id, `${formatSectionNumber(sectionNumber)} ${baseHeadingLabel}`);

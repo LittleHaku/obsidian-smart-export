@@ -31,7 +31,7 @@ export function enforceAncestorSelection(
 	node: ExportNode,
 	parentSelected: boolean
 ) {
-	const isSelected = selectedNodeIds.has(node.id);
+	const isSelected = node.includeContent ? selectedNodeIds.has(node.id) : true;
 	if (!parentSelected) {
 		selectedNodeIds.delete(node.id);
 	}

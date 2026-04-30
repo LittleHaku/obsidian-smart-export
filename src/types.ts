@@ -18,6 +18,8 @@ export interface ExportNode {
 	tokenCount: number;
 	/** The last modification date of the note file. */
 	lastModified: Date;
+	/** Whether this node is an export-only grouping node rather than a vault note. */
+	synthetic?: boolean;
 }
 
 /**

@@ -330,6 +330,43 @@ console.log("code block");
 			expect(result).toContain("Third content");
 		});
 
+		it("skips synthetic bundle roots when rendering headings and numbering", () => {
+			const root = createMockExportNode("Root", "root.md", 0, "Root content");
+			const extra = createMockExportNode("Extra", "extra.md", 0, "Extra content");
+			const bundle = createMockExportNode("Export bundle", "__smart_export_bundle_root__", 0, "", [
+				root,
+				extra,
+			]);
+			bundle.includeContent = false;
+			bundle.synthetic = true;
+			const exporter = new PrintFriendlyMarkdownExporter();
+
+			const result = exporter.export(bundle);
+
+			expect(result).toContain("- [[#1. Root|1. Root]]");
+			expect(result).toContain("- [[#2. Extra|2. Extra]]");
+			expect(result).toContain("# 1. Root");
+			expect(result).toContain("# 2. Extra");
+			expect(result).not.toContain("Export bundle");
+			expect(result).not.toContain("## 1.1 Root");
+		});
+
+		it("skips duplicate top-level children under synthetic bundle roots", () => {
+			const root = createMockExportNode("Root", "root.md", 0, "Root content");
+			const bundle = createMockExportNode("Export bundle", "__smart_export_bundle_root__", 0, "", [
+				root,
+				root,
+			]);
+			bundle.includeContent = false;
+			bundle.synthetic = true;
+			const exporter = new PrintFriendlyMarkdownExporter();
+
+			const result = exporter.export(bundle);
+
+			expect(result.match(/# 1\. Root/g)).toHaveLength(1);
+			expect(result).not.toContain("# 2. Root");
+		});
+
 		it("should maintain correct order of children", () => {
 			const children = [
 				createMockExportNode("Alpha", "alpha.md", 1, "Alpha content"),

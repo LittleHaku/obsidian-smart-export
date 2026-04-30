@@ -10,6 +10,7 @@ Core modules:
 
 - `src/ui/ExportModal.ts`
 - `src/engine/BFSTraversal.ts`
+- `src/engine/exportTreeComposition.ts`
 - `src/engine/XMLExporter.ts`
 - `src/engine/LlmMarkdownExporter.ts`
 - `src/engine/PrintFriendlyMarkdownExporter.ts`
@@ -27,7 +28,7 @@ sequenceDiagram
     participant API as ObsidianAPI
     participant Exporter as Selected exporter
 
-    User->>Modal: Open export + choose root/options
+    User->>Modal: Open export + choose root/options/additional notes
     Modal->>Traversal: traverse(rootPath)
     Traversal->>API: getFileByPath(rootPath)
     loop BFS levels
@@ -36,7 +37,16 @@ sequenceDiagram
         Traversal->>Traversal: add node + queue children
     end
     Traversal->>API: read content for content-eligible nodes
-    Traversal-->>Modal: export tree + missing notes count
+    Traversal-->>Modal: primary export tree + missing notes count
+    opt Additional extra roots
+        Modal->>Traversal: traverse(extraRootPath)
+        Traversal-->>Modal: extra root export tree + missing notes count
+    end
+    opt Additional single notes
+        Modal->>API: read single-note content
+        API-->>Modal: standalone export node
+    end
+    Modal->>Modal: compose primary tree + additional notes
     Modal->>Modal: resolve custom Markdown template (optional)
     Modal->>Exporter: export(tree, vault, missingNotes, template?)
     Exporter-->>Modal: serialized output
@@ -72,6 +82,15 @@ Content redaction:
 3. Redaction only changes included note content in the exported output; it does not mutate the cached traversal tree or source notes.
 4. The configured delimiter marks both start and end of a private section. With the default delimiter, `:::private:::` renders as `REDACTED`.
 5. Regular expression redaction rules are newline-separated and their matches are replaced with the configured regular expression replacement text.
+
+Additional notes:
+
+1. Additional notes are modal-session only and are not persisted in settings.
+2. `Single note` entries include only that note's content and do not start traversal from that note.
+3. `Extra root` entries run normal traversal from that note with the same depth, link direction, and exclusion settings as the selected root.
+4. When additional notes exist, `exportTreeComposition` creates an export-only synthetic bundle root so exporters can keep receiving a single `ExportNode`.
+5. Exporters skip synthetic grouping nodes when counting/rendering real vault notes.
+6. Duplicate note paths are deduplicated by keeping the first discovered path in primary root, then extra roots, then single notes order.
 
 Markdown link rewriting in exported note content:
 
@@ -134,9 +153,10 @@ flowchart LR
     A2[Content depth]
     A3[Title depth]
     A4[Link direction]
-    A5[Ignored folders]
-    A6[Ignored tag patterns]
-    A7[Ignored property rules]
+    A5[Additional notes]
+    A6[Ignored folders]
+    A7[Ignored tag patterns]
+    A8[Ignored property rules]
     A1 --> B
     A2 --> B
     A3 --> B
@@ -144,6 +164,7 @@ flowchart LR
     A5 --> B
     A6 --> B
     A7 --> B
+    A8 --> B
 ```
 
-Cache keys serialize ignored folders/tags/property rules with `JSON.stringify(...)` to avoid delimiter collisions.
+Cache keys serialize additional notes and ignored folders/tags/property rules with `JSON.stringify(...)` to avoid delimiter collisions.

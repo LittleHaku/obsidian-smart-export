@@ -9,6 +9,7 @@ import {
 	buildExportedHeadingLabels,
 	rewriteMarkdownLinksForExport,
 } from "../utils/exportMarkdownLinks";
+import { isSyntheticExportNode } from "./exportTreeComposition";
 
 const DEFAULT_PROCESSING_ORDER = "BFS (Breadth-First Search)";
 const TEMPLATE_PLACEHOLDER_REGEX = /{{\s*([a-z0-9_]+)\s*}}/g;
@@ -71,7 +72,9 @@ export class LlmMarkdownExporter {
 				continue;
 			}
 			visited.add(currentNode.id);
-			result.push(currentNode);
+			if (!isSyntheticExportNode(currentNode)) {
+				result.push(currentNode);
+			}
 			for (const child of currentNode.children) {
 				queue.push(child);
 			}

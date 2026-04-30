@@ -11,6 +11,7 @@ import {
 	getPrintFriendlySectionSeparator,
 	PRINT_FRIENDLY_TABLE_OF_CONTENTS_HEADING,
 } from "../utils/printFriendlyMarkdownStructure";
+import { isSyntheticExportNode } from "./exportTreeComposition";
 
 /**
  * A class to handle the export of note trees to a structured Markdown format.
@@ -70,6 +71,13 @@ export class PrintFriendlyMarkdownExporter {
 		}
 		visited.add(node.id);
 
+		if (isSyntheticExportNode(node)) {
+			for (const child of node.children) {
+				this.buildTableOfContentsEntries(child, depth, chunks, headingLabels, visited);
+			}
+			return;
+		}
+
 		const indent = "  ".repeat(depth);
 		const headingLabel = headingLabels.get(node.id)!;
 		const escapedHeadingLabel = escapePrintFriendlyWikiLinkValue(headingLabel);
@@ -100,6 +108,13 @@ export class PrintFriendlyMarkdownExporter {
 			return;
 		}
 		visited.add(node.id);
+
+		if (isSyntheticExportNode(node)) {
+			for (const child of node.children) {
+				this.buildNode(child, depth, chunks, linkIndex, headingLabels, visited, options);
+			}
+			return;
+		}
 
 		const headingLevel = depth + 1;
 		const prefix = "#".repeat(headingLevel);
