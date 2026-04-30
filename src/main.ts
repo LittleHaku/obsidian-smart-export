@@ -42,9 +42,13 @@ import {
 import {
 	DEFAULT_REDACTION_DELIMITER,
 	DEFAULT_REDACTION_REPLACEMENT,
+	DEFAULT_REGEX_REDACTION_REPLACEMENT,
 	getContentRedactionOptions,
+	normalizeRegexRedactionReplacement,
 	normalizeRedactionDelimiter,
 	normalizeRedactionReplacement,
+	normalizeRedactionRegexPatterns,
+	redactMarkedContent,
 } from "./utils/contentRedaction";
 import {
 	compareVersions,
@@ -58,6 +62,23 @@ import {
 const DEFAULT_OUTPUT_CHOICE_XML = "format:xml";
 const DEFAULT_OUTPUT_CHOICE_PRINT_FRIENDLY = "format:print-friendly-markdown";
 const DEFAULT_OUTPUT_CHOICE_LLM_PREFIX = "template:";
+const DEFAULT_REDACTION_REGEX_PATTERNS = [
+	"\\[\\^[^\\]]+\\]",
+	"!\\[\\[[^\\]]+\\]\\]",
+	"\\]\\([^\\)]+\\)",
+	"https?:\\/\\/\\S+",
+	"\\[\\[[^\\]|]+\\|",
+	"\\[\\[|\\]\\]|\\[|\\]",
+];
+const DEFAULT_REDACTION_REGEX_SAMPLE_TEXT = [
+	"1. This is a footnote [^1]",
+	"2. See the image ![[vault_pic.png]]",
+	"3. [Link Label](https://obsidian.md)",
+	"4. Visit https://google.com for info",
+	"5. [[Private_Note_Path|Public Alias]]",
+	"6. [Stray] [[Brackets]]",
+	"7. Marked private text :::thing:::",
+].join("\n");
 
 interface StoredPluginData {
 	settings?: Partial<SmartExportSettings>;
@@ -112,6 +133,18 @@ function parseTagFilterText(text: string): string[] {
  */
 function parsePropertyRuleText(text: string): string[] {
 	return normalizePropertyFilterList([text]);
+}
+
+/**
+ * Converts settings input into a normalized regex redaction list.
+ * Regex rules are newline-separated because many valid expressions contain commas.
+ */
+function parseRedactionRegexText(text: string): string[] {
+	return normalizeRedactionRegexPatterns(text);
+}
+
+function renderRedactionPreview(sampleText: string, settings: SmartExportSettings): string {
+	return redactMarkedContent(sampleText, getContentRedactionOptions(settings));
 }
 
 function normalizeTemplateDirectorySetting(path: string): string {
@@ -191,6 +224,9 @@ const DEFAULT_SETTINGS: SmartExportSettings = {
 	redactMarkedSections: false,
 	redactionDelimiter: DEFAULT_REDACTION_DELIMITER,
 	redactionReplacement: DEFAULT_REDACTION_REPLACEMENT,
+	redactRegexMatches: false,
+	redactionRegexReplacement: DEFAULT_REGEX_REDACTION_REPLACEMENT,
+	redactionRegexPatterns: DEFAULT_REDACTION_REGEX_PATTERNS,
 	llmMarkdownTemplateDirectory: LLM_MARKDOWN_TEMPLATE_DIRECTORY,
 	printFriendlyIncludeTableOfContents:
 		DEFAULT_PRINT_FRIENDLY_MARKDOWN_OPTIONS.includeTableOfContents,
@@ -299,6 +335,16 @@ export default class SmartExportPlugin extends Plugin {
 		this.settings.redactionReplacement = normalizeRedactionReplacement(
 			(storedSettings as { redactionReplacement?: unknown } | null)?.redactionReplacement ??
 				this.settings.redactionReplacement
+		);
+		this.settings.redactRegexMatches =
+			(storedSettings as { redactRegexMatches?: unknown } | null)?.redactRegexMatches === true;
+		this.settings.redactionRegexReplacement = normalizeRegexRedactionReplacement(
+			(storedSettings as { redactionRegexReplacement?: unknown } | null)
+				?.redactionRegexReplacement ?? this.settings.redactionRegexReplacement
+		);
+		this.settings.redactionRegexPatterns = normalizeRedactionRegexPatterns(
+			(storedSettings as { redactionRegexPatterns?: unknown } | null)?.redactionRegexPatterns ??
+				this.settings.redactionRegexPatterns
 		);
 		this.settings.defaultExportFormat = normalizeExportFormat(
 			(storedSettings as { defaultExportFormat?: unknown } | null)?.defaultExportFormat ??
@@ -793,6 +839,7 @@ class SmartExportSettingTab extends PluginSettingTab {
 			.addToggle((toggle) =>
 				toggle.setValue(this.plugin.settings.redactMarkedSections).onChange(async (value) => {
 					this.plugin.settings.redactMarkedSections = value;
+					updateRedactionPreview();
 					await this.plugin.saveSettings();
 				})
 			);
@@ -806,12 +853,13 @@ class SmartExportSettingTab extends PluginSettingTab {
 					.setValue(this.plugin.settings.redactionDelimiter)
 					.onChange(async (value) => {
 						this.plugin.settings.redactionDelimiter = normalizeRedactionDelimiter(value);
+						updateRedactionPreview();
 						await this.plugin.saveSettings();
 					})
 			);
 
 		new Setting(containerEl)
-			.setName("Redaction replacement")
+			.setName("Marked section replacement")
 			.setDesc("Text inserted in exported notes where a marked section was removed.")
 			.addText((text) =>
 				text
@@ -819,9 +867,116 @@ class SmartExportSettingTab extends PluginSettingTab {
 					.setValue(this.plugin.settings.redactionReplacement)
 					.onChange(async (value) => {
 						this.plugin.settings.redactionReplacement = normalizeRedactionReplacement(value);
+						updateRedactionPreview();
 						await this.plugin.saveSettings();
 					})
 			);
+
+		new Setting(containerEl)
+			.setName("Apply regular expression redaction rules")
+			.setDesc(
+				"Replace text matching regular expression rules during export. This only changes the exported output, not the source notes."
+			)
+			.addToggle((toggle) =>
+				toggle.setValue(this.plugin.settings.redactRegexMatches).onChange(async (value) => {
+					this.plugin.settings.redactRegexMatches = value;
+					updateRedactionPreview();
+					await this.plugin.saveSettings();
+				})
+			);
+
+		new Setting(containerEl)
+			.setName("Regular expression replacement")
+			.setDesc(
+				"Text inserted in exported notes where regular expression rules match. Leave blank to remove matches."
+			)
+			.addText((text) =>
+				text
+					.setPlaceholder("Remove matches")
+					.setValue(this.plugin.settings.redactionRegexReplacement)
+					.onChange(async (value) => {
+						this.plugin.settings.redactionRegexReplacement =
+							normalizeRegexRedactionReplacement(value);
+						updateRedactionPreview();
+						await this.plugin.saveSettings();
+					})
+			);
+
+		const debouncedSaveRedactionRegexPatterns = debounce(
+			() => void this.plugin.saveSettings(),
+			500,
+			true
+		);
+
+		new Setting(containerEl)
+			.setName("Regular expression redaction rules")
+			.setDesc(
+				"Optional regular expression rules, one per line. Matches are replaced during export without editing source notes."
+			)
+			.addTextArea((text) =>
+				text
+					.setPlaceholder(DEFAULT_REDACTION_REGEX_PATTERNS.join("\n"))
+					.setValue(this.plugin.settings.redactionRegexPatterns.join("\n"))
+					.onChange((value) => {
+						this.plugin.settings.redactionRegexPatterns = parseRedactionRegexText(value);
+						updateRedactionPreview();
+						debouncedSaveRedactionRegexPatterns();
+					})
+			);
+
+		const previewContainer = containerEl.createDiv({
+			cls: "smart-export-redaction-preview",
+		});
+		new Setting(previewContainer)
+			.setName("Test content redaction")
+			.setDesc(
+				"Preview marked-section and regular expression redaction with the same settings used during export."
+			)
+			.setHeading();
+
+		const previewGrid = previewContainer.createDiv({
+			cls: "smart-export-redaction-preview__grid",
+		});
+		const previewInputGroup = previewGrid.createDiv({
+			cls: "smart-export-redaction-preview__group",
+		});
+		previewInputGroup.createEl("label", {
+			text: "Input text",
+			cls: "smart-export-redaction-preview__label",
+			attr: { for: "smart-export-redaction-preview-input" },
+		});
+		const previewInput = previewInputGroup.createEl("textarea", {
+			cls: "smart-export-redaction-preview__textarea",
+			attr: {
+				id: "smart-export-redaction-preview-input",
+				spellcheck: "false",
+			},
+		});
+		previewInput.value = DEFAULT_REDACTION_REGEX_SAMPLE_TEXT;
+
+		const previewOutputGroup = previewGrid.createDiv({
+			cls: "smart-export-redaction-preview__group",
+		});
+		previewOutputGroup.createEl("label", {
+			text: "Redacted result",
+			cls: "smart-export-redaction-preview__label",
+			attr: { for: "smart-export-redaction-preview-output" },
+		});
+		const previewOutput = previewOutputGroup.createEl("textarea", {
+			cls: "smart-export-redaction-preview__textarea",
+			attr: {
+				id: "smart-export-redaction-preview-output",
+				readonly: "true",
+				spellcheck: "false",
+			},
+		});
+
+		const updateRedactionPreview = (): void => {
+			previewOutput.value = renderRedactionPreview(previewInput.value, this.plugin.settings);
+		};
+
+		previewInput.addEventListener("input", updateRedactionPreview);
+		updateRedactionPreview();
 
 		new Setting(containerEl).setName("Markdown templates").setHeading();
 
