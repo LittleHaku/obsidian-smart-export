@@ -69,7 +69,7 @@ describe("exportTreeComposition", () => {
 		expect(composedTree.children[1].children[0].id).toBe("extra-child.md");
 	});
 
-	it("deduplicates added notes by keeping the first discovered path", () => {
+	it("promotes explicitly added notes over matching primary tree descendants", () => {
 		const primaryTree = createNode("root.md", [createNode("shared.md")]);
 		const extraRootTree = createNode("extra.md", [
 			createNode("shared.md"),
@@ -84,11 +84,12 @@ describe("exportTreeComposition", () => {
 		});
 
 		const extraRoot = composedTree.children[1];
-		expect(extraRoot.children.map((child) => child.id)).toEqual(["unique.md"]);
+		expect(composedTree.children[0].children).toEqual([]);
+		expect(extraRoot.children.map((child) => child.id)).toEqual(["shared.md", "unique.md"]);
 		expect(composedTree.children.map((child) => child.id)).toEqual(["root.md", "extra.md"]);
 	});
 
-	it("does not create a synthetic root when every added note is already included", () => {
+	it("creates a top-level entry for an added note that was already a primary tree descendant", () => {
 		const primaryTree = createNode("root.md", [createNode("shared.md")]);
 		const duplicateSingleNote = createNode("shared.md");
 
@@ -97,9 +98,23 @@ describe("exportTreeComposition", () => {
 			singleNoteNodes: [duplicateSingleNote],
 		});
 
+		expect(composedTree.id).toBe(SYNTHETIC_EXPORT_ROOT_ID);
+		expect(composedTree.children[0].children).toEqual([]);
+		expect(composedTree.children.map((child) => child.id)).toEqual(["root.md", "shared.md"]);
+	});
+
+	it("keeps the primary tree when an added note duplicates the primary root", () => {
+		const primaryTree = createNode("root.md", [createNode("child.md")]);
+		const duplicateRoot = createNode("root.md");
+
+		const composedTree = composeExportTree({
+			primaryTree,
+			singleNoteNodes: [duplicateRoot],
+		});
+
 		expect(composedTree.id).toBe("root.md");
 		expect(composedTree.synthetic).toBeUndefined();
-		expect(composedTree.children.map((child) => child.id)).toEqual(["shared.md"]);
+		expect(composedTree.children.map((child) => child.id)).toEqual(["child.md"]);
 	});
 
 	it("creates standalone note nodes without traversed children", () => {

@@ -40,3 +40,59 @@ export function enforceAncestorSelection(
 		enforceAncestorSelection(selectedNodeIds, child, nextParentSelected);
 	}
 }
+
+export function reconcileContentSelectionState(
+	selectedNodeIds: Set<string>,
+	knownContentNodeIds: Set<string>,
+	userDeselectedNodeIds: Set<string>,
+	rootNode: ExportNode
+) {
+	reconcileContentSelectionNode(
+		selectedNodeIds,
+		knownContentNodeIds,
+		userDeselectedNodeIds,
+		rootNode,
+		true,
+		true
+	);
+	enforceAncestorSelection(selectedNodeIds, rootNode, true);
+}
+
+function reconcileContentSelectionNode(
+	selectedNodeIds: Set<string>,
+	knownContentNodeIds: Set<string>,
+	userDeselectedNodeIds: Set<string>,
+	node: ExportNode,
+	parentSelected: boolean,
+	isRoot: boolean
+) {
+	if (!node.includeContent) {
+		selectedNodeIds.delete(node.id);
+		knownContentNodeIds.delete(node.id);
+	} else {
+		const wasKnown = knownContentNodeIds.has(node.id);
+		if (!parentSelected) {
+			selectedNodeIds.delete(node.id);
+		} else if (isRoot) {
+			selectedNodeIds.add(node.id);
+			userDeselectedNodeIds.delete(node.id);
+		} else if (userDeselectedNodeIds.has(node.id)) {
+			selectedNodeIds.delete(node.id);
+		} else if (!wasKnown) {
+			selectedNodeIds.add(node.id);
+		}
+		knownContentNodeIds.add(node.id);
+	}
+
+	const nodeSelected = node.includeContent ? selectedNodeIds.has(node.id) : parentSelected;
+	for (const child of node.children) {
+		reconcileContentSelectionNode(
+			selectedNodeIds,
+			knownContentNodeIds,
+			userDeselectedNodeIds,
+			child,
+			nodeSelected,
+			false
+		);
+	}
+}

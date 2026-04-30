@@ -42,8 +42,16 @@ export function composeExportTree(options: ComposeExportTreeOptions): ExportNode
 		return options.primaryTree;
 	}
 
+	const explicitTopLevelIds = new Set(
+		[...extraRootTrees, ...singleNoteNodes]
+			.filter((node) => !isSyntheticExportNode(node))
+			.map((node) => node.id)
+	);
 	const seenPaths = new Set<string>();
-	const primaryTree = cloneExportTreeDeduplicating(options.primaryTree, seenPaths)!;
+	const primaryTree = cloneExportTreeDeduplicating(options.primaryTree, seenPaths, {
+		skipPaths: explicitTopLevelIds,
+		preserveCurrent: true,
+	})!;
 
 	const additionalChildren = [...extraRootTrees, ...singleNoteNodes]
 		.map((tree) => cloneExportTreeDeduplicating(tree, seenPaths))
@@ -65,8 +73,20 @@ export function composeExportTree(options: ComposeExportTreeOptions): ExportNode
 	};
 }
 
-function cloneExportTreeDeduplicating(node: ExportNode, seenPaths: Set<string>): ExportNode | null {
+interface CloneExportTreeOptions {
+	skipPaths?: Set<string>;
+	preserveCurrent?: boolean;
+}
+
+function cloneExportTreeDeduplicating(
+	node: ExportNode,
+	seenPaths: Set<string>,
+	options: CloneExportTreeOptions = {}
+): ExportNode | null {
 	if (!isSyntheticExportNode(node)) {
+		if (!options.preserveCurrent && options.skipPaths?.has(node.id)) {
+			return null;
+		}
 		if (seenPaths.has(node.id)) {
 			return null;
 		}
@@ -74,7 +94,12 @@ function cloneExportTreeDeduplicating(node: ExportNode, seenPaths: Set<string>):
 	}
 
 	const children = node.children
-		.map((child) => cloneExportTreeDeduplicating(child, seenPaths))
+		.map((child) =>
+			cloneExportTreeDeduplicating(child, seenPaths, {
+				...options,
+				preserveCurrent: false,
+			})
+		)
 		.filter((child): child is ExportNode => child !== null);
 
 	return {

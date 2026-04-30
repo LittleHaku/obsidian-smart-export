@@ -29,7 +29,7 @@ import {
 import { TEMPLATE_DOCS_URL } from "../constants/templateDocs";
 import {
 	deselectSubtree,
-	enforceAncestorSelection,
+	reconcileContentSelectionState,
 	selectAncestors,
 	selectNode,
 	selectSubtree,
@@ -122,6 +122,8 @@ export class ExportModal extends Modal {
 	private treeSummaryEl: HTMLElement;
 	/** Incremented on each tree invalidation to discard stale builds. */
 	private treeBuildId = 0;
+	/** Incremented on each token calculation to discard stale UI updates. */
+	private tokenCalculationId = 0;
 	/** Cached content-only display tree for the current export tree object. */
 	private cachedDisplayTree: ExportNode | null = null;
 	/** Source tree object tied to cachedDisplayTree. */
@@ -427,6 +429,7 @@ export class ExportModal extends Modal {
 	 * @private
 	 */
 	private async calculateAndDisplayTokens() {
+		const calculationId = ++this.tokenCalculationId;
 		if (!this.selectedFile) {
 			this.tokenCountEl.setText("Token estimate: not available");
 			return;
@@ -434,6 +437,9 @@ export class ExportModal extends Modal {
 
 		this.tokenCountEl.setText("Calculating token estimate...");
 		const exportTree = await this.ensureExportTree();
+		if (calculationId !== this.tokenCalculationId) {
+			return;
+		}
 		if (!exportTree) {
 			this.tokenCountEl.setText("Token estimate: error");
 			return;
@@ -735,8 +741,8 @@ export class ExportModal extends Modal {
 
 		this.addedNotes.push({ file, mode: "single-note" });
 		this.renderAddedNotesList();
-		this.invalidateExportTree({ resetSelection: true });
-		this.debouncedTokenUpdate();
+		this.invalidateExportTree();
+		void this.calculateAndDisplayTokens();
 	}
 
 	private renderAddedNotesList() {
@@ -782,8 +788,8 @@ export class ExportModal extends Modal {
 				const mode = modeSelectEl.value === "extra-root" ? "extra-root" : "single-note";
 				this.addedNotes[index] = { ...addedNote, mode };
 				this.renderAddedNotesList();
-				this.invalidateExportTree({ resetSelection: true });
-				this.debouncedTokenUpdate();
+				this.invalidateExportTree();
+				void this.calculateAndDisplayTokens();
 			});
 
 			const removeButtonEl = rowEl.createEl("button", {
@@ -794,8 +800,8 @@ export class ExportModal extends Modal {
 			removeButtonEl.addEventListener("click", () => {
 				this.addedNotes.splice(index, 1);
 				this.renderAddedNotesList();
-				this.invalidateExportTree({ resetSelection: true });
-				this.debouncedTokenUpdate();
+				this.invalidateExportTree();
+				void this.calculateAndDisplayTokens();
 			});
 		}
 	}
@@ -996,38 +1002,12 @@ export class ExportModal extends Modal {
 	 * @private
 	 */
 	private reconcileSelection(node: ExportNode) {
-		this.reconcileNodeSelection(node, true, true);
-		enforceAncestorSelection(this.selectedNodeIds, node, true);
-	}
-
-	/**
-	 * Reconciles a node and its descendants while auto-selecting only newly content-eligible nodes.
-	 * @private
-	 */
-	private reconcileNodeSelection(node: ExportNode, parentSelected: boolean, isRoot: boolean) {
-		if (!node.includeContent) {
-			this.selectedNodeIds.delete(node.id);
-			this.knownContentNodeIds.delete(node.id);
-		} else {
-			const wasKnown = this.knownContentNodeIds.has(node.id);
-			if (!parentSelected) {
-				this.selectedNodeIds.delete(node.id);
-			} else if (isRoot) {
-				this.selectedNodeIds.add(node.id);
-				this.userDeselectedNodeIds.delete(node.id);
-			} else if (this.userDeselectedNodeIds.has(node.id)) {
-				this.selectedNodeIds.delete(node.id);
-			} else if (!wasKnown) {
-				// New content-eligible nodes default to selected.
-				this.selectedNodeIds.add(node.id);
-			}
-			this.knownContentNodeIds.add(node.id);
-		}
-
-		const nodeSelected = node.includeContent ? this.selectedNodeIds.has(node.id) : parentSelected;
-		for (const child of node.children) {
-			this.reconcileNodeSelection(child, nodeSelected, false);
-		}
+		reconcileContentSelectionState(
+			this.selectedNodeIds,
+			this.knownContentNodeIds,
+			this.userDeselectedNodeIds,
+			node
+		);
 	}
 
 	/**

@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
 	deselectSubtree,
 	enforceAncestorSelection,
+	reconcileContentSelectionState,
 	selectAncestors,
 	selectNode,
 	selectSubtree,
@@ -103,5 +104,26 @@ describe("treeSelection", () => {
 		expect(selected.has("A")).toBe(false);
 		expect(selected.has("A1")).toBe(false);
 		expect(selected.has("A1a")).toBe(false);
+	});
+
+	it("preserves explicit deselections when a rebuilt tree adds a new note", () => {
+		const originalChild = createNode("original-child");
+		const originalRoot = createNode("root", [originalChild]);
+		const selected = new Set<string>();
+		const knownContent = new Set<string>();
+		const userDeselected = new Set<string>();
+
+		reconcileContentSelectionState(selected, knownContent, userDeselected, originalRoot);
+		deselectSubtree(selected, originalChild);
+		userDeselected.add(originalChild.id);
+
+		const addedNote = createNode("added-note");
+		const rebuiltRoot = createNode("root", [createNode("original-child"), addedNote]);
+		reconcileContentSelectionState(selected, knownContent, userDeselected, rebuiltRoot);
+
+		expect(selected.has("root")).toBe(true);
+		expect(selected.has("original-child")).toBe(false);
+		expect(selected.has("added-note")).toBe(true);
+		expect(userDeselected.has("original-child")).toBe(true);
 	});
 });
