@@ -97,6 +97,79 @@ Modern, clean styling for the export modal interface
 	border: 1px solid var(--background-modifier-border);
 }
 
+.smart-export-added-notes-list {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	margin-top: 10px;
+}
+
+.smart-export-added-notes-empty {
+	color: var(--text-muted);
+	font-size: var(--font-ui-small);
+}
+
+.smart-export-added-note-row {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) auto;
+	gap: 12px;
+	align-items: center;
+	padding: 8px 10px;
+	background: var(--background-primary);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 6px;
+}
+
+.smart-export-added-note-label {
+	min-width: 0;
+}
+
+.smart-export-added-note-title {
+	color: var(--text-normal);
+	font-size: var(--font-ui-medium);
+	font-weight: 600;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.smart-export-added-note-path {
+	color: var(--text-muted);
+	font-size: var(--font-ui-small);
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.smart-export-added-note-scope {
+	color: var(--text-muted);
+	font-size: var(--font-ui-small);
+	line-height: 1.35;
+	margin-top: 3px;
+}
+
+.smart-export-added-note-actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+	justify-content: flex-end;
+}
+
+.smart-export-added-note-action {
+	border: 1px solid var(--background-modifier-border);
+	background: transparent;
+	color: var(--text-normal);
+	border-radius: 6px;
+	padding: 6px 10px;
+	font-size: var(--font-ui-small);
+	cursor: pointer;
+	white-space: nowrap;
+}
+
+.smart-export-added-note-action:hover {
+	background: var(--background-modifier-hover);
+}
+
 /* Export Action Section */
 .smart-export-action-section {
 	background: transparent;
@@ -504,5 +577,14 @@ Modern, clean styling for the export modal interface
 
 	.smart-export-redaction-preview__grid {
 		grid-template-columns: 1fr;
+	}
+
+	.smart-export-added-note-row {
+		grid-template-columns: 1fr;
+		gap: 8px;
+	}
+
+	.smart-export-added-note-actions {
+		justify-content: flex-start;
 	}
 }

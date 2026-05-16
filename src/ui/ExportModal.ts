@@ -12,6 +12,11 @@ import {
 import { RootNoteSuggestModal } from "./RootNoteSuggestModal";
 import { BFSTraversal } from "../engine/BFSTraversal";
 import { buildExportOutput } from "../engine/exportOutput";
+import {
+	composeExportTree,
+	createStandaloneExportNode,
+	isSyntheticExportNode,
+} from "../engine/exportTreeComposition";
 import { ObsidianAPI } from "../obsidian-api";
 import { ExportNode, LinkTraversalMode, SmartExportSettings } from "../types";
 import { applyContentSelection } from "./treeContentSelection";
@@ -24,7 +29,7 @@ import {
 import { TEMPLATE_DOCS_URL } from "../constants/templateDocs";
 import {
 	deselectSubtree,
-	enforceAncestorSelection,
+	reconcileContentSelectionState,
 	selectAncestors,
 	selectNode,
 	selectSubtree,
@@ -45,6 +50,13 @@ interface PreparedExportOutput {
 	tokenCount: number;
 }
 
+type AddedNoteMode = "single-note" | "extra-root";
+
+interface AddedExportNote {
+	file: TFile;
+	mode: AddedNoteMode;
+}
+
 /**
  * The main modal for configuring and triggering a smart export.
  * It allows users to select a root note, adjust traversal depth,
@@ -56,6 +68,12 @@ export class ExportModal extends Modal {
 	private selectedFile: TFile | null = null;
 	/** The HTML element that displays the name of the selected file. */
 	private selectedFileEl: HTMLElement;
+	/** Session-only notes manually added to the export. */
+	private addedNotes: AddedExportNote[] = [];
+	/** Container for manually added note rows. */
+	private addedNotesListEl: HTMLElement;
+	/** Description for extra-note context that reflects the selected root note. */
+	private addedNotesDescriptionEl: HTMLElement;
 	/** The depth for including full note content. */
 	private contentDepth: number;
 	/** The depth for including only note titles. */
@@ -106,6 +124,8 @@ export class ExportModal extends Modal {
 	private treeSummaryEl: HTMLElement;
 	/** Incremented on each tree invalidation to discard stale builds. */
 	private treeBuildId = 0;
+	/** Incremented on each token calculation to discard stale UI updates. */
+	private tokenCalculationId = 0;
 	/** Cached content-only display tree for the current export tree object. */
 	private cachedDisplayTree: ExportNode | null = null;
 	/** Source tree object tied to cachedDisplayTree. */
@@ -188,6 +208,33 @@ export class ExportModal extends Modal {
 			}
 		}
 		this.updateSelectedFile();
+
+		const addedNotesSection = contentEl.createDiv({ cls: "smart-export-section" });
+		addedNotesSection.createDiv({
+			text: "➕ Include more notes",
+			cls: "smart-export-section-title",
+		});
+		this.addedNotesDescriptionEl = addedNotesSection.createDiv({
+			cls: "smart-export-section-description",
+		});
+		new Setting(addedNotesSection)
+			.setName("Add extra notes")
+			.setDesc("Single note includes one note. New root starts another export tree from that note.")
+			.addButton((button) => {
+				button.setButtonText("Add single note").onClick(() => {
+					this.openAddedNotePicker("single-note");
+				});
+			})
+			.addButton((button) => {
+				button.setButtonText("Add new root").onClick(() => {
+					this.openAddedNotePicker("extra-root");
+				});
+			});
+		this.addedNotesListEl = addedNotesSection.createDiv({
+			cls: "smart-export-added-notes-list",
+		});
+		this.updateAddedNotesDescription();
+		this.renderAddedNotesList();
 
 		// Depth configuration section
 		const depthSection = contentEl.createDiv({ cls: "smart-export-section" });
@@ -387,6 +434,7 @@ export class ExportModal extends Modal {
 	 * @private
 	 */
 	private async calculateAndDisplayTokens() {
+		const calculationId = ++this.tokenCalculationId;
 		if (!this.selectedFile) {
 			this.tokenCountEl.setText("Token estimate: not available");
 			return;
@@ -394,6 +442,9 @@ export class ExportModal extends Modal {
 
 		this.tokenCountEl.setText("Calculating token estimate...");
 		const exportTree = await this.ensureExportTree();
+		if (calculationId !== this.tokenCalculationId) {
+			return;
+		}
 		if (!exportTree) {
 			this.tokenCountEl.setText("Token estimate: error");
 			return;
@@ -500,6 +551,7 @@ export class ExportModal extends Modal {
 			new Notice("Failed to generate export. See console for details.");
 			return null;
 		}
+		this.enforceLockedRootSelection();
 		const adjustedTree = applyContentSelection(exportTree, this.selectedNodeIds);
 		const llmMarkdownTemplate =
 			this.exportFormat === "llm-markdown"
@@ -654,7 +706,9 @@ export class ExportModal extends Modal {
 
 		while (head < queue.length) {
 			const node = queue[head++];
-			notes.push(node);
+			if (!isSyntheticExportNode(node)) {
+				notes.push(node);
+			}
 			for (const child of node.children) {
 				queue.push(child);
 			}
@@ -670,11 +724,113 @@ export class ExportModal extends Modal {
 	private updateSelectedFile() {
 		if (this.selectedFile) {
 			this.selectedFileEl.setText(`Selected: ${this.selectedFile.basename}`);
+			this.addedNotes = this.addedNotes.filter(
+				(addedNote) => addedNote.file.path !== this.selectedFile?.path
+			);
+			this.renderAddedNotesList();
 		} else {
 			this.selectedFileEl.setText("No file selected");
 		}
+		this.updateAddedNotesDescription();
 		this.invalidateExportTree({ resetSelection: true });
 		this.debouncedTokenUpdate();
+	}
+
+	private updateAddedNotesDescription() {
+		if (!this.addedNotesDescriptionEl) {
+			return;
+		}
+		const startingPoint = this.selectedFile?.basename ?? "the selected note";
+		this.addedNotesDescriptionEl.setText(
+			`Add notes that are not reached from ${startingPoint}. They are used only for this export.`
+		);
+	}
+
+	private openAddedNotePicker(mode: AddedNoteMode) {
+		new RootNoteSuggestModal(this.app, (file: TFile) => {
+			this.addExportNote(file, mode);
+		}).open();
+	}
+
+	private addExportNote(file: TFile, mode: AddedNoteMode) {
+		if (this.selectedFile?.path === file.path) {
+			new Notice("That note is already the root note.");
+			return;
+		}
+		if (this.addedNotes.some((note) => note.file.path === file.path)) {
+			new Notice("That note is already added.");
+			return;
+		}
+
+		this.addedNotes.push({ file, mode });
+		this.renderAddedNotesList();
+		this.invalidateExportTree();
+		void this.calculateAndDisplayTokens();
+	}
+
+	private renderAddedNotesList() {
+		if (!this.addedNotesListEl) {
+			return;
+		}
+
+		this.addedNotesListEl.empty();
+		if (this.addedNotes.length === 0) {
+			this.addedNotesListEl.createDiv({
+				cls: "smart-export-added-notes-empty",
+				text: "No extra notes included.",
+			});
+			return;
+		}
+
+		for (const [index, addedNote] of this.addedNotes.entries()) {
+			const rowEl = this.addedNotesListEl.createDiv({ cls: "smart-export-added-note-row" });
+			const noteLabelEl = rowEl.createDiv({ cls: "smart-export-added-note-label" });
+			noteLabelEl.createDiv({
+				cls: "smart-export-added-note-title",
+				text: addedNote.file.basename,
+			});
+			noteLabelEl.createDiv({
+				cls: "smart-export-added-note-path",
+				text: addedNote.file.path,
+			});
+			noteLabelEl.createDiv({
+				cls: "smart-export-added-note-scope",
+				text: this.getAddedNoteScopeText(addedNote.mode),
+			});
+
+			const actionGroupEl = rowEl.createDiv({ cls: "smart-export-added-note-actions" });
+			const toggleModeButtonEl = actionGroupEl.createEl("button", {
+				text: addedNote.mode === "single-note" ? "Use as new root" : "Use as single note",
+				cls: "smart-export-added-note-action",
+			});
+			toggleModeButtonEl.setAttr("type", "button");
+			toggleModeButtonEl.addEventListener("click", () => {
+				const mode = addedNote.mode === "single-note" ? "extra-root" : "single-note";
+				this.addedNotes[index] = { ...addedNote, mode };
+				this.renderAddedNotesList();
+				this.invalidateExportTree();
+				void this.calculateAndDisplayTokens();
+			});
+
+			const removeButtonEl = actionGroupEl.createEl("button", {
+				text: "Remove",
+				cls: "smart-export-added-note-action smart-export-added-note-remove",
+			});
+			removeButtonEl.setAttr("type", "button");
+			removeButtonEl.addEventListener("click", () => {
+				this.addedNotes.splice(index, 1);
+				this.renderAddedNotesList();
+				this.invalidateExportTree();
+				void this.calculateAndDisplayTokens();
+			});
+		}
+	}
+
+	private getAddedNoteScopeText(mode: AddedNoteMode): string {
+		if (mode === "extra-root") {
+			return "New root: starts another tree from this note using the current depth and link direction.";
+		}
+		return "Single note: includes only this note.";
 	}
 
 	/**
@@ -748,25 +904,26 @@ export class ExportModal extends Modal {
 
 		try {
 			const obsidianAPI = new ObsidianAPI(this.app);
+			const traversalOptions = {
+				ignoredTraversalFolders: this.settings.ignoredTraversalFolders,
+				ignoredTraversalTagPatterns: this.settings.ignoredTraversalTagPatterns,
+				ignoredTraversalPropertyRules: this.settings.ignoredTraversalPropertyRules,
+			};
 			const traversal = new BFSTraversal(
 				obsidianAPI,
 				this.contentDepth,
 				this.titleDepth,
 				this.linkTraversalMode,
-				{
-					ignoredTraversalFolders: this.settings.ignoredTraversalFolders,
-					ignoredTraversalTagPatterns: this.settings.ignoredTraversalTagPatterns,
-					ignoredTraversalPropertyRules: this.settings.ignoredTraversalPropertyRules,
-				}
+				traversalOptions
 			);
-			const exportTree = await traversal.traverse(this.selectedFile.path);
+			const primaryTree = await traversal.traverse(this.selectedFile.path);
 
 			if (buildId !== this.treeBuildId) {
 				this.exportTreePromise = null;
 				return null;
 			}
 
-			if (!exportTree) {
+			if (!primaryTree) {
 				this.exportTree = null;
 				this.missingNotesCount = 0;
 				this.exportTreePromise = null;
@@ -776,9 +933,50 @@ export class ExportModal extends Modal {
 				return null;
 			}
 
+			const missingNotes = new Set(traversal.getMissingNotes());
+			const extraRootTrees: ExportNode[] = [];
+			const singleNoteNodes: ExportNode[] = [];
+
+			for (const addedNote of this.addedNotes) {
+				if (addedNote.mode === "extra-root") {
+					const extraTraversal = new BFSTraversal(
+						obsidianAPI,
+						this.contentDepth,
+						this.titleDepth,
+						this.linkTraversalMode,
+						traversalOptions
+					);
+					const extraRootTree = await extraTraversal.traverse(addedNote.file.path);
+					if (buildId !== this.treeBuildId) {
+						this.exportTreePromise = null;
+						return null;
+					}
+					if (extraRootTree) {
+						extraRootTrees.push(extraRootTree);
+					}
+					for (const missingNote of extraTraversal.getMissingNotes()) {
+						missingNotes.add(missingNote);
+					}
+					continue;
+				}
+
+				const content = await obsidianAPI.getNoteContent(addedNote.file.path);
+				if (buildId !== this.treeBuildId) {
+					this.exportTreePromise = null;
+					return null;
+				}
+				singleNoteNodes.push(createStandaloneExportNode(addedNote.file, { content }));
+			}
+
+			const exportTree = composeExportTree({
+				primaryTree,
+				extraRootTrees,
+				singleNoteNodes,
+			});
+
 			this.exportTree = exportTree;
 			this.treeIsStale = false;
-			this.missingNotesCount = traversal.getMissingNotes().length;
+			this.missingNotesCount = missingNotes.size;
 			this.exportTreePromise = null;
 			this.exportTreeCacheKey = this.getTreeCacheKey();
 			this.exportTreeCache.set(this.exportTreeCacheKey, {
@@ -831,38 +1029,14 @@ export class ExportModal extends Modal {
 	 * @private
 	 */
 	private reconcileSelection(node: ExportNode) {
-		this.reconcileNodeSelection(node, true, true);
-		enforceAncestorSelection(this.selectedNodeIds, node, true);
-	}
-
-	/**
-	 * Reconciles a node and its descendants while auto-selecting only newly content-eligible nodes.
-	 * @private
-	 */
-	private reconcileNodeSelection(node: ExportNode, parentSelected: boolean, isRoot: boolean) {
-		if (!node.includeContent) {
-			this.selectedNodeIds.delete(node.id);
-			this.knownContentNodeIds.delete(node.id);
-		} else {
-			const wasKnown = this.knownContentNodeIds.has(node.id);
-			if (!parentSelected) {
-				this.selectedNodeIds.delete(node.id);
-			} else if (isRoot) {
-				this.selectedNodeIds.add(node.id);
-				this.userDeselectedNodeIds.delete(node.id);
-			} else if (this.userDeselectedNodeIds.has(node.id)) {
-				this.selectedNodeIds.delete(node.id);
-			} else if (!wasKnown) {
-				// New content-eligible nodes default to selected.
-				this.selectedNodeIds.add(node.id);
-			}
-			this.knownContentNodeIds.add(node.id);
-		}
-
-		const nodeSelected = node.includeContent && this.selectedNodeIds.has(node.id);
-		for (const child of node.children) {
-			this.reconcileNodeSelection(child, nodeSelected, false);
-		}
+		reconcileContentSelectionState(
+			this.selectedNodeIds,
+			this.knownContentNodeIds,
+			this.userDeselectedNodeIds,
+			node,
+			this.getLockedRootNodeIds()
+		);
+		this.enforceLockedRootSelection();
 	}
 
 	/**
@@ -880,7 +1054,7 @@ export class ExportModal extends Modal {
 	 * @private
 	 */
 	private markUserDeselectedSubtree(node: ExportNode) {
-		if (node.includeContent) {
+		if (node.includeContent && !this.isPrimaryRootNode(node)) {
 			this.userDeselectedNodeIds.add(node.id);
 		}
 		for (const child of node.children) {
@@ -915,12 +1089,15 @@ export class ExportModal extends Modal {
 	 */
 	private getTreeCacheKey(): string {
 		const rootPath = this.selectedFile?.path ?? "unknown";
+		const addedNotes = JSON.stringify(
+			this.addedNotes.map((note) => [note.file.path, note.mode] as const)
+		);
 		const ignoredTraversalFolders = JSON.stringify(this.settings.ignoredTraversalFolders);
 		const ignoredTraversalTagPatterns = JSON.stringify(this.settings.ignoredTraversalTagPatterns);
 		const ignoredTraversalPropertyRules = JSON.stringify(
 			this.settings.ignoredTraversalPropertyRules
 		);
-		return `${rootPath}|content:${this.contentDepth}|title:${this.titleDepth}|mode:${this.linkTraversalMode}|traversalIgnored:${ignoredTraversalFolders}|traversalIgnoredTags:${ignoredTraversalTagPatterns}|traversalIgnoredProperties:${ignoredTraversalPropertyRules}`;
+		return `${rootPath}|added:${addedNotes}|content:${this.contentDepth}|title:${this.titleDepth}|mode:${this.linkTraversalMode}|traversalIgnored:${ignoredTraversalFolders}|traversalIgnoredTags:${ignoredTraversalTagPatterns}|traversalIgnoredProperties:${ignoredTraversalPropertyRules}`;
 	}
 
 	/**
@@ -980,6 +1157,22 @@ export class ExportModal extends Modal {
 		this.renderedAncestorIds.clear();
 	}
 
+	private getLockedRootNodeIds(): Set<string> {
+		return this.selectedFile ? new Set([this.selectedFile.path]) : new Set();
+	}
+
+	private isPrimaryRootNode(node: ExportNode): boolean {
+		return this.selectedFile?.path === node.id;
+	}
+
+	private enforceLockedRootSelection() {
+		if (!this.selectedFile) {
+			return;
+		}
+		this.selectedNodeIds.add(this.selectedFile.path);
+		this.userDeselectedNodeIds.delete(this.selectedFile.path);
+	}
+
 	private getNodeParentSelectedState(nodeId: string): boolean {
 		const ancestorIds = this.renderedAncestorIds.get(nodeId) ?? [];
 		for (const ancestorId of ancestorIds) {
@@ -1000,9 +1193,13 @@ export class ExportModal extends Modal {
 			return;
 		}
 
-		const childAncestorIds = [...(this.renderedAncestorIds.get(node.id) ?? []), node.id];
+		const currentAncestorIds = this.renderedAncestorIds.get(node.id) ?? [];
+		const childAncestorIds = node.includeContent
+			? [...currentAncestorIds, node.id]
+			: currentAncestorIds;
 		const parentSelected =
-			this.getNodeParentSelectedState(node.id) && this.selectedNodeIds.has(node.id);
+			this.getNodeParentSelectedState(node.id) &&
+			(!node.includeContent || this.selectedNodeIds.has(node.id));
 		for (const child of node.children) {
 			this.renderExportTreeNode(child, childListEl, parentSelected, false, childAncestorIds);
 		}
@@ -1048,13 +1245,20 @@ export class ExportModal extends Modal {
 		}
 
 		this.selectedNodeIds.add(this.renderedDisplayTree.id);
+		this.enforceLockedRootSelection();
 		this.refreshRenderedSelectionNode(this.renderedDisplayTree, true, true);
 		this.updateTreeSummary(this.renderedDisplayTree);
 	}
 
 	private refreshRenderedSelectionNode(node: ExportNode, parentSelected: boolean, isRoot: boolean) {
-		const isSelected = isRoot || this.selectedNodeIds.has(node.id);
-		const isExcluded = !parentSelected || (!isRoot && !isSelected);
+		const isPrimaryRootNode = this.isPrimaryRootNode(node);
+		const isLockedRoot = isRoot || isPrimaryRootNode;
+		if (isLockedRoot && node.includeContent) {
+			this.selectedNodeIds.add(node.id);
+			this.userDeselectedNodeIds.delete(node.id);
+		}
+		const isSelected = !node.includeContent || isLockedRoot || this.selectedNodeIds.has(node.id);
+		const isExcluded = !parentSelected || (node.includeContent && !isLockedRoot && !isSelected);
 
 		const rowEl = this.renderedRowElements.get(node.id);
 		if (rowEl) {
@@ -1070,7 +1274,7 @@ export class ExportModal extends Modal {
 			checkboxEl.checked = isSelected;
 		}
 
-		const nextParentSelected = isSelected;
+		const nextParentSelected = parentSelected && isSelected;
 		for (const child of node.children) {
 			this.refreshRenderedSelectionNode(child, nextParentSelected, false);
 		}
@@ -1123,6 +1327,7 @@ export class ExportModal extends Modal {
 		}
 
 		this.selectedNodeIds.add(this.exportTree.id);
+		this.enforceLockedRootSelection();
 		const displayTree = this.getContentDisplayTree(this.exportTree);
 		if (!displayTree) {
 			this.treeContainerEl.createDiv({
@@ -1156,11 +1361,14 @@ export class ExportModal extends Modal {
 		const rowEl = itemEl.createDiv({ cls: "smart-export-tree-row" });
 		this.renderedRowElements.set(node.id, rowEl);
 
-		if (isRoot) {
+		const isPrimaryRootNode = this.isPrimaryRootNode(node);
+		const isLockedRoot = isRoot || isPrimaryRootNode;
+		if (isLockedRoot) {
 			this.selectedNodeIds.add(node.id);
+			this.userDeselectedNodeIds.delete(node.id);
 		}
-		const isSelected = isRoot || this.selectedNodeIds.has(node.id);
-		const isExcluded = !parentSelected || (!isRoot && !isSelected);
+		const isSelected = !node.includeContent || isLockedRoot || this.selectedNodeIds.has(node.id);
+		const isExcluded = !parentSelected || (node.includeContent && !isLockedRoot && !isSelected);
 		if (isExcluded) {
 			rowEl.addClass("smart-export-tree-row--disabled");
 		} else {
@@ -1194,16 +1402,16 @@ export class ExportModal extends Modal {
 			rowEl.createSpan({ cls: "smart-export-tree-toggle-placeholder" });
 		}
 
-		if (isRoot) {
+		if (isLockedRoot || !node.includeContent) {
 			const rootLabel = rowEl.createSpan({
 				text: node.title,
 				cls: "smart-export-tree-label smart-export-tree-root",
 			});
-			if (this.settings.showTokenEstimatesInTree) {
+			if (node.includeContent && this.settings.showTokenEstimatesInTree) {
 				const tokenText = this.formatNodeTokenEstimate(node);
 				rootLabel.createSpan({ text: tokenText, cls: "smart-export-tree-token" });
 			}
-			if (hasChildren) {
+			if (hasChildren && isRoot) {
 				rootLabel.addClass("smart-export-tree-root--toggle");
 				setTooltip(
 					rootLabel,
@@ -1212,7 +1420,7 @@ export class ExportModal extends Modal {
 				rootLabel.addEventListener("click", (event) => {
 					event.preventDefault();
 					event.stopPropagation();
-					if (!this.exportTree) {
+					if (!this.exportTree || !isRoot) {
 						return;
 					}
 
@@ -1230,6 +1438,7 @@ export class ExportModal extends Modal {
 								this.markUserDeselectedSubtree(child);
 							}
 						}
+						this.enforceLockedRootSelection();
 						this.refreshRenderedSelectionUI();
 						this.debouncedTokenUpdate();
 						return;
@@ -1303,7 +1512,9 @@ export class ExportModal extends Modal {
 			if (isCollapsed) {
 				childListEl.addClass("smart-export-tree--collapsed");
 			} else {
-				const childAncestorIds = [...ancestorIdsSnapshot, node.id];
+				const childAncestorIds = node.includeContent
+					? [...ancestorIdsSnapshot, node.id]
+					: ancestorIdsSnapshot;
 				for (const child of node.children) {
 					this.renderExportTreeNode(child, childListEl, isSelected, false, childAncestorIds);
 				}
@@ -1373,16 +1584,16 @@ export class ExportModal extends Modal {
 	 * @private
 	 */
 	private buildContentDisplayTree(node: ExportNode): ExportNode | null {
-		if (!node.includeContent) {
-			return null;
-		}
-
 		const children: ExportNode[] = [];
 		for (const child of node.children) {
 			const displayChild = this.buildContentDisplayTree(child);
 			if (displayChild) {
 				children.push(displayChild);
 			}
+		}
+
+		if (!node.includeContent && children.length === 0) {
+			return null;
 		}
 
 		return {

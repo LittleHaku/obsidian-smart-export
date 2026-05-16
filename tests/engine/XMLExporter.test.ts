@@ -52,6 +52,26 @@ describe("XMLExporter", () => {
 			expect(result).toContain("<obsidian_export>");
 			expect(result).toContain("</obsidian_export>");
 		});
+
+		it("skips synthetic bundle roots when listing and rendering notes", () => {
+			const root = createMockExportNode("Root", "root.md", 0, "Root content");
+			const extra = createMockExportNode("Extra", "extra.md", 0, "Extra content");
+			const bundle = createMockExportNode("Export bundle", "__smart_export_bundle_root__", 0, "", [
+				root,
+				extra,
+			]);
+			bundle.includeContent = false;
+			bundle.synthetic = true;
+			const exporter = new XMLExporter();
+
+			const result = exporter.export(bundle, "TestVault");
+
+			expect(result).toContain("<starting_note>Export bundle</starting_note>");
+			expect(result).toContain("<total_notes_exported>2</total_notes_exported>");
+			expect(result).toContain('name="Root"');
+			expect(result).toContain('name="Extra"');
+			expect(result).not.toContain('name="Export bundle"');
+		});
 	});
 
 	describe("Complex Note Hierarchies", () => {

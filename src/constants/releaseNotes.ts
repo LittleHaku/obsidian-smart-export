@@ -13,6 +13,14 @@ export interface ReleaseNotesEntry {
 
 export const RELEASE_NOTES: ReleaseNotesEntry[] = [
 	{
+		version: "1.14.0",
+		date: "2026-05-16",
+		showOnUpdate: true,
+		new: [
+			"Export modal extra notes can now be added as single notes or new roots, making disconnected context easier to include in a session-only export.",
+		],
+	},
+	{
 		version: "1.13.0",
 		date: "2026-04-29",
 		showOnUpdate: true,

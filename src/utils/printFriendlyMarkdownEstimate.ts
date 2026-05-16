@@ -1,4 +1,5 @@
 import { ExportNode, PrintFriendlyMarkdownOptions } from "../types";
+import { isSyntheticExportNode } from "../engine/exportTreeComposition";
 import { DEFAULT_PRINT_FRIENDLY_MARKDOWN_OPTIONS } from "./printFriendlyMarkdownOptions";
 import { normalizeMarkdownHeadingsBelowParent } from "./markdownHeadingNormalization";
 import {
@@ -53,6 +54,14 @@ function estimateTableOfContentsLength(
 	}
 	visited.add(node.id);
 
+	if (isSyntheticExportNode(node)) {
+		let total = 0;
+		for (const child of node.children) {
+			total += estimateTableOfContentsLength(child, headingLabels, visited, depth);
+		}
+		return total;
+	}
+
 	const headingLabel = headingLabels.get(node.id)!;
 	const escapedHeadingLength = escapePrintFriendlyWikiLinkValue(headingLabel).length;
 	let total = depth * 2 + "- [[#".length + escapedHeadingLength + "|".length;
@@ -78,6 +87,27 @@ function estimateBodyLength(
 		return 0;
 	}
 	visited.add(node.id);
+
+	if (isSyntheticExportNode(node)) {
+		let total = 0;
+		let childRenderedCount = renderedCount;
+		for (const child of node.children) {
+			const childLength = estimateBodyLength(
+				child,
+				selectedNodeIds,
+				headingLabels,
+				visited,
+				depth,
+				childRenderedCount,
+				options
+			);
+			if (childLength > 0) {
+				total += childLength;
+				childRenderedCount += 1;
+			}
+		}
+		return total;
+	}
 
 	let total = 0;
 	if (renderedCount > 0) {

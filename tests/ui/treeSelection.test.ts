@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
 	deselectSubtree,
 	enforceAncestorSelection,
+	reconcileContentSelectionState,
 	selectAncestors,
 	selectNode,
 	selectSubtree,
@@ -103,5 +104,52 @@ describe("treeSelection", () => {
 		expect(selected.has("A")).toBe(false);
 		expect(selected.has("A1")).toBe(false);
 		expect(selected.has("A1a")).toBe(false);
+	});
+
+	it("preserves explicit deselections when a rebuilt tree adds a new note", () => {
+		const originalChild = createNode("original-child");
+		const originalRoot = createNode("root", [originalChild]);
+		const selected = new Set<string>();
+		const knownContent = new Set<string>();
+		const userDeselected = new Set<string>();
+
+		reconcileContentSelectionState(selected, knownContent, userDeselected, originalRoot);
+		deselectSubtree(selected, originalChild);
+		userDeselected.add(originalChild.id);
+
+		const addedNote = createNode("added-note");
+		const rebuiltRoot = createNode("root", [createNode("original-child"), addedNote]);
+		reconcileContentSelectionState(selected, knownContent, userDeselected, rebuiltRoot);
+
+		expect(selected.has("root")).toBe(true);
+		expect(selected.has("original-child")).toBe(false);
+		expect(selected.has("added-note")).toBe(true);
+		expect(userDeselected.has("original-child")).toBe(true);
+	});
+
+	it("keeps a locked primary root selected under a synthetic bundle root", () => {
+		const primaryRootPath = "Projects/Launch plan.md";
+		const extraRootPath = "References/Budget.md";
+		const primaryRoot = createNode(primaryRootPath);
+		const extraRoot = createNode(extraRootPath);
+		const bundleRoot = createNode("__smart_export_bundle_root__", [primaryRoot, extraRoot]);
+		bundleRoot.includeContent = false;
+		bundleRoot.synthetic = true;
+		const selected = new Set<string>([extraRootPath]);
+		const knownContent = new Set<string>([primaryRootPath, extraRootPath]);
+		const userDeselected = new Set<string>([primaryRootPath]);
+
+		reconcileContentSelectionState(
+			selected,
+			knownContent,
+			userDeselected,
+			bundleRoot,
+			new Set([primaryRootPath])
+		);
+
+		expect(selected.has("__smart_export_bundle_root__")).toBe(false);
+		expect(selected.has(primaryRootPath)).toBe(true);
+		expect(selected.has(extraRootPath)).toBe(true);
+		expect(userDeselected.has(primaryRootPath)).toBe(false);
 	});
 });

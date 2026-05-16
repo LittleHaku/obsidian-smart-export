@@ -423,6 +423,28 @@ Missing: {{missing_notes}}
 			expect(result).toContain("This export contains a knowledge graph");
 			expect(result).toContain("same-note links");
 		});
+
+		it("skips synthetic bundle roots when listing and rendering notes", () => {
+			const root = createMockExportNode("Root", "root.md", 0, "Root content");
+			const extra = createMockExportNode("Extra", "extra.md", 0, "Extra content");
+			const bundle = createMockExportNode("Export bundle", "__smart_export_bundle_root__", 0, "", [
+				root,
+				extra,
+			]);
+			bundle.includeContent = false;
+			bundle.synthetic = true;
+			const exporter = new LlmMarkdownExporter();
+
+			const result = exporter.export(bundle, "TestVault");
+
+			expect(result).toContain('starting_note: "Export bundle"');
+			expect(result).toContain("total_notes_exported: 2");
+			expect(result).toContain('Note 1: "Root"');
+			expect(result).toContain('Note 2: "Extra"');
+			expect(result).toContain("## Root");
+			expect(result).toContain("## Extra");
+			expect(result).not.toContain('Note 1: "Export bundle"');
+		});
 	});
 
 	describe("Output Format Structure", () => {

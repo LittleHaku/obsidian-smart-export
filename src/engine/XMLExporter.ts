@@ -1,4 +1,5 @@
 import { ExportNode } from "../types";
+import { isSyntheticExportNode } from "./exportTreeComposition";
 
 /**
  * A class to handle the export of note trees to a structured XML format.
@@ -43,7 +44,9 @@ export class XMLExporter {
 				continue;
 			}
 			visited.add(currentNode.id);
-			result.push(currentNode);
+			if (!isSyntheticExportNode(currentNode)) {
+				result.push(currentNode);
+			}
 			for (const child of currentNode.children) {
 				queue.push(child);
 			}
