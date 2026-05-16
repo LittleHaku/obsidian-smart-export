@@ -1,6 +1,6 @@
 # Export Architecture
 
-Updated: April 1, 2026
+Updated: May 16, 2026
 
 ## Overview
 
@@ -90,7 +90,7 @@ Extra notes:
 3. `New root` entries run normal traversal from that note with the same depth, link direction, and exclusion settings as the selected root.
 4. When extra notes exist, `exportTreeComposition` creates an export-only synthetic bundle root so exporters can keep receiving a single `ExportNode`.
 5. Exporters skip synthetic grouping nodes when counting/rendering real vault notes.
-6. Duplicate note paths are deduplicated by keeping the first discovered path in primary root, then extra roots, then single notes order.
+6. Duplicate note IDs are deduplicated so explicitly added extra notes take precedence over the same note's descendant occurrence under the primary root: `exportTreeComposition` removes explicitly added note IDs from primary-tree descendants before appending the added note as a top-level child.
 
 Markdown link rewriting in exported note content:
 
