@@ -111,8 +111,8 @@ Modern, clean styling for the export modal interface
 
 .smart-export-added-note-row {
 	display: grid;
-	grid-template-columns: minmax(0, 1fr) auto auto;
-	gap: 8px;
+	grid-template-columns: minmax(0, 1fr) auto;
+	gap: 12px;
 	align-items: center;
 	padding: 8px 10px;
 	background: var(--background-primary);
@@ -141,11 +141,21 @@ Modern, clean styling for the export modal interface
 	white-space: nowrap;
 }
 
-.smart-export-added-note-mode {
-	max-width: 140px;
+.smart-export-added-note-scope {
+	color: var(--text-muted);
+	font-size: var(--font-ui-small);
+	line-height: 1.35;
+	margin-top: 3px;
 }
 
-.smart-export-added-note-remove {
+.smart-export-added-note-actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+	justify-content: flex-end;
+}
+
+.smart-export-added-note-action {
 	border: 1px solid var(--background-modifier-border);
 	background: transparent;
 	color: var(--text-normal);
@@ -153,9 +163,10 @@ Modern, clean styling for the export modal interface
 	padding: 6px 10px;
 	font-size: var(--font-ui-small);
 	cursor: pointer;
+	white-space: nowrap;
 }
 
-.smart-export-added-note-remove:hover {
+.smart-export-added-note-action:hover {
 	background: var(--background-modifier-hover);
 }
 
@@ -570,10 +581,10 @@ Modern, clean styling for the export modal interface
 
 	.smart-export-added-note-row {
 		grid-template-columns: 1fr;
+		gap: 8px;
 	}
 
-	.smart-export-added-note-mode {
-		max-width: none;
-		width: 100%;
+	.smart-export-added-note-actions {
+		justify-content: flex-start;
 	}
 }

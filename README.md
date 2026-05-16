@@ -11,7 +11,7 @@ Landing page: [smart-export.vercel.app](https://smart-export.vercel.app/)
 ## Why Smart Export
 
 - Follow outgoing links, backlinks, or both from a root note.
-- Add disconnected notes as single notes or extra traversal roots in the export modal.
+- Include disconnected notes as single notes or new roots in the export modal.
 - Export as XML, print-friendly Markdown, or Markdown templates such as `LLM-ready`.
 - Exclude folders, tags, and notes based on frontmatter properties (property rules) from traversal.
 - Optionally redact marked private sections from exported note content.
@@ -39,7 +39,7 @@ Use [BRAT (Beta Reviewers Auto-update Tool)](https://github.com/TfTHacker/obsidi
 
 1. Open command palette (`Cmd/Ctrl+P`) and run `Smart Export: Open export` (or click the ribbon icon).
 2. Select a root note.
-3. Optionally add disconnected notes as **Single note** or **Extra root** entries.
+3. Optionally include disconnected notes as **single note** or **new root** entries.
 4. Set depth values (recommended start: content `2`, title `4`).
 5. Choose output format.
 6. Click **Export to clipboard** or **Export to new note**.
@@ -56,9 +56,9 @@ Use [BRAT (Beta Reviewers Auto-update Tool)](https://github.com/TfTHacker/obsidi
 
 - Smart note discovery using breadth-first traversal.
 - Link direction modes: outgoing, incoming, or both.
-- Session-only additional notes in the export modal:
-  - single note includes only that selected note
-  - extra root follows the normal traversal rules from that note
+- Session-only extra notes in the export modal:
+  - single note includes just the selected note
+  - new root starts another tree from that note
 - Dual depth controls:
   - content depth for full note content
   - title depth for title-only context

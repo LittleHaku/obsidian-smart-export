@@ -209,21 +209,24 @@ export class ExportModal extends Modal {
 
 		const addedNotesSection = contentEl.createDiv({ cls: "smart-export-section" });
 		addedNotesSection.createDiv({
-			text: "➕ Additional notes",
+			text: "➕ Include more notes",
 			cls: "smart-export-section-title",
 		});
 		addedNotesSection.createDiv({
 			cls: "smart-export-section-description",
-			text: "Add session-only notes that are not connected to the root note.",
+			text: "Add notes that are not reached from the root. They are used only for this export.",
 		});
 		new Setting(addedNotesSection)
-			.setName("Add note")
-			.setDesc("Single note includes only that note. Extra root follows traversal from that note.")
+			.setName("Add extra notes")
+			.setDesc("Single note includes one note. New root starts another export tree from that note.")
 			.addButton((button) => {
-				button.setButtonText("Add").onClick(() => {
-					new RootNoteSuggestModal(this.app, (file: TFile) => {
-						this.addExportNote(file);
-					}).open();
+				button.setButtonText("Add single note").onClick(() => {
+					this.openAddedNotePicker("single-note");
+				});
+			})
+			.addButton((button) => {
+				button.setButtonText("Add new root").onClick(() => {
+					this.openAddedNotePicker("extra-root");
 				});
 			});
 		this.addedNotesListEl = addedNotesSection.createDiv({
@@ -729,7 +732,13 @@ export class ExportModal extends Modal {
 		this.debouncedTokenUpdate();
 	}
 
-	private addExportNote(file: TFile) {
+	private openAddedNotePicker(mode: AddedNoteMode) {
+		new RootNoteSuggestModal(this.app, (file: TFile) => {
+			this.addExportNote(file, mode);
+		}).open();
+	}
+
+	private addExportNote(file: TFile, mode: AddedNoteMode) {
 		if (this.selectedFile?.path === file.path) {
 			new Notice("That note is already the root note.");
 			return;
@@ -739,7 +748,7 @@ export class ExportModal extends Modal {
 			return;
 		}
 
-		this.addedNotes.push({ file, mode: "single-note" });
+		this.addedNotes.push({ file, mode });
 		this.renderAddedNotesList();
 		this.invalidateExportTree();
 		void this.calculateAndDisplayTokens();
@@ -754,7 +763,7 @@ export class ExportModal extends Modal {
 		if (this.addedNotes.length === 0) {
 			this.addedNotesListEl.createDiv({
 				cls: "smart-export-added-notes-empty",
-				text: "No additional notes added.",
+				text: "No extra notes included.",
 			});
 			return;
 		}
@@ -770,31 +779,28 @@ export class ExportModal extends Modal {
 				cls: "smart-export-added-note-path",
 				text: addedNote.file.path,
 			});
+			noteLabelEl.createDiv({
+				cls: "smart-export-added-note-scope",
+				text: this.getAddedNoteScopeText(addedNote.mode),
+			});
 
-			const modeSelectEl = rowEl.createEl("select", {
-				cls: "smart-export-added-note-mode",
+			const actionGroupEl = rowEl.createDiv({ cls: "smart-export-added-note-actions" });
+			const toggleModeButtonEl = actionGroupEl.createEl("button", {
+				text: addedNote.mode === "single-note" ? "Use as new root" : "Use as single note",
+				cls: "smart-export-added-note-action",
 			});
-			const singleOptionEl = modeSelectEl.createEl("option", {
-				text: "Single note",
-				attr: { value: "single-note" },
-			});
-			const extraRootOptionEl = modeSelectEl.createEl("option", {
-				text: "Extra root",
-				attr: { value: "extra-root" },
-			});
-			singleOptionEl.selected = addedNote.mode === "single-note";
-			extraRootOptionEl.selected = addedNote.mode === "extra-root";
-			modeSelectEl.addEventListener("change", () => {
-				const mode = modeSelectEl.value === "extra-root" ? "extra-root" : "single-note";
+			toggleModeButtonEl.setAttr("type", "button");
+			toggleModeButtonEl.addEventListener("click", () => {
+				const mode = addedNote.mode === "single-note" ? "extra-root" : "single-note";
 				this.addedNotes[index] = { ...addedNote, mode };
 				this.renderAddedNotesList();
 				this.invalidateExportTree();
 				void this.calculateAndDisplayTokens();
 			});
 
-			const removeButtonEl = rowEl.createEl("button", {
+			const removeButtonEl = actionGroupEl.createEl("button", {
 				text: "Remove",
-				cls: "smart-export-added-note-remove",
+				cls: "smart-export-added-note-action smart-export-added-note-remove",
 			});
 			removeButtonEl.setAttr("type", "button");
 			removeButtonEl.addEventListener("click", () => {
@@ -804,6 +810,13 @@ export class ExportModal extends Modal {
 				void this.calculateAndDisplayTokens();
 			});
 		}
+	}
+
+	private getAddedNoteScopeText(mode: AddedNoteMode): string {
+		if (mode === "extra-root") {
+			return "New root: starts another tree from this note using the current depth and link direction.";
+		}
+		return "Single note: includes only this note.";
 	}
 
 	/**

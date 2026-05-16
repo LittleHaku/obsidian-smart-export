@@ -28,7 +28,7 @@ sequenceDiagram
     participant API as ObsidianAPI
     participant Exporter as Selected exporter
 
-    User->>Modal: Open export + choose root/options/additional notes
+    User->>Modal: Open export + choose root/options/extra notes
     Modal->>Traversal: traverse(rootPath)
     Traversal->>API: getFileByPath(rootPath)
     loop BFS levels
@@ -38,15 +38,15 @@ sequenceDiagram
     end
     Traversal->>API: read content for content-eligible nodes
     Traversal-->>Modal: primary export tree + missing notes count
-    opt Additional extra roots
+    opt Extra notes as new roots
         Modal->>Traversal: traverse(extraRootPath)
         Traversal-->>Modal: extra root export tree + missing notes count
     end
-    opt Additional single notes
+    opt Extra notes as single notes
         Modal->>API: read single-note content
         API-->>Modal: standalone export node
     end
-    Modal->>Modal: compose primary tree + additional notes
+    Modal->>Modal: compose primary tree + extra notes
     Modal->>Modal: resolve custom Markdown template (optional)
     Modal->>Exporter: export(tree, vault, missingNotes, template?)
     Exporter-->>Modal: serialized output
@@ -83,12 +83,12 @@ Content redaction:
 4. The configured delimiter marks both start and end of a private section. With the default delimiter, `:::private:::` renders as `REDACTED`.
 5. Regular expression redaction rules are newline-separated and their matches are replaced with the configured regular expression replacement text.
 
-Additional notes:
+Extra notes:
 
-1. Additional notes are modal-session only and are not persisted in settings.
+1. Extra notes are modal-session only and are not persisted in settings.
 2. `Single note` entries include only that note's content and do not start traversal from that note.
-3. `Extra root` entries run normal traversal from that note with the same depth, link direction, and exclusion settings as the selected root.
-4. When additional notes exist, `exportTreeComposition` creates an export-only synthetic bundle root so exporters can keep receiving a single `ExportNode`.
+3. `New root` entries run normal traversal from that note with the same depth, link direction, and exclusion settings as the selected root.
+4. When extra notes exist, `exportTreeComposition` creates an export-only synthetic bundle root so exporters can keep receiving a single `ExportNode`.
 5. Exporters skip synthetic grouping nodes when counting/rendering real vault notes.
 6. Duplicate note paths are deduplicated by keeping the first discovered path in primary root, then extra roots, then single notes order.
 
@@ -153,7 +153,7 @@ flowchart LR
     A2[Content depth]
     A3[Title depth]
     A4[Link direction]
-    A5[Additional notes]
+    A5[Extra notes]
     A6[Ignored folders]
     A7[Ignored tag patterns]
     A8[Ignored property rules]
@@ -167,4 +167,4 @@ flowchart LR
     A8 --> B
 ```
 
-Cache keys serialize additional notes and ignored folders/tags/property rules with `JSON.stringify(...)` to avoid delimiter collisions.
+Cache keys serialize extra notes and ignored folders/tags/property rules with `JSON.stringify(...)` to avoid delimiter collisions.

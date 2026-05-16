@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Export modal now supports session-only additional notes. Added notes can be included as single notes or as extra roots that run normal traversal from that note.
+- Export modal now supports session-only extra notes. Extra notes can be added as single notes, or as new roots that use the current depth and link-direction settings.
 
 ## [1.13.0] - 2026-04-29
 
