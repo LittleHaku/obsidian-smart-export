@@ -72,6 +72,8 @@ export class ExportModal extends Modal {
 	private addedNotes: AddedExportNote[] = [];
 	/** Container for manually added note rows. */
 	private addedNotesListEl: HTMLElement;
+	/** Description for extra-note context that reflects the selected root note. */
+	private addedNotesDescriptionEl: HTMLElement;
 	/** The depth for including full note content. */
 	private contentDepth: number;
 	/** The depth for including only note titles. */
@@ -212,9 +214,8 @@ export class ExportModal extends Modal {
 			text: "➕ Include more notes",
 			cls: "smart-export-section-title",
 		});
-		addedNotesSection.createDiv({
+		this.addedNotesDescriptionEl = addedNotesSection.createDiv({
 			cls: "smart-export-section-description",
-			text: "Add notes that are not reached from the root. They are used only for this export.",
 		});
 		new Setting(addedNotesSection)
 			.setName("Add extra notes")
@@ -232,6 +233,7 @@ export class ExportModal extends Modal {
 		this.addedNotesListEl = addedNotesSection.createDiv({
 			cls: "smart-export-added-notes-list",
 		});
+		this.updateAddedNotesDescription();
 		this.renderAddedNotesList();
 
 		// Depth configuration section
@@ -549,6 +551,7 @@ export class ExportModal extends Modal {
 			new Notice("Failed to generate export. See console for details.");
 			return null;
 		}
+		this.enforceLockedRootSelection();
 		const adjustedTree = applyContentSelection(exportTree, this.selectedNodeIds);
 		const llmMarkdownTemplate =
 			this.exportFormat === "llm-markdown"
@@ -728,8 +731,19 @@ export class ExportModal extends Modal {
 		} else {
 			this.selectedFileEl.setText("No file selected");
 		}
+		this.updateAddedNotesDescription();
 		this.invalidateExportTree({ resetSelection: true });
 		this.debouncedTokenUpdate();
+	}
+
+	private updateAddedNotesDescription() {
+		if (!this.addedNotesDescriptionEl) {
+			return;
+		}
+		const startingPoint = this.selectedFile?.basename ?? "the selected note";
+		this.addedNotesDescriptionEl.setText(
+			`Add notes that are not reached from ${startingPoint}. They are used only for this export.`
+		);
 	}
 
 	private openAddedNotePicker(mode: AddedNoteMode) {
@@ -1019,8 +1033,10 @@ export class ExportModal extends Modal {
 			this.selectedNodeIds,
 			this.knownContentNodeIds,
 			this.userDeselectedNodeIds,
-			node
+			node,
+			this.getLockedRootNodeIds()
 		);
+		this.enforceLockedRootSelection();
 	}
 
 	/**
@@ -1038,7 +1054,7 @@ export class ExportModal extends Modal {
 	 * @private
 	 */
 	private markUserDeselectedSubtree(node: ExportNode) {
-		if (node.includeContent) {
+		if (node.includeContent && !this.isPrimaryRootNode(node)) {
 			this.userDeselectedNodeIds.add(node.id);
 		}
 		for (const child of node.children) {
@@ -1141,6 +1157,22 @@ export class ExportModal extends Modal {
 		this.renderedAncestorIds.clear();
 	}
 
+	private getLockedRootNodeIds(): Set<string> {
+		return this.selectedFile ? new Set([this.selectedFile.path]) : new Set();
+	}
+
+	private isPrimaryRootNode(node: ExportNode): boolean {
+		return this.selectedFile?.path === node.id;
+	}
+
+	private enforceLockedRootSelection() {
+		if (!this.selectedFile) {
+			return;
+		}
+		this.selectedNodeIds.add(this.selectedFile.path);
+		this.userDeselectedNodeIds.delete(this.selectedFile.path);
+	}
+
 	private getNodeParentSelectedState(nodeId: string): boolean {
 		const ancestorIds = this.renderedAncestorIds.get(nodeId) ?? [];
 		for (const ancestorId of ancestorIds) {
@@ -1213,13 +1245,20 @@ export class ExportModal extends Modal {
 		}
 
 		this.selectedNodeIds.add(this.renderedDisplayTree.id);
+		this.enforceLockedRootSelection();
 		this.refreshRenderedSelectionNode(this.renderedDisplayTree, true, true);
 		this.updateTreeSummary(this.renderedDisplayTree);
 	}
 
 	private refreshRenderedSelectionNode(node: ExportNode, parentSelected: boolean, isRoot: boolean) {
-		const isSelected = !node.includeContent || isRoot || this.selectedNodeIds.has(node.id);
-		const isExcluded = !parentSelected || (node.includeContent && !isRoot && !isSelected);
+		const isPrimaryRootNode = this.isPrimaryRootNode(node);
+		const isLockedRoot = isRoot || isPrimaryRootNode;
+		if (isLockedRoot && node.includeContent) {
+			this.selectedNodeIds.add(node.id);
+			this.userDeselectedNodeIds.delete(node.id);
+		}
+		const isSelected = !node.includeContent || isLockedRoot || this.selectedNodeIds.has(node.id);
+		const isExcluded = !parentSelected || (node.includeContent && !isLockedRoot && !isSelected);
 
 		const rowEl = this.renderedRowElements.get(node.id);
 		if (rowEl) {
@@ -1288,6 +1327,7 @@ export class ExportModal extends Modal {
 		}
 
 		this.selectedNodeIds.add(this.exportTree.id);
+		this.enforceLockedRootSelection();
 		const displayTree = this.getContentDisplayTree(this.exportTree);
 		if (!displayTree) {
 			this.treeContainerEl.createDiv({
@@ -1321,11 +1361,14 @@ export class ExportModal extends Modal {
 		const rowEl = itemEl.createDiv({ cls: "smart-export-tree-row" });
 		this.renderedRowElements.set(node.id, rowEl);
 
-		if (isRoot) {
+		const isPrimaryRootNode = this.isPrimaryRootNode(node);
+		const isLockedRoot = isRoot || isPrimaryRootNode;
+		if (isLockedRoot) {
 			this.selectedNodeIds.add(node.id);
+			this.userDeselectedNodeIds.delete(node.id);
 		}
-		const isSelected = !node.includeContent || isRoot || this.selectedNodeIds.has(node.id);
-		const isExcluded = !parentSelected || (node.includeContent && !isRoot && !isSelected);
+		const isSelected = !node.includeContent || isLockedRoot || this.selectedNodeIds.has(node.id);
+		const isExcluded = !parentSelected || (node.includeContent && !isLockedRoot && !isSelected);
 		if (isExcluded) {
 			rowEl.addClass("smart-export-tree-row--disabled");
 		} else {
@@ -1359,7 +1402,7 @@ export class ExportModal extends Modal {
 			rowEl.createSpan({ cls: "smart-export-tree-toggle-placeholder" });
 		}
 
-		if (isRoot || !node.includeContent) {
+		if (isLockedRoot || !node.includeContent) {
 			const rootLabel = rowEl.createSpan({
 				text: node.title,
 				cls: "smart-export-tree-label smart-export-tree-root",
@@ -1368,7 +1411,7 @@ export class ExportModal extends Modal {
 				const tokenText = this.formatNodeTokenEstimate(node);
 				rootLabel.createSpan({ text: tokenText, cls: "smart-export-tree-token" });
 			}
-			if (hasChildren) {
+			if (hasChildren && isRoot) {
 				rootLabel.addClass("smart-export-tree-root--toggle");
 				setTooltip(
 					rootLabel,
@@ -1395,6 +1438,7 @@ export class ExportModal extends Modal {
 								this.markUserDeselectedSubtree(child);
 							}
 						}
+						this.enforceLockedRootSelection();
 						this.refreshRenderedSelectionUI();
 						this.debouncedTokenUpdate();
 						return;

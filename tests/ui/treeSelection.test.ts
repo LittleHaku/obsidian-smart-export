@@ -126,4 +126,30 @@ describe("treeSelection", () => {
 		expect(selected.has("added-note")).toBe(true);
 		expect(userDeselected.has("original-child")).toBe(true);
 	});
+
+	it("keeps a locked primary root selected under a synthetic bundle root", () => {
+		const primaryRootPath = "Projects/Launch plan.md";
+		const extraRootPath = "References/Budget.md";
+		const primaryRoot = createNode(primaryRootPath);
+		const extraRoot = createNode(extraRootPath);
+		const bundleRoot = createNode("__smart_export_bundle_root__", [primaryRoot, extraRoot]);
+		bundleRoot.includeContent = false;
+		bundleRoot.synthetic = true;
+		const selected = new Set<string>([extraRootPath]);
+		const knownContent = new Set<string>([primaryRootPath, extraRootPath]);
+		const userDeselected = new Set<string>([primaryRootPath]);
+
+		reconcileContentSelectionState(
+			selected,
+			knownContent,
+			userDeselected,
+			bundleRoot,
+			new Set([primaryRootPath])
+		);
+
+		expect(selected.has("__smart_export_bundle_root__")).toBe(false);
+		expect(selected.has(primaryRootPath)).toBe(true);
+		expect(selected.has(extraRootPath)).toBe(true);
+		expect(userDeselected.has(primaryRootPath)).toBe(false);
+	});
 });

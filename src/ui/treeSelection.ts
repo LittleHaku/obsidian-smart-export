@@ -29,15 +29,16 @@ export function deselectSubtree(selectedNodeIds: Set<string>, node: ExportNode) 
 export function enforceAncestorSelection(
 	selectedNodeIds: Set<string>,
 	node: ExportNode,
-	parentSelected: boolean
+	parentSelected: boolean,
+	lockedNodeIds: Set<string> = new Set()
 ) {
 	const isSelected = node.includeContent ? selectedNodeIds.has(node.id) : true;
-	if (!parentSelected) {
+	if (!parentSelected && !lockedNodeIds.has(node.id)) {
 		selectedNodeIds.delete(node.id);
 	}
 	const nextParentSelected = parentSelected && isSelected;
 	for (const child of node.children) {
-		enforceAncestorSelection(selectedNodeIds, child, nextParentSelected);
+		enforceAncestorSelection(selectedNodeIds, child, nextParentSelected, lockedNodeIds);
 	}
 }
 
@@ -45,7 +46,8 @@ export function reconcileContentSelectionState(
 	selectedNodeIds: Set<string>,
 	knownContentNodeIds: Set<string>,
 	userDeselectedNodeIds: Set<string>,
-	rootNode: ExportNode
+	rootNode: ExportNode,
+	lockedNodeIds: Set<string> = new Set()
 ) {
 	reconcileContentSelectionNode(
 		selectedNodeIds,
@@ -53,9 +55,10 @@ export function reconcileContentSelectionState(
 		userDeselectedNodeIds,
 		rootNode,
 		true,
-		true
+		true,
+		lockedNodeIds
 	);
-	enforceAncestorSelection(selectedNodeIds, rootNode, true);
+	enforceAncestorSelection(selectedNodeIds, rootNode, true, lockedNodeIds);
 }
 
 function reconcileContentSelectionNode(
@@ -64,18 +67,19 @@ function reconcileContentSelectionNode(
 	userDeselectedNodeIds: Set<string>,
 	node: ExportNode,
 	parentSelected: boolean,
-	isRoot: boolean
+	isRoot: boolean,
+	lockedNodeIds: Set<string>
 ) {
 	if (!node.includeContent) {
 		selectedNodeIds.delete(node.id);
 		knownContentNodeIds.delete(node.id);
 	} else {
 		const wasKnown = knownContentNodeIds.has(node.id);
-		if (!parentSelected) {
-			selectedNodeIds.delete(node.id);
-		} else if (isRoot) {
+		if (isRoot || lockedNodeIds.has(node.id)) {
 			selectedNodeIds.add(node.id);
 			userDeselectedNodeIds.delete(node.id);
+		} else if (!parentSelected) {
+			selectedNodeIds.delete(node.id);
 		} else if (userDeselectedNodeIds.has(node.id)) {
 			selectedNodeIds.delete(node.id);
 		} else if (!wasKnown) {
@@ -92,7 +96,8 @@ function reconcileContentSelectionNode(
 			userDeselectedNodeIds,
 			child,
 			nodeSelected,
-			false
+			false,
+			lockedNodeIds
 		);
 	}
 }
