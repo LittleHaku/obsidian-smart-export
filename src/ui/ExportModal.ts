@@ -8,8 +8,10 @@ import {
 	Notice,
 	debounce,
 	setTooltip,
+	TextComponent,
 } from "obsidian";
 import { RootNoteSuggestModal } from "./RootNoteSuggestModal";
+import { TagSuggestModal } from "./TagSuggestModal";
 import { BFSTraversal } from "../engine/BFSTraversal";
 import { buildExportOutput } from "../engine/exportOutput";
 import {
@@ -39,17 +41,20 @@ import { ExportNoteDestinationModal } from "./ExportNoteDestinationModal";
 import { getPrintFriendlyMarkdownOptions } from "../utils/printFriendlyMarkdownOptions";
 import { estimatePrintFriendlyMarkdownCharacterCount } from "../utils/printFriendlyMarkdownEstimate";
 import { getContentRedactionOptions } from "../utils/contentRedaction";
+import { normalizeNoteTag } from "../utils/noteFilters";
 
 const EXPORT_CHOICE_XML = "format:xml";
 const EXPORT_CHOICE_PRINT_FRIENDLY = "format:print-friendly-markdown";
 const EXPORT_CHOICE_LLM_PREFIX = "template:";
 
 interface PreparedExportOutput {
-	rootFile: TFile;
+	rootFile: TFile | null;
+	sourceName: string;
 	output: string;
 	tokenCount: number;
 }
 
+type ExportSourceMode = "note" | "tag";
 type AddedNoteMode = "single-note" | "extra-root";
 
 interface AddedExportNote {
@@ -66,6 +71,14 @@ export class ExportModal extends Modal {
 	private static readonly MAX_TREE_CACHE_ENTRIES = 5;
 	/** The currently selected file to be used as the root of the export. */
 	private selectedFile: TFile | null = null;
+	/** Which source type is used for this export. */
+	private sourceMode: ExportSourceMode = "note";
+	/** Tag pattern used when exporting from matching notes. */
+	private selectedTagPattern = "";
+	/** Dropdown used to switch export source modes. */
+	private sourceModeDropdown: DropdownComponent | null = null;
+	/** Text input used to enter a tag export source. */
+	private tagPatternText: TextComponent | null = null;
 	/** The HTML element that displays the name of the selected file. */
 	private selectedFileEl: HTMLElement;
 	/** Session-only notes manually added to the export. */
@@ -179,15 +192,31 @@ export class ExportModal extends Modal {
 			cls: "smart-export-description",
 		});
 
-		// Root note selection section
+		// Export source selection section
 		const rootSection = contentEl.createDiv({ cls: "smart-export-section" });
-		rootSection.createDiv({ text: "📝 Root note", cls: "smart-export-section-title" });
+		rootSection.createDiv({ text: "📝 Starting point", cls: "smart-export-section-title" });
 
 		new Setting(rootSection)
-			.setName("Starting point")
+			.setName("Source")
+			.setDesc("Start from one note, or from every note matching a tag.")
+			.addDropdown((dropdown) => {
+				this.sourceModeDropdown = dropdown;
+				dropdown
+					.addOption("note", "Root note")
+					.addOption("tag", "Tag")
+					.setValue(this.sourceMode)
+					.onChange((value: ExportSourceMode) => {
+						this.sourceMode = value;
+						this.updateSelectedFile();
+					});
+			});
+
+		new Setting(rootSection)
+			.setName("Root note")
 			.setDesc("Choose the note to start traversing from. Default: current active note")
 			.addButton((button) => {
 				button.setButtonText("Select").onClick(() => {
+					this.sourceMode = "note";
 					new RootNoteSuggestModal(this.app, (file: TFile) => {
 						this.selectedFile = file;
 						this.updateSelectedFile();
@@ -195,8 +224,33 @@ export class ExportModal extends Modal {
 				});
 			});
 
+		new Setting(rootSection)
+			.setName("Tag")
+			.setDesc("Enter a tag or pattern. Matching notes become top-level export roots.")
+			.addText((text) => {
+				this.tagPatternText = text;
+				text
+					.setPlaceholder("#project or project/*")
+					.setValue(this.selectedTagPattern)
+					.onChange((value) => {
+						this.sourceMode = "tag";
+						this.selectedTagPattern = value;
+						this.updateSelectedFile();
+					});
+			})
+			.addButton((button) => {
+				button.setButtonText("Select tag").onClick(() => {
+					this.sourceMode = "tag";
+					new TagSuggestModal(this.app, (tag) => {
+						this.selectedTagPattern = tag;
+						this.tagPatternText?.setValue(tag);
+						this.updateSelectedFile();
+					}).open();
+				});
+			});
+
 		this.selectedFileEl = rootSection.createEl("div", {
-			text: "No file selected",
+			text: "No source selected",
 			cls: "smart-export-selected-file",
 		});
 
@@ -435,7 +489,7 @@ export class ExportModal extends Modal {
 	 */
 	private async calculateAndDisplayTokens() {
 		const calculationId = ++this.tokenCalculationId;
-		if (!this.selectedFile) {
+		if (!this.hasExportSource()) {
 			this.tokenCountEl.setText("Token estimate: not available");
 			return;
 		}
@@ -538,17 +592,18 @@ export class ExportModal extends Modal {
 	 * @private
 	 */
 	private async prepareExportOutput(): Promise<PreparedExportOutput | null> {
-		if (!this.selectedFile) {
-			new Notice("Please select a root note first.");
+		if (!this.hasExportSource()) {
+			new Notice("Please select a root note or tag first.");
 			return null;
 		}
 
-		const rootFile = this.selectedFile;
+		const rootFile = this.sourceMode === "note" ? this.selectedFile : null;
+		const sourceName = this.getExportSourceName();
 		this.tokenCountEl.setText("Exporting...");
 		const exportTree = await this.ensureExportTree();
 		if (!exportTree) {
 			this.tokenCountEl.setText("Export failed");
-			new Notice("Failed to generate export. See console for details.");
+			new Notice(this.getExportTreeFailureMessage());
 			return null;
 		}
 		this.enforceLockedRootSelection();
@@ -580,6 +635,7 @@ export class ExportModal extends Modal {
 
 		return {
 			rootFile,
+			sourceName,
 			output,
 			tokenCount,
 		};
@@ -635,7 +691,8 @@ export class ExportModal extends Modal {
 				if (this.settings.closeModalAfterExport) {
 					this.close();
 				}
-			}
+			},
+			preparedExport.sourceName
 		).open();
 	}
 
@@ -717,19 +774,49 @@ export class ExportModal extends Modal {
 		return notes;
 	}
 
+	private getNormalizedTagPattern(): string {
+		return normalizeNoteTag(this.selectedTagPattern);
+	}
+
+	private hasExportSource(): boolean {
+		if (this.sourceMode === "tag") {
+			return this.getNormalizedTagPattern().length > 0;
+		}
+		return this.selectedFile !== null;
+	}
+
+	private getExportSourceName(): string {
+		if (this.sourceMode === "tag") {
+			const tagPattern = this.getNormalizedTagPattern();
+			return tagPattern ? `Tag #${tagPattern}` : "Tag export";
+		}
+		return this.selectedFile?.basename ?? "Smart export";
+	}
+
+	private getExportTreeFailureMessage(): string {
+		if (this.sourceMode === "tag") {
+			return "No notes matched the selected tag after exclusions.";
+		}
+		return "Failed to generate export. See console for details.";
+	}
+
 	/**
 	 * Updates the UI to reflect the currently selected file.
 	 * @private
 	 */
 	private updateSelectedFile() {
-		if (this.selectedFile) {
+		this.sourceModeDropdown?.setValue(this.sourceMode);
+		if (this.sourceMode === "tag") {
+			const tagPattern = this.getNormalizedTagPattern();
+			this.selectedFileEl.setText(tagPattern ? `Selected tag: #${tagPattern}` : "No tag selected");
+		} else if (this.selectedFile) {
 			this.selectedFileEl.setText(`Selected: ${this.selectedFile.basename}`);
 			this.addedNotes = this.addedNotes.filter(
 				(addedNote) => addedNote.file.path !== this.selectedFile?.path
 			);
 			this.renderAddedNotesList();
 		} else {
-			this.selectedFileEl.setText("No file selected");
+			this.selectedFileEl.setText("No source selected");
 		}
 		this.updateAddedNotesDescription();
 		this.invalidateExportTree({ resetSelection: true });
@@ -740,7 +827,9 @@ export class ExportModal extends Modal {
 		if (!this.addedNotesDescriptionEl) {
 			return;
 		}
-		const startingPoint = this.selectedFile?.basename ?? "the selected note";
+		const startingPoint = this.hasExportSource()
+			? this.getExportSourceName()
+			: "the selected source";
 		this.addedNotesDescriptionEl.setText(
 			`Add notes that are not reached from ${startingPoint}. They are used only for this export.`
 		);
@@ -753,7 +842,7 @@ export class ExportModal extends Modal {
 	}
 
 	private addExportNote(file: TFile, mode: AddedNoteMode) {
-		if (this.selectedFile?.path === file.path) {
+		if (this.sourceMode === "note" && this.selectedFile?.path === file.path) {
 			new Notice("That note is already the root note.");
 			return;
 		}
@@ -863,7 +952,7 @@ export class ExportModal extends Modal {
 	 * @private
 	 */
 	private async ensureExportTree(): Promise<ExportNode | null> {
-		if (!this.selectedFile) {
+		if (!this.hasExportSource()) {
 			return null;
 		}
 
@@ -897,7 +986,7 @@ export class ExportModal extends Modal {
 	 * @private
 	 */
 	private async buildExportTree(buildId: number): Promise<ExportNode | null> {
-		if (!this.selectedFile) {
+		if (!this.hasExportSource()) {
 			this.exportTreePromise = null;
 			return null;
 		}
@@ -916,7 +1005,10 @@ export class ExportModal extends Modal {
 				this.linkTraversalMode,
 				traversalOptions
 			);
-			const primaryTree = await traversal.traverse(this.selectedFile.path);
+			const primaryTree =
+				this.sourceMode === "tag"
+					? await traversal.traverseTag(this.getNormalizedTagPattern())
+					: await traversal.traverse(this.selectedFile!.path);
 
 			if (buildId !== this.treeBuildId) {
 				this.exportTreePromise = null;
@@ -1088,7 +1180,10 @@ export class ExportModal extends Modal {
 	 * @private
 	 */
 	private getTreeCacheKey(): string {
-		const rootPath = this.selectedFile?.path ?? "unknown";
+		const source =
+			this.sourceMode === "tag"
+				? `tag:${this.getNormalizedTagPattern()}`
+				: `note:${this.selectedFile?.path ?? "unknown"}`;
 		const addedNotes = JSON.stringify(
 			this.addedNotes.map((note) => [note.file.path, note.mode] as const)
 		);
@@ -1097,7 +1192,7 @@ export class ExportModal extends Modal {
 		const ignoredTraversalPropertyRules = JSON.stringify(
 			this.settings.ignoredTraversalPropertyRules
 		);
-		return `${rootPath}|added:${addedNotes}|content:${this.contentDepth}|title:${this.titleDepth}|mode:${this.linkTraversalMode}|traversalIgnored:${ignoredTraversalFolders}|traversalIgnoredTags:${ignoredTraversalTagPatterns}|traversalIgnoredProperties:${ignoredTraversalPropertyRules}`;
+		return `${source}|added:${addedNotes}|content:${this.contentDepth}|title:${this.titleDepth}|mode:${this.linkTraversalMode}|traversalIgnored:${ignoredTraversalFolders}|traversalIgnoredTags:${ignoredTraversalTagPatterns}|traversalIgnoredProperties:${ignoredTraversalPropertyRules}`;
 	}
 
 	/**
@@ -1158,15 +1253,17 @@ export class ExportModal extends Modal {
 	}
 
 	private getLockedRootNodeIds(): Set<string> {
-		return this.selectedFile ? new Set([this.selectedFile.path]) : new Set();
+		return this.sourceMode === "note" && this.selectedFile
+			? new Set([this.selectedFile.path])
+			: new Set();
 	}
 
 	private isPrimaryRootNode(node: ExportNode): boolean {
-		return this.selectedFile?.path === node.id;
+		return this.sourceMode === "note" && this.selectedFile?.path === node.id;
 	}
 
 	private enforceLockedRootSelection() {
-		if (!this.selectedFile) {
+		if (this.sourceMode !== "note" || !this.selectedFile) {
 			return;
 		}
 		this.selectedNodeIds.add(this.selectedFile.path);
@@ -1302,10 +1399,10 @@ export class ExportModal extends Modal {
 			this.treeSummaryEl.setText("");
 		}
 
-		if (!this.selectedFile) {
+		if (!this.hasExportSource()) {
 			this.treeContainerEl.createDiv({
 				cls: "smart-export-tree-placeholder",
-				text: "Select a root note to preview the export tree.",
+				text: "Select a root note or tag to preview the export tree.",
 			});
 			return;
 		}

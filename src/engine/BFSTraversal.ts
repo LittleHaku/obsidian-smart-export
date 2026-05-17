@@ -1,6 +1,7 @@
 import { TFile } from "obsidian";
 import { ExportNode, LinkTraversalMode } from "../types";
 import { ObsidianAPI } from "../obsidian-api";
+import { composeExportRootCollection } from "./exportTreeComposition";
 import {
 	compileFolderFilterMatchers,
 	FolderFilterMatcher,
@@ -10,6 +11,7 @@ import {
 	compilePropertyFilterRules,
 	compileTagFilterMatchers,
 	frontmatterMatchesPropertyFilterRules,
+	normalizeNoteTag,
 	PropertyFilterRule,
 	TagFilterMatcher,
 	tagsMatchFilterMatchers,
@@ -98,38 +100,45 @@ export class BFSTraversal {
 			return null;
 		}
 
-		const queue: { file: TFile; depth: number; parent: ExportNode }[] = [];
 		const rootNode = this.createExportNode(rootFile, 0);
-
 		this.visited.add(rootFile.path);
-		queue.push({ file: rootFile, depth: 0, parent: rootNode });
-
-		let head = 0;
-		while (head < queue.length) {
-			const { file, depth, parent } = queue[head++];
-
-			if (depth >= this.titleDepth) continue;
-
-			const linkedFiles = this.getLinkedFiles(file);
-			for (const linkedFile of linkedFiles) {
-				// Global folder exclusions are applied before any node is added to the tree.
-				// Excluded notes are not traversed further, so links "from them" are ignored too.
-				if (this.shouldExcludeTraversalFile(linkedFile)) continue;
-				if (this.visited.has(linkedFile.path)) continue;
-
-				this.visited.add(linkedFile.path);
-				const childNode = this.createExportNode(linkedFile, depth + 1);
-				parent.children.push(childNode);
-				queue.push({
-					file: linkedFile,
-					depth: depth + 1,
-					parent: childNode,
-				});
-			}
-		}
+		this.traverseQueue([{ file: rootFile, depth: 0, parent: rootNode }]);
 
 		await this.updateNodeContent(rootNode);
 
+		return rootNode;
+	}
+
+	/**
+	 * Traverses the note graph from every note matching a tag pattern.
+	 */
+	public async traverseTag(tagPattern: string): Promise<ExportNode | null> {
+		this.missingNotes.clear();
+		this.visited.clear();
+
+		const rootFiles = this.obsidianAPI
+			.getFilesMatchingTagPattern(tagPattern)
+			.filter((file) => !this.shouldExcludeTraversalFile(file));
+
+		if (rootFiles.length === 0) {
+			return null;
+		}
+
+		const queue: { file: TFile; depth: number; parent: ExportNode }[] = [];
+		const rootNodes = rootFiles.map((rootFile) => {
+			const rootNode = this.createExportNode(rootFile, 0);
+			this.visited.add(rootFile.path);
+			queue.push({ file: rootFile, depth: 0, parent: rootNode });
+			return rootNode;
+		});
+
+		this.traverseQueue(queue);
+		const rootNode = composeExportRootCollection({
+			title: this.getTagRootTitle(tagPattern),
+			roots: rootNodes,
+		})!;
+
+		await this.updateNodeContent(rootNode);
 		return rootNode;
 	}
 
@@ -153,6 +162,37 @@ export class BFSTraversal {
 		};
 
 		return node;
+	}
+
+	private traverseQueue(queue: { file: TFile; depth: number; parent: ExportNode }[]): void {
+		let head = 0;
+		while (head < queue.length) {
+			const { file, depth, parent } = queue[head++];
+
+			if (depth >= this.titleDepth) continue;
+
+			const linkedFiles = this.getLinkedFiles(file);
+			for (const linkedFile of linkedFiles) {
+				// Global exclusions are applied before any node is added to the tree.
+				// Excluded notes are not traversed further, so links "from them" are ignored too.
+				if (this.shouldExcludeTraversalFile(linkedFile)) continue;
+				if (this.visited.has(linkedFile.path)) continue;
+
+				this.visited.add(linkedFile.path);
+				const childNode = this.createExportNode(linkedFile, depth + 1);
+				parent.children.push(childNode);
+				queue.push({
+					file: linkedFile,
+					depth: depth + 1,
+					parent: childNode,
+				});
+			}
+		}
+	}
+
+	private getTagRootTitle(tagPattern: string): string {
+		const normalizedTag = normalizeNoteTag(tagPattern);
+		return normalizedTag ? `Tag: #${normalizedTag}` : "Tag export";
 	}
 
 	/**

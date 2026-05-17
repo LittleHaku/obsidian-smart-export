@@ -19,14 +19,20 @@ export class ExportNoteDestinationModal extends Modal {
 
 	constructor(
 		app: App,
-		rootFile: TFile,
+		rootFile: TFile | null,
 		defaultFolderPath: string,
-		onSubmit: (destination: ExportNoteDestination) => Promise<boolean | void> | boolean | void
+		onSubmit: (destination: ExportNoteDestination) => Promise<boolean | void> | boolean | void,
+		sourceName: string = "Smart export"
 	) {
 		super(app);
 		this.onSubmit = onSubmit;
 
-		const defaultDestination = getDefaultExportNoteDestination(rootFile, defaultFolderPath);
+		const defaultDestination = rootFile
+			? getDefaultExportNoteDestination(rootFile, defaultFolderPath)
+			: {
+					folderPath: normalizeExportNoteFolderPath(defaultFolderPath),
+					noteName: normalizeExportNoteName(`Smart export - ${sourceName}`),
+				};
 		this.folderPath = defaultDestination.folderPath;
 		this.noteName = defaultDestination.noteName;
 	}

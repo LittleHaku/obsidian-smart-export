@@ -145,6 +145,7 @@ describe("BFSTraversal", () => {
 		// Mock App object behavior
 		mockApp.vault.getAbstractFileByPath = vi.fn((path: string) => mockFiles[path]);
 		mockApp.vault.getFileByPath = vi.fn((path: string) => mockFiles[path] || null);
+		mockApp.vault.getMarkdownFiles = vi.fn(() => Object.values(mockFiles));
 		mockApp.vault.cachedRead = vi.fn((file: TFile) =>
 			Promise.resolve(mockFileContents[file.path] || "")
 		);
@@ -154,6 +155,28 @@ describe("BFSTraversal", () => {
 			tags: mockFileTags[path] || [],
 			frontmatter: mockFileFrontmatter[path] || {},
 		}));
+		(mockApp.metadataCache as unknown as { getTags: ReturnType<typeof vi.fn> }).getTags = vi.fn(
+			() => {
+				const tags: Record<string, number> = {};
+				for (const fileTags of Object.values(mockFileTags)) {
+					for (const tag of fileTags) {
+						tags[tag.tag] = (tags[tag.tag] ?? 0) + 1;
+					}
+				}
+				for (const frontmatter of Object.values(mockFileFrontmatter)) {
+					for (const key of ["tag", "tags"]) {
+						const value = frontmatter[key];
+						const values = Array.isArray(value) ? value : [value];
+						for (const tag of values) {
+							if (typeof tag !== "string" || tag.trim().length === 0) continue;
+							const normalizedTag = tag.startsWith("#") ? tag : `#${tag}`;
+							tags[normalizedTag] = (tags[normalizedTag] ?? 0) + 1;
+						}
+					}
+				}
+				return tags;
+			}
+		);
 		mockApp.metadataCache.getFirstLinkpathDest = vi.fn((link: string, sourcePath: string) => {
 			if (link === "missing") return null;
 			const targetFile = Object.values(mockFiles).find((f) => f.basename === link);
@@ -582,6 +605,72 @@ describe("BFSTraversal", () => {
 		expect(rootNode?.children.map((child) => child.id)).toEqual([
 			"included/child-from-tag-root.md",
 		]);
+	});
+
+	it("should traverse from all notes matching a tag pattern", async () => {
+		mockFiles["tag/a.md"] = createMockTFile("tag/a.md", "tag-a");
+		mockFiles["tag/c.md"] = createMockTFile("tag/c.md", "tag-c");
+		mockFiles["notes/tag-child.md"] = createMockTFile("notes/tag-child.md", "tag-child");
+		mockFiles["excluded/tag-hidden.md"] = createMockTFile("excluded/tag-hidden.md", "tag-hidden");
+
+		mockFileContents["tag/a.md"] = "[[tag-child]] [[tag-hidden]]";
+		mockFileContents["tag/c.md"] = "frontmatter tag";
+		mockFileContents["notes/tag-child.md"] = "child content";
+		mockFileContents["excluded/tag-hidden.md"] = "hidden content";
+
+		mockFileLinks["tag/a.md"] = [createLink("tag-child"), createLink("tag-hidden")];
+		mockFileLinks["tag/c.md"] = [];
+		mockFileLinks["notes/tag-child.md"] = [];
+		mockFileLinks["excluded/tag-hidden.md"] = [];
+
+		mockFileFrontmatterLinks["tag/a.md"] = [];
+		mockFileFrontmatterLinks["tag/c.md"] = [];
+		mockFileFrontmatterLinks["notes/tag-child.md"] = [];
+		mockFileFrontmatterLinks["excluded/tag-hidden.md"] = [];
+
+		mockFileTags["tag/a.md"] = [createTag("#project/alpha")];
+		mockFileTags["tag/c.md"] = [];
+		mockFileTags["notes/tag-child.md"] = [];
+		mockFileTags["excluded/tag-hidden.md"] = [createTag("#project")];
+
+		mockFileFrontmatter["tag/a.md"] = {};
+		mockFileFrontmatter["tag/c.md"] = { tags: ["project"] };
+		mockFileFrontmatter["notes/tag-child.md"] = {};
+		mockFileFrontmatter["excluded/tag-hidden.md"] = {};
+		rebuildResolvedLinks();
+
+		const traversal = new BFSTraversal(obsidianAPI, 1, 1, "outgoing", {
+			ignoredTraversalFolders: ["excluded"],
+		});
+		const rootNode = await traversal.traverseTag("#project");
+
+		expect(rootNode).not.toBeNull();
+		expect(rootNode?.synthetic).toBe(true);
+		expect(rootNode?.title).toBe("Tag: #project");
+		expect(rootNode?.children.map((child) => child.id)).toEqual(["tag/a.md", "tag/c.md"]);
+		expect(rootNode?.children[0].children.map((child) => child.id)).toEqual(["notes/tag-child.md"]);
+		expect(rootNode?.children[0].content).toBe("[[tag-child]] [[tag-hidden]]");
+		expect(rootNode?.children[0].children[0].content).toBe("child content");
+	});
+
+	it("should return null when no notes match a tag pattern after exclusions", async () => {
+		mockFiles["excluded/tag-only-hidden.md"] = createMockTFile(
+			"excluded/tag-only-hidden.md",
+			"tag-only-hidden"
+		);
+		mockFileContents["excluded/tag-only-hidden.md"] = "";
+		mockFileLinks["excluded/tag-only-hidden.md"] = [];
+		mockFileFrontmatterLinks["excluded/tag-only-hidden.md"] = [];
+		mockFileTags["excluded/tag-only-hidden.md"] = [createTag("#hidden")];
+		mockFileFrontmatter["excluded/tag-only-hidden.md"] = {};
+		rebuildResolvedLinks();
+
+		const traversal = new BFSTraversal(obsidianAPI, 1, 1, "outgoing", {
+			ignoredTraversalFolders: ["excluded"],
+		});
+
+		await expect(traversal.traverseTag("#hidden")).resolves.toBeNull();
+		await expect(traversal.traverseTag("#missing")).resolves.toBeNull();
 	});
 
 	it("should exclude notes matching ignored property rules", async () => {

@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Export modal can now use a tag as the starting point, exporting all matching inline/frontmatter tagged notes as top-level roots while preserving traversal exclusions.
+
 ## [1.14.0] - 2026-05-16
 
 ### Added
