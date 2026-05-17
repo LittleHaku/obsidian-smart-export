@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { TFile } from "obsidian";
 import {
+	composeExportRootCollection,
 	composeExportTree,
 	createStandaloneExportNode,
 	SYNTHETIC_EXPORT_ROOT_ID,
@@ -101,6 +102,27 @@ describe("exportTreeComposition", () => {
 		expect(composedTree.id).toBe(SYNTHETIC_EXPORT_ROOT_ID);
 		expect(composedTree.children[0].children).toEqual([]);
 		expect(composedTree.children.map((child) => child.id)).toEqual(["root.md", "shared.md"]);
+	});
+
+	it("combines multiple export roots under a named synthetic collection", () => {
+		const firstRoot = createNode("first.md", [createNode("second.md")]);
+		const secondRoot = createNode("second.md", [createNode("child.md")]);
+
+		const composedTree = composeExportRootCollection({
+			title: "Tag: #project",
+			roots: [firstRoot, secondRoot],
+		});
+
+		expect(composedTree).not.toBeNull();
+		expect(composedTree?.synthetic).toBe(true);
+		expect(composedTree?.title).toBe("Tag: #project");
+		expect(composedTree?.children.map((child) => child.id)).toEqual(["first.md", "second.md"]);
+		expect(composedTree?.children[0].children).toEqual([]);
+		expect(composedTree?.children[1].children.map((child) => child.id)).toEqual(["child.md"]);
+	});
+
+	it("returns null when a root collection has no roots", () => {
+		expect(composeExportRootCollection({ title: "Empty", roots: [] })).toBeNull();
 	});
 
 	it("keeps the primary tree when an added note duplicates the primary root", () => {

@@ -9,6 +9,11 @@ interface ComposeExportTreeOptions {
 	singleNoteNodes?: ExportNode[];
 }
 
+interface ComposeExportRootCollectionOptions {
+	title: string;
+	roots: ExportNode[];
+}
+
 interface StandaloneExportNodeOptions {
 	content: string;
 	depth?: number;
@@ -69,6 +74,38 @@ export function composeExportTree(options: ComposeExportTreeOptions): ExportNode
 		children: [primaryTree, ...additionalChildren],
 		tokenCount: 0,
 		lastModified: getLatestModifiedDate([primaryTree, ...additionalChildren]),
+		synthetic: true,
+	};
+}
+
+export function composeExportRootCollection(
+	options: ComposeExportRootCollectionOptions
+): ExportNode | null {
+	if (options.roots.length === 0) {
+		return null;
+	}
+
+	const explicitTopLevelIds = new Set(
+		options.roots.filter((node) => !isSyntheticExportNode(node)).map((node) => node.id)
+	);
+	const seenPaths = new Set<string>();
+	const children = options.roots
+		.map((tree) =>
+			cloneExportTreeDeduplicating(tree, seenPaths, {
+				skipPaths: explicitTopLevelIds,
+				preserveCurrent: true,
+			})
+		)
+		.filter((tree): tree is ExportNode => tree !== null);
+
+	return {
+		id: `${SYNTHETIC_EXPORT_ROOT_ID}:root-collection:${options.title}`,
+		title: options.title,
+		depth: 0,
+		includeContent: false,
+		children,
+		tokenCount: 0,
+		lastModified: getLatestModifiedDate(children),
 		synthetic: true,
 	};
 }

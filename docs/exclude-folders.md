@@ -1,6 +1,6 @@
 # Exclusion Rules
 
-Updated: March 5, 2026
+Updated: May 17, 2026
 
 ## Overview
 
@@ -67,6 +67,7 @@ Value matching is exact after normalization and supports scalar values and array
 
 - If a linked note matches any exclusion rule, it is not added to the export tree and is not traversed.
 - The selected root note is always kept.
+- For tag source exports, matching tag roots are excluded if they match any folder/tag/property exclusion.
 - Folder rules: leading `/` is a root anchor. If you want segment matching anywhere in the path, remove the leading `/` (for example `assets*` instead of `/assets*`).
 
 ## Where this is used in code

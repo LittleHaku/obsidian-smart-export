@@ -1,10 +1,10 @@
 # Export Architecture
 
-Updated: May 16, 2026
+Updated: May 17, 2026
 
 ## Overview
 
-Smart Export builds a note tree from a selected root note, applies traversal filters, serializes the result into a chosen export format, and then delivers that output either to the clipboard or to a newly created vault note based on the user's delivery settings.
+Smart Export builds a note tree from a selected root note or tag source, applies traversal filters, serializes the result into a chosen export format, and then delivers that output either to the clipboard or to a newly created vault note based on the user's delivery settings.
 
 Core modules:
 
@@ -28,9 +28,15 @@ sequenceDiagram
     participant API as ObsidianAPI
     participant Exporter as Selected exporter
 
-    User->>Modal: Open export + choose root/options/extra notes
-    Modal->>Traversal: traverse(rootPath)
-    Traversal->>API: getFileByPath(rootPath)
+    User->>Modal: Open export + choose root note or tag/options/extra notes/tags
+    alt Tag source
+        Modal->>API: find notes matching selected tag
+        Modal->>Traversal: traverse each matching note as a root
+        Traversal-->>Modal: synthetic tag root with matching note roots
+    else Root note source
+        Modal->>Traversal: traverse(rootPath)
+        Traversal->>API: getFileByPath(rootPath)
+    end
     loop BFS levels
         Traversal->>API: get outgoing/incoming links
         Traversal->>Traversal: apply folder/tag/property filters
@@ -41,6 +47,10 @@ sequenceDiagram
     opt Extra notes as new roots
         Modal->>Traversal: traverse(extraRootPath)
         Traversal-->>Modal: extra root export tree + missing notes count
+    end
+    opt Extra tags
+        Modal->>Traversal: traverseTag(extraTag)
+        Traversal-->>Modal: extra tag root collection + missing notes count
     end
     opt Extra notes as single notes
         Modal->>API: read single-note content
@@ -83,14 +93,23 @@ Content redaction:
 4. The configured delimiter marks both start and end of a private section. With the default delimiter, `:::private:::` renders as `REDACTED`.
 5. Regular expression redaction rules are newline-separated and their matches are replaced with the configured regular expression replacement text.
 
-Extra notes:
+Extra notes and tags:
 
-1. Extra notes are modal-session only and are not persisted in settings.
+1. Extra notes and tags are modal-session only and are not persisted in settings.
 2. `Single note` entries include only that note's content and do not start traversal from that note.
 3. `New root` entries run normal traversal from that note with the same depth, link direction, and exclusion settings as the selected root.
-4. When extra notes exist, `exportTreeComposition` creates an export-only synthetic bundle root so exporters can keep receiving a single `ExportNode`.
-5. Exporters skip synthetic grouping nodes when counting/rendering real vault notes.
-6. Duplicate note IDs are deduplicated so explicitly added extra notes take precedence over the same note's descendant occurrence under the primary root: `exportTreeComposition` removes explicitly added note IDs from primary-tree descendants before appending the added note as a top-level child.
+4. `Tag` entries run tag-source traversal and add matching notes as another export-only root collection.
+5. When extra notes or tags exist, `exportTreeComposition` creates an export-only synthetic bundle root so exporters can keep receiving a single `ExportNode`.
+6. Exporters skip synthetic grouping nodes when counting/rendering real vault notes.
+7. Duplicate note IDs are deduplicated so explicitly added extra notes take precedence over the same note's descendant occurrence under the primary root: `exportTreeComposition` removes explicitly added note IDs from primary-tree descendants before appending the added note as a top-level child.
+
+Tag sources:
+
+1. The export modal can use either a root note or a tag source.
+2. Tag source exports use tags selected from Obsidian metadata.
+3. Matching notes are found from inline tags and frontmatter `tag`/`tags`, sorted by vault path, and represented as top-level roots under an export-only synthetic `Tag: #...` grouping node.
+4. Folder, tag, and property exclusions apply to matching tag roots and to their traversed descendants.
+5. Link direction, content depth, title depth, extra roots, extra tags, and single-note additions continue to apply normally.
 
 Markdown link rewriting in exported note content:
 
@@ -149,7 +168,7 @@ flowchart LR
     C -- No --> E[Build new traversal]
     E --> F[Store in bounded cache]
 
-    A1[Root note]
+    A1[Root note or tag source]
     A2[Content depth]
     A3[Title depth]
     A4[Link direction]

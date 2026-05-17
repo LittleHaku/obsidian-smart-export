@@ -13,6 +13,15 @@ export interface ReleaseNotesEntry {
 
 export const RELEASE_NOTES: ReleaseNotesEntry[] = [
 	{
+		version: "1.15.0",
+		date: "2026-05-17",
+		showOnUpdate: true,
+		new: [
+			"Export modal can now use a tag as the starting point, exporting all matching inline and frontmatter tagged notes as top-level roots while preserving traversal exclusions.",
+			"Include more notes now supports adding tags, so another tag can contribute matching notes to the same export.",
+		],
+	},
+	{
 		version: "1.14.0",
 		date: "2026-05-16",
 		showOnUpdate: true,

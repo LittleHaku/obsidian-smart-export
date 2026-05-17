@@ -7,11 +7,13 @@ export const mockVault = {
 	getFileByPath: vi.fn(),
 	cachedRead: vi.fn(),
 	getFiles: vi.fn(() => []),
+	getMarkdownFiles: vi.fn(() => []),
 } as unknown as Vault;
 
 export const mockMetadataCache = {
 	getCache: vi.fn(),
 	getFirstLinkpathDest: vi.fn(),
+	getTags: vi.fn(() => ({})),
 	resolvedLinks: {},
 } as unknown as MetadataCache;
 

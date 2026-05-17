@@ -11,7 +11,8 @@ Landing page: [smart-export.vercel.app](https://smart-export.vercel.app/)
 ## Why Smart Export
 
 - Follow outgoing links, backlinks, or both from a root note.
-- Include disconnected notes as single notes or new roots in the export modal.
+- Export all notes matching a tag as top-level roots.
+- Include disconnected notes or tags in the export modal.
 - Export as XML, print-friendly Markdown, or Markdown templates such as `LLM-ready`.
 - Exclude folders, tags, and notes based on frontmatter properties (property rules) from traversal.
 - Optionally redact marked private sections from exported note content.
@@ -38,8 +39,8 @@ Use [BRAT (Beta Reviewers Auto-update Tool)](https://github.com/TfTHacker/obsidi
 ## Quick Start
 
 1. Open command palette (`Cmd/Ctrl+P`) and run `Smart Export: Open export` (or click the ribbon icon).
-2. Select a root note.
-3. Optionally include disconnected notes as **single note** or **new root** entries.
+2. Select a root note, or switch **Source** to **Tag** and choose a tag.
+3. Optionally include disconnected notes as **single note** or **new root** entries, or include another tag.
 4. Set depth values (recommended start: content `2`, title `4`).
 5. Choose output format.
 6. Click **Export to clipboard** or **Export to new note**.
@@ -55,10 +56,12 @@ Use [BRAT (Beta Reviewers Auto-update Tool)](https://github.com/TfTHacker/obsidi
 ## Core Features
 
 - Smart note discovery using breadth-first traversal.
+- Tag source exports that start from every matching inline or frontmatter tag.
 - Link direction modes: outgoing, incoming, or both.
 - Session-only extra notes in the export modal:
   - single note includes just the selected note
   - new root starts another tree from that note
+- Session-only extra tags that add matching notes as additional export roots.
 - Dual depth controls:
   - content depth for full note content
   - title depth for title-only context
@@ -88,6 +91,8 @@ Settings location: **Obsidian → Settings → Smart Export**
 - **Ignored folders**: comma-separated folders/patterns (for example `templates, assets*, /archive`) excluded from traversal/export. Leading `/` anchors to vault root.
 - **Hide notes with tags**: comma-separated tag patterns (for example `archive*, #draft, projects/*/old`) excluded from traversal/export.
 - **Hide notes with property rules**: comma-separated rules using `key` or `key=value` (for example `status=done, published=true, archived`) excluded from traversal/export.
+
+Tag source exports use tags from Obsidian metadata, including inline tags and frontmatter `tag`/`tags`. Matching notes are grouped as top-level export roots in vault-path order, and folder/tag/property exclusions still remove matching notes from the export.
 
 ### Content redaction
 

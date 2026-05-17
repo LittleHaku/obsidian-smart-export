@@ -1,5 +1,9 @@
 import { App, TFile, Reference, getAllTags } from "obsidian";
-import { normalizeNoteTag } from "./utils/noteFilters";
+import {
+	compileTagFilterMatchers,
+	normalizeNoteTag,
+	tagsMatchFilterMatchers,
+} from "./utils/noteFilters";
 
 function getBaseLinkTarget(link: string): string {
 	const headingOrBlockSeparatorIndex = link.search(/[#^]/);
@@ -33,6 +37,13 @@ export class ObsidianAPI {
 	 */
 	public getTFile(path: string): TFile | null {
 		return this.app.vault.getFileByPath(path);
+	}
+
+	/**
+	 * Retrieves markdown files in a stable vault-path order.
+	 */
+	public getMarkdownFiles(): TFile[] {
+		return [...this.app.vault.getMarkdownFiles()].sort((a, b) => a.path.localeCompare(b.path));
 	}
 
 	/**
@@ -151,6 +162,44 @@ export class ObsidianAPI {
 		}
 
 		return [...normalizedTags];
+	}
+
+	/**
+	 * Lists normalized tags known to the metadata cache.
+	 */
+	public getAvailableTags(): string[] {
+		const cacheWithTags = this.app.metadataCache as {
+			getTags?: () => Record<string, number>;
+		};
+		const metadataTags = Object.keys(cacheWithTags.getTags?.() ?? {})
+			.map((tag) => normalizeNoteTag(tag))
+			.filter((tag) => tag.length > 0);
+
+		if (metadataTags.length > 0) {
+			return [...new Set(metadataTags)].sort((a, b) => a.localeCompare(b));
+		}
+
+		const scannedTags = new Set<string>();
+		for (const file of this.getMarkdownFiles()) {
+			for (const tag of this.getNoteTags(file)) {
+				scannedTags.add(tag);
+			}
+		}
+		return [...scannedTags].sort((a, b) => a.localeCompare(b));
+	}
+
+	/**
+	 * Finds markdown files whose inline or frontmatter tags match the selected tag.
+	 */
+	public getFilesMatchingTag(tag: string): TFile[] {
+		const matchers = compileTagFilterMatchers([tag]);
+		if (matchers.length === 0) {
+			return [];
+		}
+
+		return this.getMarkdownFiles().filter((file) =>
+			tagsMatchFilterMatchers(this.getNoteTags(file), matchers)
+		);
 	}
 
 	/**
