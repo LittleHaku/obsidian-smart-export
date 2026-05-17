@@ -189,10 +189,10 @@ export class ObsidianAPI {
 	}
 
 	/**
-	 * Finds markdown files whose inline or frontmatter tags match a tag pattern.
+	 * Finds markdown files whose inline or frontmatter tags match the selected tag.
 	 */
-	public getFilesMatchingTagPattern(tagPattern: string): TFile[] {
-		const matchers = compileTagFilterMatchers([tagPattern]);
+	public getFilesMatchingTag(tag: string): TFile[] {
+		const matchers = compileTagFilterMatchers([tag]);
 		if (matchers.length === 0) {
 			return [];
 		}

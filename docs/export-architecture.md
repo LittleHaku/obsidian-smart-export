@@ -106,7 +106,7 @@ Extra notes and tags:
 Tag sources:
 
 1. The export modal can use either a root note or a tag source.
-2. Tag source exports use the same tag normalization semantics as `Hide notes with tags`.
+2. Tag source exports use tags selected from Obsidian metadata.
 3. Matching notes are found from inline tags and frontmatter `tag`/`tags`, sorted by vault path, and represented as top-level roots under an export-only synthetic `Tag: #...` grouping node.
 4. Folder, tag, and property exclusions apply to matching tag roots and to their traversed descendants.
 5. Link direction, content depth, title depth, extra roots, extra tags, and single-note additions continue to apply normally.

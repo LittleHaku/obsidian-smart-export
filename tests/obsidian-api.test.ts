@@ -86,14 +86,14 @@ describe("ObsidianAPI", () => {
 		expect(api.getAvailableTags()).toEqual(["archive", "project", "project/alpha"]);
 	});
 
-	it("finds files matching a normalized tag pattern in path order", () => {
+	it("finds files matching a normalized selected tag in path order", () => {
 		setGetTagsMock(() => ({}));
 		const api = new ObsidianAPI(mockApp);
 
-		expect(api.getFilesMatchingTagPattern("#project").map((file) => file.path)).toEqual([
+		expect(api.getFilesMatchingTag("#project").map((file) => file.path)).toEqual([
 			"b.md",
 			"folder/a.md",
 		]);
-		expect(api.getFilesMatchingTagPattern("#").map((file) => file.path)).toEqual([]);
+		expect(api.getFilesMatchingTag("#").map((file) => file.path)).toEqual([]);
 	});
 });

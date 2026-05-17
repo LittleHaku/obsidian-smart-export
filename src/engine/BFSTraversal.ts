@@ -110,14 +110,14 @@ export class BFSTraversal {
 	}
 
 	/**
-	 * Traverses the note graph from every note matching a tag pattern.
+	 * Traverses the note graph from every note matching the selected tag.
 	 */
-	public async traverseTag(tagPattern: string): Promise<ExportNode | null> {
+	public async traverseTag(tag: string): Promise<ExportNode | null> {
 		this.missingNotes.clear();
 		this.visited.clear();
 
 		const rootFiles = this.obsidianAPI
-			.getFilesMatchingTagPattern(tagPattern)
+			.getFilesMatchingTag(tag)
 			.filter((file) => !this.shouldExcludeTraversalFile(file));
 
 		if (rootFiles.length === 0) {
@@ -134,7 +134,7 @@ export class BFSTraversal {
 
 		this.traverseQueue(queue);
 		const rootNode = composeExportRootCollection({
-			title: this.getTagRootTitle(tagPattern),
+			title: this.getTagRootTitle(tag),
 			roots: rootNodes,
 		})!;
 
@@ -190,8 +190,8 @@ export class BFSTraversal {
 		}
 	}
 
-	private getTagRootTitle(tagPattern: string): string {
-		const normalizedTag = normalizeNoteTag(tagPattern);
+	private getTagRootTitle(tag: string): string {
+		const normalizedTag = normalizeNoteTag(tag);
 		return normalizedTag ? `Tag: #${normalizedTag}` : "Tag export";
 	}
 

@@ -607,7 +607,7 @@ describe("BFSTraversal", () => {
 		]);
 	});
 
-	it("should traverse from all notes matching a tag pattern", async () => {
+	it("should traverse from all notes matching the selected tag", async () => {
 		mockFiles["tag/a.md"] = createMockTFile("tag/a.md", "tag-a");
 		mockFiles["tag/c.md"] = createMockTFile("tag/c.md", "tag-c");
 		mockFiles["notes/tag-child.md"] = createMockTFile("notes/tag-child.md", "tag-child");
@@ -653,7 +653,7 @@ describe("BFSTraversal", () => {
 		expect(rootNode?.children[0].children[0].content).toBe("child content");
 	});
 
-	it("should return null when no notes match a tag pattern after exclusions", async () => {
+	it("should return null when no notes match a selected tag after exclusions", async () => {
 		mockFiles["excluded/tag-only-hidden.md"] = createMockTFile(
 			"excluded/tag-only-hidden.md",
 			"tag-only-hidden"

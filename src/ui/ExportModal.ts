@@ -64,7 +64,7 @@ type AddedExportItem =
 	  }
 	| {
 			kind: "tag";
-			tagPattern: string;
+			tag: string;
 	  };
 
 /**
@@ -78,8 +78,8 @@ export class ExportModal extends Modal {
 	private selectedFile: TFile | null = null;
 	/** Which source type is used for this export. */
 	private sourceMode: ExportSourceMode = "note";
-	/** Tag pattern used when exporting from matching notes. */
-	private selectedTagPattern = "";
+	/** Selected tag used when exporting from matching notes. */
+	private selectedTag = "";
 	/** Dropdown used to switch export source modes. */
 	private sourceModeDropdown: DropdownComponent | null = null;
 	/** Container for source-specific controls. */
@@ -752,21 +752,21 @@ export class ExportModal extends Modal {
 		return notes;
 	}
 
-	private getNormalizedTagPattern(): string {
-		return normalizeNoteTag(this.selectedTagPattern);
+	private getSelectedTag(): string {
+		return normalizeNoteTag(this.selectedTag);
 	}
 
 	private hasExportSource(): boolean {
 		if (this.sourceMode === "tag") {
-			return this.getNormalizedTagPattern().length > 0;
+			return this.getSelectedTag().length > 0;
 		}
 		return this.selectedFile !== null;
 	}
 
 	private getExportSourceName(): string {
 		if (this.sourceMode === "tag") {
-			const tagPattern = this.getNormalizedTagPattern();
-			return tagPattern ? `Tag #${tagPattern}` : "Tag export";
+			const tag = this.getSelectedTag();
+			return tag ? `Tag #${tag}` : "Tag export";
 		}
 		return this.selectedFile?.basename ?? "Smart export";
 	}
@@ -791,7 +791,7 @@ export class ExportModal extends Modal {
 				.addButton((button) => {
 					button.setButtonText("Select tag").onClick(() => {
 						new TagSuggestModal(this.app, (tag) => {
-							this.selectedTagPattern = tag;
+							this.selectedTag = tag;
 							this.updateSelectedFile();
 						}).open();
 					});
@@ -819,8 +819,8 @@ export class ExportModal extends Modal {
 	private updateSelectedFile() {
 		this.sourceModeDropdown?.setValue(this.sourceMode);
 		if (this.sourceMode === "tag") {
-			const tagPattern = this.getNormalizedTagPattern();
-			this.selectedFileEl.setText(tagPattern ? `Selected tag: #${tagPattern}` : "No tag selected");
+			const tag = this.getSelectedTag();
+			this.selectedFileEl.setText(tag ? `Selected tag: #${tag}` : "No tag selected");
 		} else if (this.selectedFile) {
 			this.selectedFileEl.setText(`Selected: ${this.selectedFile.basename}`);
 			this.addedNotes = this.addedNotes.filter(
@@ -875,26 +875,26 @@ export class ExportModal extends Modal {
 		void this.calculateAndDisplayTokens();
 	}
 
-	private addExportTag(tagPattern: string) {
-		const normalizedTagPattern = normalizeNoteTag(tagPattern);
-		if (!normalizedTagPattern) {
+	private addExportTag(tag: string) {
+		const normalizedTag = normalizeNoteTag(tag);
+		if (!normalizedTag) {
 			new Notice("That tag could not be added.");
 			return;
 		}
-		if (this.sourceMode === "tag" && this.getNormalizedTagPattern() === normalizedTagPattern) {
+		if (this.sourceMode === "tag" && this.getSelectedTag() === normalizedTag) {
 			new Notice("That tag is already the export source.");
 			return;
 		}
 		if (
 			this.addedNotes.some(
-				(note) => note.kind === "tag" && normalizeNoteTag(note.tagPattern) === normalizedTagPattern
+				(note) => note.kind === "tag" && normalizeNoteTag(note.tag) === normalizedTag
 			)
 		) {
 			new Notice("That tag is already added.");
 			return;
 		}
 
-		this.addedNotes.push({ kind: "tag", tagPattern: normalizedTagPattern });
+		this.addedNotes.push({ kind: "tag", tag: normalizedTag });
 		this.renderAddedNotesList();
 		this.invalidateExportTree();
 		void this.calculateAndDisplayTokens();
@@ -962,7 +962,7 @@ export class ExportModal extends Modal {
 
 	private getAddedItemTitle(item: AddedExportItem): string {
 		if (item.kind === "tag") {
-			return `#${normalizeNoteTag(item.tagPattern)}`;
+			return `#${normalizeNoteTag(item.tag)}`;
 		}
 		return item.file.basename;
 	}
@@ -1069,7 +1069,7 @@ export class ExportModal extends Modal {
 			);
 			const primaryTree =
 				this.sourceMode === "tag"
-					? await traversal.traverseTag(this.getNormalizedTagPattern())
+					? await traversal.traverseTag(this.getSelectedTag())
 					: await traversal.traverse(this.selectedFile!.path);
 
 			if (buildId !== this.treeBuildId) {
@@ -1100,7 +1100,7 @@ export class ExportModal extends Modal {
 						this.linkTraversalMode,
 						traversalOptions
 					);
-					const extraRootTree = await extraTraversal.traverseTag(addedNote.tagPattern);
+					const extraRootTree = await extraTraversal.traverseTag(addedNote.tag);
 					if (buildId !== this.treeBuildId) {
 						this.exportTreePromise = null;
 						return null;
@@ -1266,12 +1266,12 @@ export class ExportModal extends Modal {
 	private getTreeCacheKey(): string {
 		const source =
 			this.sourceMode === "tag"
-				? `tag:${this.getNormalizedTagPattern()}`
+				? `tag:${this.getSelectedTag()}`
 				: `note:${this.selectedFile?.path ?? "unknown"}`;
 		const addedNotes = JSON.stringify(
 			this.addedNotes.map((note) =>
 				note.kind === "tag"
-					? (["tag", normalizeNoteTag(note.tagPattern)] as const)
+					? (["tag", normalizeNoteTag(note.tag)] as const)
 					: (["note", note.file.path, note.mode] as const)
 			)
 		);
