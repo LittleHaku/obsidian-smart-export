@@ -56,10 +56,16 @@ interface PreparedExportOutput {
 type ExportSourceMode = "note" | "tag";
 type AddedNoteMode = "single-note" | "extra-root";
 
-interface AddedExportNote {
-	file: TFile;
-	mode: AddedNoteMode;
-}
+type AddedExportItem =
+	| {
+			kind: "note";
+			file: TFile;
+			mode: AddedNoteMode;
+	  }
+	| {
+			kind: "tag";
+			tagPattern: string;
+	  };
 
 /**
  * The main modal for configuring and triggering a smart export.
@@ -80,9 +86,9 @@ export class ExportModal extends Modal {
 	private sourceControlsEl: HTMLElement;
 	/** The HTML element that displays the name of the selected file. */
 	private selectedFileEl: HTMLElement;
-	/** Session-only notes manually added to the export. */
-	private addedNotes: AddedExportNote[] = [];
-	/** Container for manually added note rows. */
+	/** Session-only notes and tags manually added to the export. */
+	private addedNotes: AddedExportItem[] = [];
+	/** Container for manually added note/tag rows. */
 	private addedNotesListEl: HTMLElement;
 	/** Description for extra-note context that reflects the selected root note. */
 	private addedNotesDescriptionEl: HTMLElement;
@@ -238,7 +244,9 @@ export class ExportModal extends Modal {
 		});
 		new Setting(addedNotesSection)
 			.setName("Add extra notes")
-			.setDesc("Single note includes one note. New root starts another export tree from that note.")
+			.setDesc(
+				"Single note includes one note. New root starts another export tree. Tag adds matching notes as roots."
+			)
 			.addButton((button) => {
 				button.setButtonText("Add single note").onClick(() => {
 					this.openAddedNotePicker("single-note");
@@ -247,6 +255,11 @@ export class ExportModal extends Modal {
 			.addButton((button) => {
 				button.setButtonText("Add new root").onClick(() => {
 					this.openAddedNotePicker("extra-root");
+				});
+			})
+			.addButton((button) => {
+				button.setButtonText("Add tag").onClick(() => {
+					this.openAddedTagPicker();
 				});
 			});
 		this.addedNotesListEl = addedNotesSection.createDiv({
@@ -811,7 +824,7 @@ export class ExportModal extends Modal {
 		} else if (this.selectedFile) {
 			this.selectedFileEl.setText(`Selected: ${this.selectedFile.basename}`);
 			this.addedNotes = this.addedNotes.filter(
-				(addedNote) => addedNote.file.path !== this.selectedFile?.path
+				(addedNote) => addedNote.kind !== "note" || addedNote.file.path !== this.selectedFile?.path
 			);
 			this.renderAddedNotesList();
 		} else {
@@ -830,7 +843,7 @@ export class ExportModal extends Modal {
 			? this.getExportSourceName()
 			: "the selected source";
 		this.addedNotesDescriptionEl.setText(
-			`Add notes that are not reached from ${startingPoint}. They are used only for this export.`
+			`Add notes or tags that are not reached from ${startingPoint}. They are used only for this export.`
 		);
 	}
 
@@ -840,17 +853,48 @@ export class ExportModal extends Modal {
 		}).open();
 	}
 
+	private openAddedTagPicker() {
+		new TagSuggestModal(this.app, (tag) => {
+			this.addExportTag(tag);
+		}).open();
+	}
+
 	private addExportNote(file: TFile, mode: AddedNoteMode) {
 		if (this.sourceMode === "note" && this.selectedFile?.path === file.path) {
 			new Notice("That note is already the root note.");
 			return;
 		}
-		if (this.addedNotes.some((note) => note.file.path === file.path)) {
+		if (this.addedNotes.some((note) => note.kind === "note" && note.file.path === file.path)) {
 			new Notice("That note is already added.");
 			return;
 		}
 
-		this.addedNotes.push({ file, mode });
+		this.addedNotes.push({ kind: "note", file, mode });
+		this.renderAddedNotesList();
+		this.invalidateExportTree();
+		void this.calculateAndDisplayTokens();
+	}
+
+	private addExportTag(tagPattern: string) {
+		const normalizedTagPattern = normalizeNoteTag(tagPattern);
+		if (!normalizedTagPattern) {
+			new Notice("That tag could not be added.");
+			return;
+		}
+		if (this.sourceMode === "tag" && this.getNormalizedTagPattern() === normalizedTagPattern) {
+			new Notice("That tag is already the export source.");
+			return;
+		}
+		if (
+			this.addedNotes.some(
+				(note) => note.kind === "tag" && normalizeNoteTag(note.tagPattern) === normalizedTagPattern
+			)
+		) {
+			new Notice("That tag is already added.");
+			return;
+		}
+
+		this.addedNotes.push({ kind: "tag", tagPattern: normalizedTagPattern });
 		this.renderAddedNotesList();
 		this.invalidateExportTree();
 		void this.calculateAndDisplayTokens();
@@ -875,30 +919,32 @@ export class ExportModal extends Modal {
 			const noteLabelEl = rowEl.createDiv({ cls: "smart-export-added-note-label" });
 			noteLabelEl.createDiv({
 				cls: "smart-export-added-note-title",
-				text: addedNote.file.basename,
+				text: this.getAddedItemTitle(addedNote),
 			});
 			noteLabelEl.createDiv({
 				cls: "smart-export-added-note-path",
-				text: addedNote.file.path,
+				text: this.getAddedItemPathText(addedNote),
 			});
 			noteLabelEl.createDiv({
 				cls: "smart-export-added-note-scope",
-				text: this.getAddedNoteScopeText(addedNote.mode),
+				text: this.getAddedItemScopeText(addedNote),
 			});
 
 			const actionGroupEl = rowEl.createDiv({ cls: "smart-export-added-note-actions" });
-			const toggleModeButtonEl = actionGroupEl.createEl("button", {
-				text: addedNote.mode === "single-note" ? "Use as new root" : "Use as single note",
-				cls: "smart-export-added-note-action",
-			});
-			toggleModeButtonEl.setAttr("type", "button");
-			toggleModeButtonEl.addEventListener("click", () => {
-				const mode = addedNote.mode === "single-note" ? "extra-root" : "single-note";
-				this.addedNotes[index] = { ...addedNote, mode };
-				this.renderAddedNotesList();
-				this.invalidateExportTree();
-				void this.calculateAndDisplayTokens();
-			});
+			if (addedNote.kind === "note") {
+				const toggleModeButtonEl = actionGroupEl.createEl("button", {
+					text: addedNote.mode === "single-note" ? "Use as new root" : "Use as single note",
+					cls: "smart-export-added-note-action",
+				});
+				toggleModeButtonEl.setAttr("type", "button");
+				toggleModeButtonEl.addEventListener("click", () => {
+					const mode = addedNote.mode === "single-note" ? "extra-root" : "single-note";
+					this.addedNotes[index] = { ...addedNote, mode };
+					this.renderAddedNotesList();
+					this.invalidateExportTree();
+					void this.calculateAndDisplayTokens();
+				});
+			}
 
 			const removeButtonEl = actionGroupEl.createEl("button", {
 				text: "Remove",
@@ -914,8 +960,25 @@ export class ExportModal extends Modal {
 		}
 	}
 
-	private getAddedNoteScopeText(mode: AddedNoteMode): string {
-		if (mode === "extra-root") {
+	private getAddedItemTitle(item: AddedExportItem): string {
+		if (item.kind === "tag") {
+			return `#${normalizeNoteTag(item.tagPattern)}`;
+		}
+		return item.file.basename;
+	}
+
+	private getAddedItemPathText(item: AddedExportItem): string {
+		if (item.kind === "tag") {
+			return "Tag";
+		}
+		return item.file.path;
+	}
+
+	private getAddedItemScopeText(item: AddedExportItem): string {
+		if (item.kind === "tag") {
+			return "Tag: starts export trees from all matching notes using the current depth and link direction.";
+		}
+		if (item.mode === "extra-root") {
 			return "New root: starts another tree from this note using the current depth and link direction.";
 		}
 		return "Single note: includes only this note.";
@@ -1029,6 +1092,28 @@ export class ExportModal extends Modal {
 			const singleNoteNodes: ExportNode[] = [];
 
 			for (const addedNote of this.addedNotes) {
+				if (addedNote.kind === "tag") {
+					const extraTraversal = new BFSTraversal(
+						obsidianAPI,
+						this.contentDepth,
+						this.titleDepth,
+						this.linkTraversalMode,
+						traversalOptions
+					);
+					const extraRootTree = await extraTraversal.traverseTag(addedNote.tagPattern);
+					if (buildId !== this.treeBuildId) {
+						this.exportTreePromise = null;
+						return null;
+					}
+					if (extraRootTree) {
+						extraRootTrees.push(extraRootTree);
+					}
+					for (const missingNote of extraTraversal.getMissingNotes()) {
+						missingNotes.add(missingNote);
+					}
+					continue;
+				}
+
 				if (addedNote.mode === "extra-root") {
 					const extraTraversal = new BFSTraversal(
 						obsidianAPI,
@@ -1184,7 +1269,11 @@ export class ExportModal extends Modal {
 				? `tag:${this.getNormalizedTagPattern()}`
 				: `note:${this.selectedFile?.path ?? "unknown"}`;
 		const addedNotes = JSON.stringify(
-			this.addedNotes.map((note) => [note.file.path, note.mode] as const)
+			this.addedNotes.map((note) =>
+				note.kind === "tag"
+					? (["tag", normalizeNoteTag(note.tagPattern)] as const)
+					: (["note", note.file.path, note.mode] as const)
+			)
 		);
 		const ignoredTraversalFolders = JSON.stringify(this.settings.ignoredTraversalFolders);
 		const ignoredTraversalTagPatterns = JSON.stringify(this.settings.ignoredTraversalTagPatterns);
