@@ -1,6 +1,6 @@
 # Export Architecture
 
-Updated: May 16, 2026
+Updated: May 17, 2026
 
 ## Overview
 

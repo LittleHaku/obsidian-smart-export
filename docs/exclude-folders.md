@@ -1,6 +1,6 @@
 # Exclusion Rules
 
-Updated: March 5, 2026
+Updated: May 17, 2026
 
 ## Overview
 
