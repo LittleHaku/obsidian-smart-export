@@ -8,7 +8,6 @@ import {
 	Notice,
 	debounce,
 	setTooltip,
-	TextComponent,
 } from "obsidian";
 import { RootNoteSuggestModal } from "./RootNoteSuggestModal";
 import { TagSuggestModal } from "./TagSuggestModal";
@@ -77,8 +76,8 @@ export class ExportModal extends Modal {
 	private selectedTagPattern = "";
 	/** Dropdown used to switch export source modes. */
 	private sourceModeDropdown: DropdownComponent | null = null;
-	/** Text input used to enter a tag export source. */
-	private tagPatternText: TextComponent | null = null;
+	/** Container for source-specific controls. */
+	private sourceControlsEl: HTMLElement;
 	/** The HTML element that displays the name of the selected file. */
 	private selectedFileEl: HTMLElement;
 	/** Session-only notes manually added to the export. */
@@ -207,47 +206,13 @@ export class ExportModal extends Modal {
 					.setValue(this.sourceMode)
 					.onChange((value: ExportSourceMode) => {
 						this.sourceMode = value;
+						this.renderSourceControls();
 						this.updateSelectedFile();
 					});
 			});
 
-		new Setting(rootSection)
-			.setName("Root note")
-			.setDesc("Choose the note to start traversing from. Default: current active note")
-			.addButton((button) => {
-				button.setButtonText("Select").onClick(() => {
-					this.sourceMode = "note";
-					new RootNoteSuggestModal(this.app, (file: TFile) => {
-						this.selectedFile = file;
-						this.updateSelectedFile();
-					}).open();
-				});
-			});
-
-		new Setting(rootSection)
-			.setName("Tag")
-			.setDesc("Enter a tag or pattern. Matching notes become top-level export roots.")
-			.addText((text) => {
-				this.tagPatternText = text;
-				text
-					.setPlaceholder("#project or project/*")
-					.setValue(this.selectedTagPattern)
-					.onChange((value) => {
-						this.sourceMode = "tag";
-						this.selectedTagPattern = value;
-						this.updateSelectedFile();
-					});
-			})
-			.addButton((button) => {
-				button.setButtonText("Select tag").onClick(() => {
-					this.sourceMode = "tag";
-					new TagSuggestModal(this.app, (tag) => {
-						this.selectedTagPattern = tag;
-						this.tagPatternText?.setValue(tag);
-						this.updateSelectedFile();
-					}).open();
-				});
-			});
+		this.sourceControlsEl = rootSection.createDiv();
+		this.renderSourceControls();
 
 		this.selectedFileEl = rootSection.createEl("div", {
 			text: "No source selected",
@@ -798,6 +763,40 @@ export class ExportModal extends Modal {
 			return "No notes matched the selected tag after exclusions.";
 		}
 		return "Failed to generate export. See console for details.";
+	}
+
+	private renderSourceControls(): void {
+		if (!this.sourceControlsEl) {
+			return;
+		}
+
+		this.sourceControlsEl.empty();
+		if (this.sourceMode === "tag") {
+			new Setting(this.sourceControlsEl)
+				.setName("Tag")
+				.setDesc("Choose the tag to use as the export source.")
+				.addButton((button) => {
+					button.setButtonText("Select tag").onClick(() => {
+						new TagSuggestModal(this.app, (tag) => {
+							this.selectedTagPattern = tag;
+							this.updateSelectedFile();
+						}).open();
+					});
+				});
+			return;
+		}
+
+		new Setting(this.sourceControlsEl)
+			.setName("Root note")
+			.setDesc("Choose the note to start traversing from. Default: current active note")
+			.addButton((button) => {
+				button.setButtonText("Select").onClick(() => {
+					new RootNoteSuggestModal(this.app, (file: TFile) => {
+						this.selectedFile = file;
+						this.updateSelectedFile();
+					}).open();
+				});
+			});
 	}
 
 	/**

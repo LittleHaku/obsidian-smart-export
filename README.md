@@ -39,7 +39,7 @@ Use [BRAT (Beta Reviewers Auto-update Tool)](https://github.com/TfTHacker/obsidi
 ## Quick Start
 
 1. Open command palette (`Cmd/Ctrl+P`) and run `Smart Export: Open export` (or click the ribbon icon).
-2. Select a root note, or switch **Source** to **Tag** and choose/enter a tag.
+2. Select a root note, or switch **Source** to **Tag** and choose a tag.
 3. Optionally include disconnected notes as **single note** or **new root** entries.
 4. Set depth values (recommended start: content `2`, title `4`).
 5. Choose output format.

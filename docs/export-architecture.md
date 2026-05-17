@@ -30,7 +30,7 @@ sequenceDiagram
 
     User->>Modal: Open export + choose root note or tag/options/extra notes
     alt Tag source
-        Modal->>API: find notes matching tag pattern
+        Modal->>API: find notes matching selected tag
         Modal->>Traversal: traverse each matching note as a root
         Traversal-->>Modal: synthetic tag root with matching note roots
     else Root note source
@@ -101,7 +101,7 @@ Extra notes:
 Tag sources:
 
 1. The export modal can use either a root note or a tag source.
-2. Tag source exports use the same tag normalization and pattern semantics as `Hide notes with tags`.
+2. Tag source exports use the same tag normalization semantics as `Hide notes with tags`.
 3. Matching notes are found from inline tags and frontmatter `tag`/`tags`, sorted by vault path, and represented as top-level roots under an export-only synthetic `Tag: #...` grouping node.
 4. Folder, tag, and property exclusions apply to matching tag roots and to their traversed descendants.
 5. Link direction, content depth, title depth, extra roots, and single-note additions continue to apply normally.
