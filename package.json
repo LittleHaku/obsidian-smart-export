@@ -42,7 +42,7 @@
 		"eslint": "^9.39.5",
 		"eslint-plugin-obsidianmd": "^0.4.1",
 		"jsdom": "^26.1.0",
-		"obsidian": "latest",
+		"obsidian": "1.13.1",
 		"prettier": "^3.9.6",
 		"tslib": "2.4.0",
 		"typescript": "^5.9.3",

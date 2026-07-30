@@ -39,7 +39,7 @@ importers:
         specifier: ^26.1.0
         version: 26.1.0(supports-color@7.2.0)
       obsidian:
-        specifier: latest
+        specifier: 1.13.1
         version: 1.13.1(@codemirror/state@6.5.0)(@codemirror/view@6.38.6)
       prettier:
         specifier: ^3.9.6
