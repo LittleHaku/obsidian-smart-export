@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { App } from "obsidian";
 import { ReleaseNotesModal } from "../../src/ui/ReleaseNotesModal";
 import { ReleaseNotesEntry } from "../../src/constants/releaseNotes";
@@ -30,5 +30,67 @@ describe("ReleaseNotesModal", () => {
 
 		expect(modal.titleEl.textContent).toBe("What's new");
 		expect(modal.contentEl.textContent).toContain("If this plugin is useful in your workflow");
+	});
+
+	it("renders funding actions as safe external links", () => {
+		const modal = new ReleaseNotesModal(new App(), SAMPLE_RELEASE_NOTES, {
+			fundingUrl: "https://buymeacoffee.com/example",
+		});
+
+		modal.onOpen();
+
+		const supportLink = modal.contentEl.querySelector<HTMLAnchorElement>(
+			".smart-export-support-button-small"
+		);
+		expect(supportLink?.href).toBe("https://buymeacoffee.com/example");
+		expect(supportLink?.target).toBe("_blank");
+		expect(supportLink?.rel).toBe("noopener noreferrer");
+	});
+
+	it("uses the modal owner window to schedule focus", () => {
+		const modal = new ReleaseNotesModal(new App(), SAMPLE_RELEASE_NOTES);
+		const scheduledCallbacks: FrameRequestCallback[] = [];
+		const requestAnimationFrame = vi.fn((callback: FrameRequestCallback) => {
+			scheduledCallbacks.push(callback);
+			return 42;
+		});
+		const cancelAnimationFrame = vi.fn();
+		const ownerWindow = {
+			requestAnimationFrame,
+			cancelAnimationFrame,
+		};
+		Object.defineProperty(modal.contentEl, "win", {
+			configurable: true,
+			value: ownerWindow,
+		});
+
+		modal.open();
+
+		expect(requestAnimationFrame).toHaveBeenCalledOnce();
+		const okButton = modal.contentEl.querySelector<HTMLButtonElement>(".mod-cta");
+		const focus = vi.spyOn(okButton as HTMLButtonElement, "focus");
+		scheduledCallbacks[0]?.(0);
+		expect(focus).toHaveBeenCalledOnce();
+		expect(cancelAnimationFrame).not.toHaveBeenCalled();
+	});
+
+	it("cancels pending focus when the modal closes", () => {
+		const onClose = vi.fn();
+		const modal = new ReleaseNotesModal(new App(), SAMPLE_RELEASE_NOTES, { onClose });
+		const requestAnimationFrame = vi.fn(() => 73);
+		const cancelAnimationFrame = vi.fn();
+		Object.defineProperty(modal.contentEl, "win", {
+			configurable: true,
+			value: {
+				requestAnimationFrame,
+				cancelAnimationFrame,
+			},
+		});
+
+		modal.open();
+		modal.close();
+
+		expect(cancelAnimationFrame).toHaveBeenCalledWith(73);
+		expect(onClose).toHaveBeenCalledOnce();
 	});
 });

@@ -13,6 +13,14 @@ export interface ReleaseNotesEntry {
 
 export const RELEASE_NOTES: ReleaseNotesEntry[] = [
 	{
+		version: "1.15.3",
+		date: "2026-07-30",
+		showOnUpdate: true,
+		fixed: [
+			"Settings, export controls, release-note focus, and external links now stay attached to their owning Obsidian window for reliable pop-out, desktop, and mobile behavior.",
+		],
+	},
+	{
 		version: "1.15.2",
 		date: "2026-07-30",
 		showOnUpdate: true,

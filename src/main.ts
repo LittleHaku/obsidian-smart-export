@@ -58,6 +58,7 @@ import {
 	normalizeStoredPluginVersion,
 	shouldAutoDisplayReleaseNotesForUpdate,
 } from "./utils/releaseNotes";
+import { createLinkedDescription } from "./utils/linkedDescription";
 
 const DEFAULT_OUTPUT_CHOICE_XML = "format:xml";
 const DEFAULT_OUTPUT_CHOICE_PRINT_FRIENDLY = "format:print-friendly-markdown";
@@ -704,16 +705,11 @@ class SmartExportSettingTab extends PluginSettingTab {
 					})
 			);
 
-		const defaultOutputDesc = document.createDocumentFragment();
-		defaultOutputDesc.append(
-			"Choose your default output: XML, print-friendly Markdown, or a Markdown template. "
-		);
-		const defaultOutputDocsLink = document.createElement("a");
-		defaultOutputDocsLink.href = TEMPLATE_DOCS_URL;
-		defaultOutputDocsLink.textContent = "Template docs";
-		defaultOutputDocsLink.target = "_blank";
-		defaultOutputDocsLink.rel = "noopener noreferrer";
-		defaultOutputDesc.append(defaultOutputDocsLink);
+		const defaultOutputDesc = createLinkedDescription(containerEl, {
+			text: "Choose your default output: XML, print-friendly Markdown, or a Markdown template. ",
+			linkText: "Template docs",
+			href: TEMPLATE_DOCS_URL,
+		});
 
 		new Setting(containerEl)
 			.setName("Default output")
@@ -976,16 +972,11 @@ class SmartExportSettingTab extends PluginSettingTab {
 
 		new Setting(containerEl).setName("Markdown templates").setHeading();
 
-		const templateDirectoryDesc = document.createDocumentFragment();
-		templateDirectoryDesc.append(
-			"Vault-relative folder for custom Markdown templates. The folder must be visible inside Obsidian. Every .md file in this folder is available as a custom template option. "
-		);
-		const templateDocsLink = document.createElement("a");
-		templateDocsLink.href = TEMPLATE_DOCS_URL;
-		templateDocsLink.textContent = "Template placeholder docs";
-		templateDocsLink.target = "_blank";
-		templateDocsLink.rel = "noopener noreferrer";
-		templateDirectoryDesc.append(templateDocsLink);
+		const templateDirectoryDesc = createLinkedDescription(containerEl, {
+			text: "Vault-relative folder for custom Markdown templates. The folder must be visible inside Obsidian. Every .md file in this folder is available as a custom template option. ",
+			linkText: "Template placeholder docs",
+			href: TEMPLATE_DOCS_URL,
+		});
 
 		new Setting(containerEl)
 			.setName("Markdown template folder")

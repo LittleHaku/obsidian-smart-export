@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.15.3] - 2026-07-30
+
+### Fixed
+
+- Settings and export UI descriptions now create links in their owning Obsidian document for reliable pop-out-window behavior.
+- The release notes modal now schedules and cancels focus through its owning window, and its funding action uses a safe standard link instead of an unsupported SDK declaration.
+
 ## [1.15.2] - 2026-07-30
 
 ### Changed

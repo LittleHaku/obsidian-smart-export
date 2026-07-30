@@ -4,7 +4,7 @@ Updated: July 30, 2026
 
 ## Current baseline
 
-Smart Export 1.15.2 is the maintenance baseline:
+Smart Export 1.15.3 is the maintenance baseline:
 
 - Node.js 24 LTS is the recommended development runtime; Node.js 22-26 is supported.
 - pnpm 11.18.0 is pinned through `package.json`.
@@ -29,6 +29,12 @@ Smart Export 1.15.2 is the maintenance baseline:
 - Replaced direct `Vault.adapter` access in the Markdown template resolver with normalized public Vault API lookups and cached reads ([#97](https://github.com/LittleHaku/obsidian-smart-export/issues/97)).
 - Preserved template precedence and ordering while covering missing, invalid, empty, unreadable, and nested template paths.
 - Documented that custom template folders must be visible inside Obsidian.
+
+## Completed for 1.15.3
+
+- Created settings and export UI descriptions in their owning Obsidian document for pop-out-window compatibility ([#98](https://github.com/LittleHaku/obsidian-smart-export/issues/98)).
+- Scheduled and canceled release-note focus through the modal's owning window.
+- Replaced the locally declared `openExternal` helper with a safe standard external link that works without undocumented Obsidian SDK exports.
 
 ## Next maintenance work
 
@@ -63,18 +69,6 @@ Completion criteria:
 - unchanged vaults are not repeatedly rescanned;
 - metadata changes invalidate or update the result;
 - mobile and large-vault behavior are covered by tests and benchmarks.
-
-### Priority 1: UI API and pop-out-window cleanup ([#98](https://github.com/LittleHaku/obsidian-smart-export/issues/98))
-
-- Verify or replace the locally typed `openExternal` helper with a supported public mechanism.
-- Create DOM nodes relative to their owning Obsidian container/document.
-- Use owner-window timers and animation frames for pop-out-window compatibility.
-
-Completion criteria:
-
-- the current Obsidian lint rules report no API, DOM, or pop-out-window warnings in touched UI code;
-- callbacks cannot run after modal or plugin disposal;
-- links and UI work in the main window, pop-out windows, and supported mobile clients.
 
 ### Priority 1: TypeScript guarantees ([#99](https://github.com/LittleHaku/obsidian-smart-export/issues/99))
 
