@@ -121,6 +121,7 @@ describe("SmartExportSettingTab", () => {
 			"Regular expression redaction rules",
 			"Test content redaction",
 			"Markdown template folder",
+			"Template documentation",
 			"Include table of contents",
 			"Number headings",
 			"Insert section dividers",
@@ -137,11 +138,8 @@ describe("SmartExportSettingTab", () => {
 
 		const defaultOutputDescription = findDefinition(tab, "Default output").desc;
 		const templateFolderDescription = findDefinition(tab, "Markdown template folder").desc;
-		expect(defaultOutputDescription).toBeInstanceOf(DocumentFragment);
-		expect((defaultOutputDescription as DocumentFragment).querySelector("a")?.textContent).toBe(
-			"Template docs"
-		);
-		expect(templateFolderDescription).toBeInstanceOf(DocumentFragment);
+		expect(defaultOutputDescription).toContain("Template docs");
+		expect(templateFolderDescription).toContain("Vault-relative folder");
 		expect(findDefinition(tab, "Default export note folder").control?.type).toBe("folder");
 		expect(findDefinition(tab, "Markdown template folder").control?.type).toBe("folder");
 		expect(findDefinition(tab, "Redact marked sections").aliases).toEqual([
@@ -152,6 +150,28 @@ describe("SmartExportSettingTab", () => {
 			"Regular expression replacement",
 			"Regular expression redaction rules",
 		]);
+	});
+
+	it("creates linked descriptions from their rendered rows", () => {
+		const { tab } = createSettingTab();
+		const defaultOutputSetting = new Setting(document.body);
+		const defaultOutputCleanup = findDefinition(tab, "Default output").render?.(
+			defaultOutputSetting,
+			{} as never
+		);
+		const templateDocsSetting = new Setting(document.body);
+		findDefinition(tab, "Template documentation").render?.(templateDocsSetting, {} as never);
+
+		const defaultOutputLink = defaultOutputSetting.descEl.querySelector("a");
+		const templateDocsLink = templateDocsSetting.descEl.querySelector("a");
+		expect(defaultOutputLink?.textContent).toBe("Template docs");
+		expect(defaultOutputLink?.ownerDocument).toBe(defaultOutputSetting.settingEl.ownerDocument);
+		expect(templateDocsLink?.textContent).toBe("Template placeholder docs");
+		expect(templateDocsLink?.ownerDocument).toBe(templateDocsSetting.settingEl.ownerDocument);
+
+		if (typeof defaultOutputCleanup === "function") {
+			defaultOutputCleanup();
+		}
 	});
 
 	it("declares explicit defaults matching the values used for new installations", () => {

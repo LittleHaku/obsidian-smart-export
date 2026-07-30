@@ -42,6 +42,10 @@ const DEFAULT_OUTPUT_CHOICE_LLM_PREFIX = "template:";
 const TRAVERSAL_EXCLUSIONS_SAVE_DELAY_MS = 300;
 const REDACTION_REGEX_SAVE_DELAY_MS = 500;
 const TEMPLATE_DIRECTORY_UPDATE_DELAY_MS = 300;
+const DEFAULT_OUTPUT_DESCRIPTION =
+	"Choose your default output: XML, print-friendly Markdown, or a Markdown template. ";
+const TEMPLATE_DIRECTORY_DESCRIPTION =
+	"Vault-relative folder for custom Markdown templates. The folder must be visible inside Obsidian. Every .md file in this folder is available as a custom template option.";
 const DEFAULT_REDACTION_REGEX_SAMPLE_TEXT = [
 	"1. This is a footnote [^1]",
 	"2. See the image ![[vault_pic.png]]",
@@ -157,17 +161,6 @@ export class SmartExportSettingTab extends PluginSettingTab {
 	}
 
 	getSettingDefinitions(): SettingDefinitionItem<SmartExportSettingKey>[] {
-		const defaultOutputDesc = createLinkedDescription(this.containerEl, {
-			text: "Choose your default output: XML, print-friendly Markdown, or a Markdown template. ",
-			linkText: "Template docs",
-			href: TEMPLATE_DOCS_URL,
-		});
-		const templateDirectoryDesc = createLinkedDescription(this.containerEl, {
-			text: "Vault-relative folder for custom Markdown templates. The folder must be visible inside Obsidian. Every .md file in this folder is available as a custom template option. ",
-			linkText: "Template placeholder docs",
-			href: TEMPLATE_DOCS_URL,
-		});
-
 		return [
 			{
 				type: "group",
@@ -192,7 +185,7 @@ export class SmartExportSettingTab extends PluginSettingTab {
 					},
 					{
 						name: "Default output",
-						desc: defaultOutputDesc,
+						desc: `${DEFAULT_OUTPUT_DESCRIPTION}Template docs.`,
 						render: (setting) => this.renderDefaultOutput(setting),
 					},
 					{
@@ -352,13 +345,20 @@ export class SmartExportSettingTab extends PluginSettingTab {
 				items: [
 					{
 						name: "Markdown template folder",
-						desc: templateDirectoryDesc,
+						desc: TEMPLATE_DIRECTORY_DESCRIPTION,
+						aliases: ["Template placeholder docs"],
 						control: {
 							type: "folder",
 							key: "llmMarkdownTemplateDirectory",
 							defaultValue: DEFAULT_SETTINGS.llmMarkdownTemplateDirectory,
 							placeholder: LLM_MARKDOWN_TEMPLATE_DIRECTORY,
 						},
+					},
+					{
+						name: "Template documentation",
+						desc: "Learn how to use placeholders in custom Markdown templates.",
+						aliases: ["Template placeholder docs"],
+						render: (setting) => this.renderTemplateDocumentation(setting),
 					},
 				],
 			},
@@ -633,6 +633,13 @@ export class SmartExportSettingTab extends PluginSettingTab {
 		let dropdown: DropdownComponent | null = null;
 		let active = true;
 
+		setting.setDesc(
+			createLinkedDescription(setting.settingEl, {
+				text: DEFAULT_OUTPUT_DESCRIPTION,
+				linkText: "Template docs",
+				href: TEMPLATE_DOCS_URL,
+			})
+		);
 		setting.controlEl.empty();
 		setting.addDropdown((component) => {
 			dropdown = component;
@@ -657,6 +664,16 @@ export class SmartExportSettingTab extends PluginSettingTab {
 				this.defaultOutputDropdown = null;
 			}
 		};
+	}
+
+	private renderTemplateDocumentation(setting: Setting): void {
+		setting.setDesc(
+			createLinkedDescription(setting.settingEl, {
+				text: "Learn how to use placeholders in custom Markdown templates. ",
+				linkText: "Template placeholder docs",
+				href: TEMPLATE_DOCS_URL,
+			})
+		);
 	}
 
 	private populateDefaultOutputDropdown(
