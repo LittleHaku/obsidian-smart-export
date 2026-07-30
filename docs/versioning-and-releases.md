@@ -1,6 +1,6 @@
 # Versioning and Releases
 
-Updated: April 22, 2026
+Updated: July 30, 2026
 
 ## Overview
 
@@ -33,6 +33,20 @@ The release workflow is triggered on tag push and determines prerelease status f
 - Prefer merging release-ready PRs into `main` as a **single squash commit** to keep history clean.
 - Create and push **stable release tags only from `main`** (after merge), not from feature branches.
 - This avoids duplicate release builds and keeps release provenance unambiguous.
+
+## Pull request versioning policy
+
+Every pull request must be release-ready and include its intended semantic version.
+
+Before opening or updating a PR:
+
+1. Select the appropriate patch, minor, major, or prerelease version.
+2. Run `pnpm version <version> --no-git-tag-version`.
+3. Add the matching dated section to `CHANGELOG.md`.
+4. Add the matching entry to `src/constants/releaseNotes.ts`.
+5. Verify `package.json`, `manifest.json`, `versions.json`, `CHANGELOG.md`, and bundled release notes all use the same version.
+
+The release tag is still created only after the PR is merged into `main`.
 
 ## Changelog rule
 

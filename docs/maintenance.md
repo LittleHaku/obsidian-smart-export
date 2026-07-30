@@ -4,7 +4,7 @@ Updated: July 30, 2026
 
 ## Current baseline
 
-Smart Export 1.15.1 is the maintenance baseline:
+Smart Export 1.15.2 is the maintenance baseline:
 
 - Node.js 24 LTS is the recommended development runtime; Node.js 22-26 is supported.
 - pnpm 11.18.0 is pinned through `package.json`.
@@ -23,6 +23,12 @@ Smart Export 1.15.1 is the maintenance baseline:
 - Fixed parsing of GitHub-generated release notes and made API failures visible.
 - Corrected historical `versions.json` compatibility mappings from Smart Export 1.5.1 onward.
 - Removed unused placeholder code.
+
+## Completed for 1.15.2
+
+- Replaced direct `Vault.adapter` access in the Markdown template resolver with normalized public Vault API lookups and cached reads ([#97](https://github.com/LittleHaku/obsidian-smart-export/issues/97)).
+- Preserved template precedence and ordering while covering missing, invalid, empty, unreadable, and nested template paths.
+- Documented that custom template folders must be visible inside Obsidian.
 
 ## Next maintenance work
 
@@ -57,17 +63,6 @@ Completion criteria:
 - unchanged vaults are not repeatedly rescanned;
 - metadata changes invalidate or update the result;
 - mobile and large-vault behavior are covered by tests and benchmarks.
-
-### Priority 1: public Vault APIs for templates ([#97](https://github.com/LittleHaku/obsidian-smart-export/issues/97))
-
-Replace direct `Vault.adapter` access in the Markdown template resolver with normalized path
-lookups, `TFile`/`TFolder` traversal, and public `Vault` read APIs.
-
-Completion criteria:
-
-- the resolver contains no direct adapter calls or Node.js filesystem imports;
-- template ordering and precedence remain backward compatible;
-- missing, invalid, empty, and nested template directories are tested.
 
 ### Priority 1: UI API and pop-out-window cleanup ([#98](https://github.com/LittleHaku/obsidian-smart-export/issues/98))
 

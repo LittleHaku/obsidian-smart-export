@@ -13,6 +13,14 @@ export interface ReleaseNotesEntry {
 
 export const RELEASE_NOTES: ReleaseNotesEntry[] = [
 	{
+		version: "1.15.2",
+		date: "2026-07-30",
+		showOnUpdate: true,
+		changed: [
+			"Custom Markdown templates now use Obsidian's public Vault API for consistent desktop and mobile behavior; template folders must be visible inside Obsidian.",
+		],
+	},
+	{
 		version: "1.15.1",
 		date: "2026-07-30",
 		showOnUpdate: false,

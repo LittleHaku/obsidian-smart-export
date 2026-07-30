@@ -27,6 +27,7 @@ Briefly describe what this PR does and why it's needed.
 - [ ] Code follows existing style
 - [ ] Self-review completed
 - [ ] Documentation updated (if needed)
+- [ ] Release version and metadata are aligned
 - [ ] No new warnings/errors
 - [ ] Linting passes
 - [ ] Backwards compatibility maintained
