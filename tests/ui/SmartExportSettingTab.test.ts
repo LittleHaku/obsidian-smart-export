@@ -229,6 +229,13 @@ describe("SmartExportSettingTab", () => {
 		if (typeof cleanup === "function") {
 			cleanup();
 		}
+		expect(setting.controlEl.querySelectorAll("select")).toHaveLength(0);
+
+		const rerenderCleanup = definition.render?.(setting, {} as never);
+		expect(setting.controlEl.querySelectorAll("select")).toHaveLength(1);
+		if (typeof rerenderCleanup === "function") {
+			rerenderCleanup();
+		}
 	});
 
 	it("preserves the live redaction preview and cleans up its input listener", async () => {
@@ -250,8 +257,19 @@ describe("SmartExportSettingTab", () => {
 		if (typeof cleanup === "function") {
 			cleanup();
 		}
+		expect(
+			setting.settingEl.querySelectorAll(".smart-export-redaction-preview__grid")
+		).toHaveLength(0);
 		input.value = "Changed after cleanup";
 		input.dispatchEvent(new Event("input"));
 		expect(output.value).toBe("Visible REDACTED text");
+
+		const rerenderCleanup = definition.render?.(setting, {} as never);
+		expect(
+			setting.settingEl.querySelectorAll(".smart-export-redaction-preview__grid")
+		).toHaveLength(1);
+		if (typeof rerenderCleanup === "function") {
+			rerenderCleanup();
+		}
 	});
 });

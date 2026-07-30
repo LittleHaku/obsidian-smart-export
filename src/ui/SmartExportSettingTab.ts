@@ -569,6 +569,7 @@ export class SmartExportSettingTab extends PluginSettingTab {
 		let dropdown: DropdownComponent | null = null;
 		let active = true;
 
+		setting.controlEl.empty();
 		setting.addDropdown((component) => {
 			dropdown = component;
 			this.populateDefaultOutputDropdown(component, this.defaultOutputTemplateOptions);
@@ -586,6 +587,7 @@ export class SmartExportSettingTab extends PluginSettingTab {
 
 		return () => {
 			active = false;
+			dropdown?.selectEl.remove();
 		};
 	}
 
@@ -642,6 +644,14 @@ export class SmartExportSettingTab extends PluginSettingTab {
 	private renderRedactionPreview(setting: Setting): () => void {
 		setting.setHeading();
 		setting.settingEl.addClass("smart-export-redaction-preview");
+		const existingGrids = setting.settingEl.getElementsByClassName(
+			"smart-export-redaction-preview__grid"
+		);
+		let existingGrid = existingGrids.item(0);
+		while (existingGrid) {
+			existingGrid.remove();
+			existingGrid = existingGrids.item(0);
+		}
 		const previewGrid = setting.settingEl.createDiv({
 			cls: "smart-export-redaction-preview__grid",
 		});
@@ -691,6 +701,7 @@ export class SmartExportSettingTab extends PluginSettingTab {
 
 		return () => {
 			previewInput.removeEventListener("input", updatePreview);
+			previewGrid.remove();
 			if (this.redactionPreviewUpdater === updatePreview) {
 				this.redactionPreviewUpdater = null;
 			}
