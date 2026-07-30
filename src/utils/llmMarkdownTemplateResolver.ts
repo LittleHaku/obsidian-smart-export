@@ -1,4 +1,4 @@
-import { App, normalizePath } from "obsidian";
+import { App, normalizePath, TFile } from "obsidian";
 import {
 	BUILTIN_LLM_TEMPLATES,
 	BuiltinLlmTemplate,
@@ -66,14 +66,30 @@ function findBuiltinTemplate(templateId: string): BuiltinLlmTemplate | null {
 
 async function tryReadTemplate(app: App, path: string): Promise<string | null> {
 	try {
-		const exists = await app.vault.adapter.exists(path);
-		if (!exists) {
+		const file = app.vault.getFileByPath(normalizePath(path));
+		if (file === null) {
 			return null;
 		}
-		const content = await app.vault.adapter.read(path);
+		const content = await app.vault.cachedRead(file);
 		return normalizeTemplateContent(content);
 	} catch {
 		return null;
+	}
+}
+
+function listMarkdownTemplates(app: App, normalizedDirectory: string): TFile[] {
+	try {
+		const folder = app.vault.getFolderByPath(normalizedDirectory);
+		if (folder === null) {
+			return [];
+		}
+
+		return folder.children
+			.filter((child): child is TFile => child instanceof TFile && isMarkdownFile(child.path))
+			.sort((a, b) => a.path.localeCompare(b.path));
+	} catch {
+		// Template discovery failures should not block export.
+		return [];
 	}
 }
 
@@ -91,24 +107,19 @@ async function resolveFolderTemplateFallback(
 		};
 	}
 
-	try {
-		const listed = await app.vault.adapter.list(normalizedDirectory);
-		const fallbackFiles = listed.files
-			.filter((filePath) => filePath !== preferredPath && isMarkdownFile(filePath))
-			.sort((a, b) => a.localeCompare(b));
+	const fallbackFiles = listMarkdownTemplates(app, normalizedDirectory).filter(
+		(file) => file.path !== preferredPath
+	);
 
-		for (const filePath of fallbackFiles) {
-			const content = await tryReadTemplate(app, filePath);
-			if (content !== null) {
-				return {
-					template: content,
-					sourcePath: filePath,
-					templateId: toUserTemplateId(filePath),
-				};
-			}
+	for (const file of fallbackFiles) {
+		const content = await tryReadTemplate(app, file.path);
+		if (content !== null) {
+			return {
+				template: content,
+				sourcePath: file.path,
+				templateId: toUserTemplateId(file.path),
+			};
 		}
-	} catch {
-		// Missing folder or adapter errors should not block export.
 	}
 
 	return null;
@@ -133,21 +144,12 @@ export async function listLlmMarkdownTemplateOptions(
 		return templateOptions;
 	}
 
-	try {
-		const listed = await app.vault.adapter.list(normalizedDirectory);
-		const userTemplateFiles = listed.files
-			.filter((filePath) => isMarkdownFile(filePath))
-			.sort((a, b) => a.localeCompare(b));
-
-		for (const filePath of userTemplateFiles) {
-			templateOptions.push({
-				id: toUserTemplateId(filePath),
-				label: `Custom: ${getTemplateLabelFromPath(filePath)}`,
-				source: "user",
-			});
-		}
-	} catch {
-		// Missing folder or adapter errors should not block export.
+	for (const file of listMarkdownTemplates(app, normalizedDirectory)) {
+		templateOptions.push({
+			id: toUserTemplateId(file.path),
+			label: `Custom: ${getTemplateLabelFromPath(file.path)}`,
+			source: "user",
+		});
 	}
 
 	return templateOptions;

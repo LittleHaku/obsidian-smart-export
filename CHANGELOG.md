@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Custom Markdown templates are now resolved through Obsidian's public Vault API for consistent desktop and mobile behavior; template folders must be visible inside Obsidian.
+
 ## [1.15.1] - 2026-07-30
 
 ### Changed

@@ -978,7 +978,7 @@ class SmartExportSettingTab extends PluginSettingTab {
 
 		const templateDirectoryDesc = document.createDocumentFragment();
 		templateDirectoryDesc.append(
-			"Vault-relative folder for custom Markdown templates. Every .md file in this folder is available as a custom template option. "
+			"Vault-relative folder for custom Markdown templates. The folder must be visible inside Obsidian. Every .md file in this folder is available as a custom template option. "
 		);
 		const templateDocsLink = document.createElement("a");
 		templateDocsLink.href = TEMPLATE_DOCS_URL;

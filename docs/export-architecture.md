@@ -84,6 +84,10 @@ Markdown template selection and resolution:
    - `<llmMarkdownTemplateDirectory>/llm-markdown.md`
    - first readable `.md` in `<llmMarkdownTemplateDirectory>/`
    - built-in `default`
+8. Custom template paths are normalized and resolved through the public Vault API:
+   - `Vault.getFileByPath()` and `Vault.cachedRead()` for template content
+   - `Vault.getFolderByPath()` and immediate `TFolder.children` for template discovery
+   - files hidden from Obsidian's vault index are intentionally not treated as templates
 
 Content redaction:
 
