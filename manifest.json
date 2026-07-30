@@ -1,8 +1,8 @@
 {
 	"id": "smart-export",
 	"name": "Smart Export",
-	"version": "1.15.0",
-	"minAppVersion": "1.5.7",
+	"version": "1.15.1",
+	"minAppVersion": "1.6.6",
 	"description": "Plugin that follows wikilinks to a configurable depth, joining the notes into a single export.",
 	"author": "Iván Sotillo",
 	"authorUrl": "https://github.com/LittleHaku",

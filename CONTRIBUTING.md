@@ -17,7 +17,8 @@ We welcome contributions of all types:
 
 ### Prerequisites
 
-- **Node.js** 18+ and **pnpm** (npm will also work)
+- **Node.js 24 LTS** (Node 22 is also supported)
+- **Corepack** with the repository-pinned **pnpm** version
 - **Obsidian** (for testing your changes)
 - **Git** for version control
 
@@ -31,11 +32,14 @@ We welcome contributions of all types:
    cd obsidian-smart-export
    ```
 
-3. **Install dependencies**:
+3. **Enable pnpm and install dependencies**:
 
    ```bash
+   corepack enable pnpm
    pnpm install
    ```
+
+   The exact pnpm version is declared in `package.json`; npm is not a supported workflow for this repository.
 
 4. **Start development mode**:
 
@@ -57,7 +61,7 @@ We welcome contributions of all types:
 
 ### Optional WSL/Linux repo workflow
 
-If you want faster Node/esbuild performance under WSL2, keep the repository on the Linux filesystem and mirror built plugin artifacts back into your Windows or Obsidian vault plugin folder:
+For good WSL2 performance, keep the repository on the Linux filesystem (for example under `~/src`) and mirror built plugin artifacts back into the Windows Obsidian vault:
 
 1. Copy `.env.example` to `.env.local`
 2. Set `OBSIDIAN_PLUGIN_DIR` to your local plugin folder, for example:
@@ -75,6 +79,14 @@ If you want faster Node/esbuild performance under WSL2, keep the repository on t
 
 When `OBSIDIAN_PLUGIN_DIR` is set, the existing build pipeline still writes local artifacts as usual and also mirrors `main.js`, `manifest.json`, and `styles.css` to that target directory. `.env.local` is ignored by git so each contributor can use a different path.
 
+Do not reuse one `node_modules` directory between Windows and WSL/Linux. It contains operating-system-specific launchers, links, and native binaries. If you intentionally run the same checkout from the other operating system, rebuild dependencies there before running project commands:
+
+```bash
+pnpm install --frozen-lockfile --force
+```
+
+For a repository stored on the Windows filesystem, prefer running Node and pnpm from Windows. Accessing that checkout through `/mnt/c` can make WSL file operations substantially slower.
+
 ### Development Workflow
 
 1. **Create a feature branch**:
@@ -88,9 +100,7 @@ When `OBSIDIAN_PLUGIN_DIR` is set, the existing build pipeline still writes loca
 3. **Test your changes**:
 
    ```bash
-   pnpm test                # Run all tests
-   pnpm run lint            # Check code style
-   pnpm run format:check    # Check formatting
+   pnpm run check
    ```
 
 4. **Commit your changes**:
@@ -144,7 +154,7 @@ refactor: improve token calculation performance
 - **Unit tests** for all new functionality (we use Vitest)
 - **Integration tests** for complex features
 - **Manual testing** in Obsidian
-- **Maintain 80%+ code coverage**
+- **Maintain 100% project and patch coverage**
 
 ```bash
 pnpm test              # Run tests with coverage

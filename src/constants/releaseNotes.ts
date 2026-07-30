@@ -13,6 +13,18 @@ export interface ReleaseNotesEntry {
 
 export const RELEASE_NOTES: ReleaseNotesEntry[] = [
 	{
+		version: "1.15.1",
+		date: "2026-07-30",
+		showOnUpdate: false,
+		changed: [
+			"The minimum supported Obsidian version is now declared as 1.6.6, matching the folder suggestion API used since Smart Export 1.5.1.",
+			"The development, CI, and release toolchain has been refreshed for reproducible Windows, WSL, and Linux builds.",
+		],
+		fixed: [
+			"Release metadata, generated release notes, TypeScript validation, and coverage uploads are now checked consistently before publishing.",
+		],
+	},
+	{
 		version: "1.15.0",
 		date: "2026-05-17",
 		showOnUpdate: true,
