@@ -1,5 +1,6 @@
 import {
 	App,
+	debounce,
 	DropdownComponent,
 	Plugin,
 	PluginSettingTab,
@@ -37,6 +38,9 @@ import { normalizePropertyFilterList, normalizeTagFilterList } from "../utils/no
 const DEFAULT_OUTPUT_CHOICE_XML = "format:xml";
 const DEFAULT_OUTPUT_CHOICE_PRINT_FRIENDLY = "format:print-friendly-markdown";
 const DEFAULT_OUTPUT_CHOICE_LLM_PREFIX = "template:";
+const TRAVERSAL_EXCLUSIONS_SAVE_DELAY_MS = 300;
+const REDACTION_REGEX_SAVE_DELAY_MS = 500;
+const TEMPLATE_DIRECTORY_UPDATE_DELAY_MS = 300;
 const DEFAULT_REDACTION_REGEX_SAMPLE_TEXT = [
 	"1. This is a footnote [^1]",
 	"2. See the image ![[vault_pic.png]]",
@@ -119,9 +123,31 @@ function clampDepth(value: number): number {
 export class SmartExportSettingTab extends PluginSettingTab {
 	plugin: SmartExportSettingsPlugin;
 	private defaultOutputTemplateOptions = getAvailableTemplateOptions([]);
+	private defaultOutputDropdown: DropdownComponent | null = null;
 	private templateOptionsDirectory: string | null = null;
 	private templateOptionsRequest = 0;
 	private redactionPreviewUpdater: (() => void) | null = null;
+	private readonly debouncedSaveTraversalExclusions = debounce(
+		() => {
+			void this.plugin.saveSettings();
+		},
+		TRAVERSAL_EXCLUSIONS_SAVE_DELAY_MS,
+		true
+	);
+	private readonly debouncedSaveRedactionRegexPatterns = debounce(
+		() => {
+			void this.plugin.saveSettings();
+		},
+		REDACTION_REGEX_SAVE_DELAY_MS,
+		true
+	);
+	private readonly debouncedUpdateTemplateDirectory = debounce(
+		() => {
+			void this.persistTemplateDirectoryAndRefreshOptions();
+		},
+		TEMPLATE_DIRECTORY_UPDATE_DELAY_MS,
+		true
+	);
 
 	constructor(app: App, plugin: SmartExportSettingsPlugin) {
 		super(app, plugin);
@@ -455,7 +481,8 @@ export class SmartExportSettingTab extends PluginSettingTab {
 	async setControlValue(key: string, value: unknown): Promise<void> {
 		let shouldUpdateDefinitions = false;
 		let shouldRefreshVisibility = false;
-		let shouldReloadTemplateOptions = false;
+		let deferredSave: "traversal-exclusions" | "redaction-regex" | "template-directory" | null =
+			null;
 
 		switch (key) {
 			case "defaultContentDepth":
@@ -489,14 +516,17 @@ export class SmartExportSettingTab extends PluginSettingTab {
 			case "ignoredTraversalFolders":
 				if (typeof value !== "string") return;
 				this.plugin.settings.ignoredTraversalFolders = normalizeFolderFilterList([value]);
+				deferredSave = "traversal-exclusions";
 				break;
 			case "ignoredTraversalTagPatterns":
 				if (typeof value !== "string") return;
 				this.plugin.settings.ignoredTraversalTagPatterns = normalizeTagFilterList([value]);
+				deferredSave = "traversal-exclusions";
 				break;
 			case "ignoredTraversalPropertyRules":
 				if (typeof value !== "string") return;
 				this.plugin.settings.ignoredTraversalPropertyRules = normalizePropertyFilterList([value]);
+				deferredSave = "traversal-exclusions";
 				break;
 			case "redactMarkedSections":
 			case "redactRegexMatches":
@@ -519,13 +549,19 @@ export class SmartExportSettingTab extends PluginSettingTab {
 			case "redactionRegexPatterns":
 				if (typeof value !== "string") return;
 				this.plugin.settings.redactionRegexPatterns = normalizeRedactionRegexPatterns(value);
+				deferredSave = "redaction-regex";
 				break;
-			case "llmMarkdownTemplateDirectory":
+			case "llmMarkdownTemplateDirectory": {
 				if (typeof value !== "string") return;
-				this.plugin.settings.llmMarkdownTemplateDirectory =
-					normalizeTemplateDirectorySetting(value);
-				shouldReloadTemplateOptions = true;
+				const normalizedDirectory = normalizeTemplateDirectorySetting(value);
+				if (this.plugin.settings.llmMarkdownTemplateDirectory === normalizedDirectory) {
+					return;
+				}
+				this.plugin.settings.llmMarkdownTemplateDirectory = normalizedDirectory;
+				this.templateOptionsDirectory = null;
+				deferredSave = "template-directory";
 				break;
+			}
 			case "printFriendlyIncludeTableOfContents":
 			case "printFriendlyNumberHeadings":
 			case "printFriendlyInsertSectionDividers":
@@ -543,15 +579,22 @@ export class SmartExportSettingTab extends PluginSettingTab {
 		}
 
 		this.redactionPreviewUpdater?.();
-		await this.plugin.saveSettings();
+		if (deferredSave === "traversal-exclusions") {
+			this.debouncedSaveTraversalExclusions();
+			return;
+		}
+		if (deferredSave === "redaction-regex") {
+			this.debouncedSaveRedactionRegexPatterns();
+			return;
+		}
+		if (deferredSave === "template-directory") {
+			this.debouncedUpdateTemplateDirectory();
+			return;
+		}
 
+		await this.plugin.saveSettings();
 		if (shouldRefreshVisibility) {
 			this.refreshDomState();
-		}
-		if (shouldReloadTemplateOptions) {
-			this.templateOptionsDirectory = null;
-			await this.loadDefaultOutputTemplateOptions();
-			shouldUpdateDefinitions = true;
 		}
 		if (shouldUpdateDefinitions) {
 			this.update();
@@ -559,6 +602,10 @@ export class SmartExportSettingTab extends PluginSettingTab {
 	}
 
 	hide(): void {
+		this.debouncedSaveTraversalExclusions.run();
+		this.debouncedSaveRedactionRegexPatterns.run();
+		this.debouncedUpdateTemplateDirectory.run();
+		this.defaultOutputDropdown = null;
 		this.templateOptionsDirectory = null;
 		this.templateOptionsRequest += 1;
 		this.redactionPreviewUpdater = null;
@@ -572,6 +619,7 @@ export class SmartExportSettingTab extends PluginSettingTab {
 		setting.controlEl.empty();
 		setting.addDropdown((component) => {
 			dropdown = component;
+			this.defaultOutputDropdown = component;
 			this.populateDefaultOutputDropdown(component, this.defaultOutputTemplateOptions);
 			component.onChange(async (value) => {
 				applyDefaultOutputChoiceToSettings(this.plugin.settings, value);
@@ -588,6 +636,9 @@ export class SmartExportSettingTab extends PluginSettingTab {
 		return () => {
 			active = false;
 			dropdown?.selectEl.remove();
+			if (this.defaultOutputDropdown === dropdown) {
+				this.defaultOutputDropdown = null;
+			}
 		};
 	}
 
@@ -639,6 +690,19 @@ export class SmartExportSettingTab extends PluginSettingTab {
 			await this.plugin.saveSettings();
 		}
 		return availableOptions;
+	}
+
+	private async persistTemplateDirectoryAndRefreshOptions(): Promise<void> {
+		await this.plugin.saveSettings();
+		const directory = this.plugin.settings.llmMarkdownTemplateDirectory;
+		const options = await this.loadDefaultOutputTemplateOptions();
+		if (
+			this.defaultOutputDropdown &&
+			this.templateOptionsDirectory === directory &&
+			this.plugin.settings.llmMarkdownTemplateDirectory === directory
+		) {
+			this.populateDefaultOutputDropdown(this.defaultOutputDropdown, options);
+		}
 	}
 
 	private renderRedactionPreview(setting: Setting): () => void {

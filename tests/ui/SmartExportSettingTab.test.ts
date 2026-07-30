@@ -1,5 +1,5 @@
-import { App, Setting, SettingDefinitionItem } from "obsidian";
-import { describe, expect, it, vi } from "vitest";
+import { App, Setting, SettingDefinitionItem, TFile, TFolder } from "obsidian";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import {
 	SmartExportSettingTab,
 	SmartExportSettingsPlugin,
@@ -80,6 +80,10 @@ function findDefinition(tab: SmartExportSettingTab, name: string): NamedDefiniti
 }
 
 describe("SmartExportSettingTab", () => {
+	afterEach(() => {
+		vi.useRealTimers();
+	});
+
 	it("generates searchable declarative groups with every existing control", () => {
 		const { tab } = createSettingTab();
 		const definitions = tab.getSettingDefinitions();
@@ -156,7 +160,7 @@ describe("SmartExportSettingTab", () => {
 		}
 	});
 
-	it("normalizes value changes, preserves depth invariants, and persists through the plugin", async () => {
+	it("normalizes value changes, preserves depth invariants, and persists immediate controls", async () => {
 		const { tab, plugin, saveSettings } = createSettingTab();
 		const update = vi.spyOn(tab, "update");
 
@@ -180,11 +184,72 @@ describe("SmartExportSettingTab", () => {
 		expect(plugin.settings.defaultExportNoteFolderPath).toBe("Exports/Generated");
 		expect(plugin.settings.redactionDelimiter).toBe(DEFAULT_SETTINGS.redactionDelimiter);
 		expect(tab.getControlValue("ignoredTraversalFolders")).toBe("Templates, /Archive");
-		expect(saveSettings).toHaveBeenCalledTimes(7);
+		expect(saveSettings).toHaveBeenCalledTimes(4);
 
 		await tab.setControlValue("defaultExportTarget", "unsupported");
 		await tab.setControlValue("missingSetting", true);
-		expect(saveSettings).toHaveBeenCalledTimes(7);
+		expect(saveSettings).toHaveBeenCalledTimes(4);
+	});
+
+	it("debounces persistence for traversal exclusions and regular expression rules", async () => {
+		vi.useFakeTimers();
+		const { tab, plugin, saveSettings } = createSettingTab();
+
+		await tab.setControlValue("ignoredTraversalFolders", "Templates");
+		await tab.setControlValue("ignoredTraversalTagPatterns", "#draft");
+		await tab.setControlValue("ignoredTraversalPropertyRules", "status=done");
+		expect(saveSettings).not.toHaveBeenCalled();
+
+		await vi.advanceTimersByTimeAsync(299);
+		expect(saveSettings).not.toHaveBeenCalled();
+		await vi.advanceTimersByTimeAsync(1);
+		expect(saveSettings).toHaveBeenCalledOnce();
+
+		await tab.setControlValue("redactionRegexPatterns", "secret");
+		await tab.setControlValue("redactionRegexPatterns", "secret\\d+");
+		expect(plugin.settings.redactionRegexPatterns).toEqual(["secret\\d+"]);
+		expect(saveSettings).toHaveBeenCalledOnce();
+
+		await vi.advanceTimersByTimeAsync(499);
+		expect(saveSettings).toHaveBeenCalledOnce();
+		await vi.advanceTimersByTimeAsync(1);
+		expect(saveSettings).toHaveBeenCalledTimes(2);
+	});
+
+	it("updates a template folder without rebuilding the active settings tab", async () => {
+		vi.useFakeTimers();
+		const { tab, plugin, saveSettings } = createSettingTab();
+		const update = vi.spyOn(tab, "update");
+		const customTemplate = new TFile();
+		customTemplate.path = "Templates/Final/custom.md";
+		const templateFolder = new TFolder();
+		templateFolder.children = [customTemplate];
+		vi.spyOn(tab.app.vault, "getFolderByPath").mockImplementation((path) =>
+			path === "Templates/Final" ? templateFolder : null
+		);
+		const definition = findDefinition(tab, "Default output");
+		const setting = new Setting(document.body);
+		const cleanup = definition.render?.(setting, {} as never);
+		const dropdown = setting.controlEl.querySelector("select");
+		await Promise.resolve();
+
+		await tab.setControlValue("llmMarkdownTemplateDirectory", "Templates/First");
+		await tab.setControlValue("llmMarkdownTemplateDirectory", "Templates/Final");
+
+		expect(plugin.settings.llmMarkdownTemplateDirectory).toBe("Templates/Final");
+		expect(saveSettings).not.toHaveBeenCalled();
+		expect(update).not.toHaveBeenCalled();
+
+		await vi.advanceTimersByTimeAsync(300);
+		expect(saveSettings).toHaveBeenCalledOnce();
+		expect(update).not.toHaveBeenCalled();
+		expect(
+			dropdown?.querySelector('option[value="template:user:Templates/Final/custom.md"]')
+		).not.toBeNull();
+
+		if (typeof cleanup === "function") {
+			cleanup();
+		}
 	});
 
 	it("refreshes conditional redaction rows when their controlling toggles change", async () => {

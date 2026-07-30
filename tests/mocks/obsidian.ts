@@ -144,6 +144,59 @@ export class LinkCache {}
 export class Position {}
 export class Loc {}
 
+type MockDebouncer<T extends unknown[], V> = {
+	(...args: T): MockDebouncer<T, V>;
+	cancel(): MockDebouncer<T, V>;
+	run(): V | void;
+};
+
+export function debounce<T extends unknown[], V>(
+	callback: (...args: T) => V,
+	timeout = 0,
+	resetTimer = false
+): MockDebouncer<T, V> {
+	let timer: number | null = null;
+	let pendingArgs: T | null = null;
+
+	const invoke = (): V | void => {
+		timer = null;
+		if (!pendingArgs) {
+			return;
+		}
+		const args = pendingArgs;
+		pendingArgs = null;
+		return callback(...args);
+	};
+
+	const debounced = ((...args: T): MockDebouncer<T, V> => {
+		pendingArgs = args;
+		if (timer !== null && resetTimer) {
+			window.clearTimeout(timer);
+			timer = null;
+		}
+		timer ??= window.setTimeout(invoke, timeout);
+		return debounced;
+	}) as MockDebouncer<T, V>;
+
+	debounced.cancel = () => {
+		if (timer !== null) {
+			window.clearTimeout(timer);
+		}
+		timer = null;
+		pendingArgs = null;
+		return debounced;
+	};
+	debounced.run = () => {
+		if (timer === null) {
+			return;
+		}
+		window.clearTimeout(timer);
+		return invoke();
+	};
+
+	return debounced;
+}
+
 type MockObsidianWindow = Window & {
 	createFragment?: () => DocumentFragment;
 	createEl?: <K extends keyof HTMLElementTagNameMap>(
