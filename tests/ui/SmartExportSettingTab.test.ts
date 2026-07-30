@@ -10,6 +10,7 @@ import { SmartExportSettings } from "../../src/types";
 type NamedDefinition = {
 	name: string;
 	desc?: string | DocumentFragment;
+	aliases?: string[];
 	visible?: boolean | (() => boolean);
 	control?: {
 		key: string;
@@ -143,6 +144,14 @@ describe("SmartExportSettingTab", () => {
 		expect(templateFolderDescription).toBeInstanceOf(DocumentFragment);
 		expect(findDefinition(tab, "Default export note folder").control?.type).toBe("folder");
 		expect(findDefinition(tab, "Markdown template folder").control?.type).toBe("folder");
+		expect(findDefinition(tab, "Redact marked sections").aliases).toEqual([
+			"Redaction delimiter",
+			"Marked section replacement",
+		]);
+		expect(findDefinition(tab, "Apply regular expression redaction rules").aliases).toEqual([
+			"Regular expression replacement",
+			"Regular expression redaction rules",
+		]);
 	});
 
 	it("declares explicit defaults matching the values used for new installations", () => {
@@ -167,7 +176,7 @@ describe("SmartExportSettingTab", () => {
 		await tab.setControlValue("defaultContentDepth", 9);
 		expect(plugin.settings.defaultContentDepth).toBe(9);
 		expect(plugin.settings.defaultTitleDepth).toBe(9);
-		expect(update).toHaveBeenCalledOnce();
+		expect(update).not.toHaveBeenCalled();
 
 		await tab.setControlValue("defaultTitleDepth", 2);
 		expect(plugin.settings.defaultTitleDepth).toBe(9);
@@ -189,6 +198,32 @@ describe("SmartExportSettingTab", () => {
 		await tab.setControlValue("defaultExportTarget", "unsupported");
 		await tab.setControlValue("missingSetting", true);
 		expect(saveSettings).toHaveBeenCalledTimes(4);
+	});
+
+	it("restores the title slider when its value is clamped to the content depth", async () => {
+		const { tab, plugin, saveSettings } = createSettingTab();
+		const definition = findDefinition(tab, "Default title depth");
+		const setting = new Setting(document.body);
+		const cleanup = definition.render?.(setting, {} as never);
+		const slider = setting.controlEl.querySelector<HTMLInputElement>('input[type="range"]');
+
+		expect(slider?.value).toBe(String(DEFAULT_SETTINGS.defaultTitleDepth));
+		await tab.setControlValue("defaultContentDepth", 9);
+		expect(slider?.value).toBe("9");
+
+		if (slider) {
+			slider.value = "2";
+			slider.dispatchEvent(new Event("input"));
+		}
+		await vi.waitFor(() => {
+			expect(plugin.settings.defaultTitleDepth).toBe(9);
+			expect(slider?.value).toBe("9");
+		});
+		expect(saveSettings).toHaveBeenCalledTimes(2);
+
+		if (typeof cleanup === "function") {
+			cleanup();
+		}
 	});
 
 	it("debounces persistence for traversal exclusions and regular expression rules", async () => {

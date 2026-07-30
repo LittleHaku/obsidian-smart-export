@@ -284,6 +284,53 @@ export class DropdownComponent {
 	}
 }
 
+export class SliderComponent {
+	sliderEl: HTMLInputElement;
+	private readonly displayEl: HTMLSpanElement;
+	private displayFormat = (value: number): string => String(value);
+
+	constructor(containerEl: HTMLElement) {
+		this.sliderEl = containerEl.createEl("input", {
+			attr: { type: "range" },
+		});
+		this.displayEl = containerEl.createSpan();
+	}
+
+	setLimits(min: number | null, max: number | null, step: number | "any"): this {
+		if (min === null) {
+			this.sliderEl.removeAttribute("min");
+		} else {
+			this.sliderEl.min = String(min);
+		}
+		if (max === null) {
+			this.sliderEl.removeAttribute("max");
+		} else {
+			this.sliderEl.max = String(max);
+		}
+		this.sliderEl.step = String(step);
+		return this;
+	}
+
+	setValue(value: number): this {
+		this.sliderEl.value = String(value);
+		this.displayEl.textContent = this.displayFormat(value);
+		return this;
+	}
+
+	setDisplayFormat(format: (value: number) => string): this {
+		this.displayFormat = format;
+		this.displayEl.textContent = format(Number(this.sliderEl.value));
+		return this;
+	}
+
+	onChange(callback: (value: number) => unknown): this {
+		this.sliderEl.addEventListener("input", () => {
+			void callback(Number(this.sliderEl.value));
+		});
+		return this;
+	}
+}
+
 export class Setting {
 	settingEl: HTMLDivElement;
 	infoEl: HTMLDivElement;
@@ -316,6 +363,11 @@ export class Setting {
 
 	addDropdown(callback: (component: DropdownComponent) => unknown): this {
 		callback(new DropdownComponent(this.controlEl));
+		return this;
+	}
+
+	addSlider(callback: (component: SliderComponent) => unknown): this {
+		callback(new SliderComponent(this.controlEl));
 		return this;
 	}
 }

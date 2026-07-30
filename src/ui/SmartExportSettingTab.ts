@@ -6,6 +6,7 @@ import {
 	PluginSettingTab,
 	Setting,
 	SettingDefinitionItem,
+	SliderComponent,
 } from "obsidian";
 import { TEMPLATE_DOCS_URL } from "../constants/templateDocs";
 import {
@@ -124,6 +125,7 @@ export class SmartExportSettingTab extends PluginSettingTab {
 	plugin: SmartExportSettingsPlugin;
 	private defaultOutputTemplateOptions = getAvailableTemplateOptions([]);
 	private defaultOutputDropdown: DropdownComponent | null = null;
+	private titleDepthSlider: SliderComponent | null = null;
 	private templateOptionsDirectory: string | null = null;
 	private templateOptionsRequest = 0;
 	private redactionPreviewUpdater: (() => void) | null = null;
@@ -186,14 +188,7 @@ export class SmartExportSettingTab extends PluginSettingTab {
 					{
 						name: "Default title depth",
 						desc: "Default number of additional levels to include titles only (1–20).",
-						control: {
-							type: "slider",
-							key: "defaultTitleDepth",
-							defaultValue: DEFAULT_SETTINGS.defaultTitleDepth,
-							min: 1,
-							max: 20,
-							step: 1,
-						},
+						render: (setting) => this.renderTitleDepth(setting),
 					},
 					{
 						name: "Default output",
@@ -282,6 +277,7 @@ export class SmartExportSettingTab extends PluginSettingTab {
 					{
 						name: "Redact marked sections",
 						desc: "Replace text between matching delimiters during export. This only changes the exported output, not the source notes.",
+						aliases: ["Redaction delimiter", "Marked section replacement"],
 						control: {
 							type: "toggle",
 							key: "redactMarkedSections",
@@ -313,6 +309,7 @@ export class SmartExportSettingTab extends PluginSettingTab {
 					{
 						name: "Apply regular expression redaction rules",
 						desc: "Replace text matching regular expression rules during export. This only changes the exported output, not the source notes.",
+						aliases: ["Regular expression replacement", "Regular expression redaction rules"],
 						control: {
 							type: "toggle",
 							key: "redactRegexMatches",
@@ -479,7 +476,6 @@ export class SmartExportSettingTab extends PluginSettingTab {
 	}
 
 	async setControlValue(key: string, value: unknown): Promise<void> {
-		let shouldUpdateDefinitions = false;
 		let shouldRefreshVisibility = false;
 		let deferredSave: "traversal-exclusions" | "redaction-regex" | "template-directory" | null =
 			null;
@@ -491,7 +487,7 @@ export class SmartExportSettingTab extends PluginSettingTab {
 				if (this.plugin.settings.defaultTitleDepth < this.plugin.settings.defaultContentDepth) {
 					this.plugin.settings.defaultTitleDepth = this.plugin.settings.defaultContentDepth;
 				}
-				shouldUpdateDefinitions = true;
+				this.titleDepthSlider?.setValue(this.plugin.settings.defaultTitleDepth);
 				break;
 			case "defaultTitleDepth":
 				if (typeof value !== "number") return;
@@ -499,7 +495,7 @@ export class SmartExportSettingTab extends PluginSettingTab {
 					this.plugin.settings.defaultContentDepth,
 					clampDepth(value)
 				);
-				shouldUpdateDefinitions = true;
+				this.titleDepthSlider?.setValue(this.plugin.settings.defaultTitleDepth);
 				break;
 			case "defaultExportTarget":
 				if (!isExportTarget(value)) return;
@@ -596,9 +592,6 @@ export class SmartExportSettingTab extends PluginSettingTab {
 		if (shouldRefreshVisibility) {
 			this.refreshDomState();
 		}
-		if (shouldUpdateDefinitions) {
-			this.update();
-		}
 	}
 
 	hide(): void {
@@ -606,10 +599,34 @@ export class SmartExportSettingTab extends PluginSettingTab {
 		this.debouncedSaveRedactionRegexPatterns.run();
 		this.debouncedUpdateTemplateDirectory.run();
 		this.defaultOutputDropdown = null;
+		this.titleDepthSlider = null;
 		this.templateOptionsDirectory = null;
 		this.templateOptionsRequest += 1;
 		this.redactionPreviewUpdater = null;
 		super.hide();
+	}
+
+	private renderTitleDepth(setting: Setting): () => void {
+		let slider: SliderComponent | null = null;
+
+		setting.controlEl.empty();
+		setting.addSlider((component) => {
+			slider = component;
+			this.titleDepthSlider = component;
+			component
+				.setLimits(1, 20, 1)
+				.setValue(this.plugin.settings.defaultTitleDepth)
+				.onChange((value) => {
+					void this.setControlValue("defaultTitleDepth", value);
+				});
+		});
+
+		return () => {
+			if (this.titleDepthSlider === slider) {
+				this.titleDepthSlider = null;
+			}
+			setting.controlEl.empty();
+		};
 	}
 
 	private renderDefaultOutput(setting: Setting): () => void {
