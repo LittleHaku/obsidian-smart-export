@@ -292,7 +292,6 @@ export class ExportModal extends Modal {
 				slider
 					.setLimits(1, 20, 1)
 					.setValue(this.contentDepth)
-					.setDynamicTooltip()
 					.onChange((value) => {
 						this.contentDepth = value;
 						if (this.titleDepth < this.contentDepth) {
@@ -312,7 +311,6 @@ export class ExportModal extends Modal {
 				slider
 					.setLimits(1, 20, 1)
 					.setValue(this.titleDepth)
-					.setDynamicTooltip()
 					.onChange((value) => {
 						this.titleDepth = value;
 						if (this.titleDepth < this.contentDepth) {

@@ -4,14 +4,14 @@ Updated: July 30, 2026
 
 ## Current baseline
 
-Smart Export 1.15.3 is the maintenance baseline:
+Smart Export 1.16.0 is the maintenance baseline:
 
 - Node.js 24 LTS is the recommended development runtime; Node.js 22-26 is supported.
 - pnpm 11.18.0 is pinned through `package.json`.
 - Windows and WSL/Linux use the same lockfile but separate `node_modules` installations.
 - The Obsidian SDK is aligned with the 1.13 release line.
 - The plugin remains mobile-compatible and does not import Node.js or Electron modules at runtime.
-- The minimum supported Obsidian version is 1.6.6, matching `Vault.getAllFolders()`.
+- The minimum supported Obsidian version is 1.13.0 so the plugin can use the declarative settings API without maintaining a second legacy UI.
 
 ## Completed for 1.15.1
 
@@ -36,26 +36,18 @@ Smart Export 1.15.3 is the maintenance baseline:
 - Scheduled and canceled release-note focus through the modal's owning window.
 - Replaced the locally declared `openExternal` helper with a safe standard external link that works without undocumented Obsidian SDK exports.
 
+## Completed for 1.16.0
+
+- Raised `minAppVersion` to Obsidian 1.13.0 and selected the clean declarative-only migration path recommended by Obsidian ([#95](https://github.com/LittleHaku/obsidian-smart-export/issues/95)).
+- Moved `SmartExportSettingTab` out of `src/main.ts` and replaced its deprecated `display()` implementation with searchable `getSettingDefinitions()` groups.
+- Replaced custom settings-tab folder suggesters with Obsidian's declarative `folder` controls while retaining normalized stored paths.
+- Added conditional visibility for marked-section and regular-expression redaction details, preserved the live preview and dynamic template dropdown, and removed obsolete dynamic slider tooltip calls.
+- Added tests for definition generation, explicit defaults, normalized persistence, conditional visibility, and the derived output selector.
+
 ## Next maintenance work
 
 The GitHub issues linked below are the durable source of truth for implementation scope,
 acceptance criteria, and validation evidence.
-
-### Priority 1: Obsidian 1.13 settings ([#95](https://github.com/LittleHaku/obsidian-smart-export/issues/95))
-
-Migrate `SmartExportSettingTab` to the declarative `getSettingDefinitions()` API so plugin settings appear in Obsidian search.
-
-Decide between:
-
-- dual support, retaining the imperative `display()` implementation for Obsidian 1.6.6-1.12; or
-- raising `minAppVersion` to 1.13 and using only declarative settings.
-
-Completion criteria:
-
-- all settings remain editable and persist correctly;
-- conditional sections and custom folder suggestions still work;
-- settings are searchable on Obsidian 1.13;
-- deprecated `display()` and `setDynamicTooltip()` calls are removed from the selected support path.
 
 ### Priority 1: supported tag discovery ([#96](https://github.com/LittleHaku/obsidian-smart-export/issues/96))
 

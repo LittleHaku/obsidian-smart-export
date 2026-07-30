@@ -126,6 +126,15 @@ if (!Object.getOwnPropertyDescriptor(elementPrototype, "win")) {
 	});
 }
 
+if (!Object.getOwnPropertyDescriptor(Document.prototype, "win")) {
+	Object.defineProperty(Document.prototype, "win", {
+		configurable: true,
+		get(this: Document): Window {
+			return this.defaultView ?? window;
+		},
+	});
+}
+
 export class TFile {}
 export class TFolder {}
 export class App {}
@@ -134,6 +143,130 @@ export class MetadataCache {}
 export class LinkCache {}
 export class Position {}
 export class Loc {}
+
+type MockObsidianWindow = Window & {
+	createFragment?: () => DocumentFragment;
+	createEl?: <K extends keyof HTMLElementTagNameMap>(
+		tag: K,
+		options?: CreateElOptions
+	) => HTMLElementTagNameMap[K];
+};
+
+const mockWindow = window as MockObsidianWindow;
+mockWindow.createFragment ??= () => new DocumentFragment();
+mockWindow.createEl ??= <K extends keyof HTMLElementTagNameMap>(
+	tag: K,
+	options?: CreateElOptions
+): HTMLElementTagNameMap[K] => {
+	const element = document.body.createEl(tag, options);
+	element.remove();
+	return element;
+};
+
+export class Plugin {
+	app: App;
+
+	constructor(app = new App()) {
+		this.app = app;
+	}
+
+	async saveData(_data: unknown): Promise<void> {}
+}
+
+export class PluginSettingTab {
+	app: App;
+	containerEl: HTMLDivElement;
+	plugin: Plugin;
+	settingItems: unknown[] = [];
+
+	constructor(app: App, plugin: Plugin) {
+		this.app = app;
+		this.plugin = plugin;
+		this.containerEl = mockWindow.createEl!("div");
+	}
+
+	getSettingDefinitions(): unknown[] {
+		return [];
+	}
+
+	getControlValue(_key: string): unknown {
+		return undefined;
+	}
+
+	async setControlValue(_key: string, _value: unknown): Promise<void> {}
+
+	update(): void {
+		this.settingItems = this.getSettingDefinitions();
+	}
+
+	refreshDomState(): void {}
+
+	hide(): void {}
+}
+
+export class DropdownComponent {
+	selectEl: HTMLSelectElement;
+
+	constructor(containerEl: HTMLElement) {
+		this.selectEl = containerEl.createEl("select");
+	}
+
+	addOption(value: string, display: string): this {
+		const option = this.selectEl.createEl("option");
+		option.value = value;
+		option.textContent = display;
+		return this;
+	}
+
+	setValue(value: string): this {
+		this.selectEl.value = value;
+		return this;
+	}
+
+	onChange(callback: (value: string) => unknown): this {
+		this.selectEl.addEventListener("change", () => {
+			void callback(this.selectEl.value);
+		});
+		return this;
+	}
+}
+
+export class Setting {
+	settingEl: HTMLDivElement;
+	infoEl: HTMLDivElement;
+	nameEl: HTMLDivElement;
+	descEl: HTMLDivElement;
+	controlEl: HTMLDivElement;
+
+	constructor(containerEl: HTMLElement) {
+		this.settingEl = containerEl.createDiv();
+		this.infoEl = this.settingEl.createDiv();
+		this.nameEl = this.infoEl.createDiv();
+		this.descEl = this.infoEl.createDiv();
+		this.controlEl = this.settingEl.createDiv();
+	}
+
+	setName(name: string): this {
+		this.nameEl.textContent = name;
+		return this;
+	}
+
+	setDesc(desc: string | DocumentFragment): this {
+		this.descEl.replaceChildren(desc);
+		return this;
+	}
+
+	setHeading(): this {
+		this.settingEl.classList.add("setting-item-heading");
+		return this;
+	}
+
+	addDropdown(callback: (component: DropdownComponent) => unknown): this {
+		callback(new DropdownComponent(this.controlEl));
+		return this;
+	}
+}
+
 export class Modal {
 	app: App;
 	modalEl: HTMLDivElement;

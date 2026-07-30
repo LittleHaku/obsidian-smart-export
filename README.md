@@ -8,6 +8,8 @@ Smart Export turns one Obsidian note into a clean exportable context bundle by f
 
 Landing page: [smart-export.vercel.app](https://smart-export.vercel.app/)
 
+Smart Export 1.16.0 and later require Obsidian 1.13.0 or newer. Smart Export 1.15.3 remains available for older Obsidian installations.
+
 ## Why Smart Export
 
 - Follow outgoing links, backlinks, or both from a root note.
@@ -76,6 +78,8 @@ Use [BRAT (Beta Reviewers Auto-update Tool)](https://github.com/TfTHacker/obsidi
 ## Settings
 
 Settings location: **Obsidian → Settings → Smart Export**
+
+On Obsidian 1.13+, Smart Export settings are indexed by the global settings search. Redaction detail controls appear when their corresponding redaction mode is enabled, and folder fields use Obsidian's native vault-folder suggestions.
 
 ### Export defaults
 

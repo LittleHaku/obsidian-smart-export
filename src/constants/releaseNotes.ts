@@ -13,6 +13,15 @@ export interface ReleaseNotesEntry {
 
 export const RELEASE_NOTES: ReleaseNotesEntry[] = [
 	{
+		version: "1.16.0",
+		date: "2026-07-30",
+		showOnUpdate: true,
+		changed: [
+			"Settings now use Obsidian's searchable declarative interface, with native vault-folder suggestions and conditional redaction controls.",
+			"Smart Export now requires Obsidian 1.13.0 or newer; version 1.15.3 remains available for older Obsidian installations.",
+		],
+	},
+	{
 		version: "1.15.3",
 		date: "2026-07-30",
 		showOnUpdate: true,
