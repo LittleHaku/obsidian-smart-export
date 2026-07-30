@@ -41,6 +41,7 @@ import { getPrintFriendlyMarkdownOptions } from "../utils/printFriendlyMarkdownO
 import { estimatePrintFriendlyMarkdownCharacterCount } from "../utils/printFriendlyMarkdownEstimate";
 import { getContentRedactionOptions } from "../utils/contentRedaction";
 import { normalizeNoteTag } from "../utils/noteFilters";
+import { createLinkedDescription } from "../utils/linkedDescription";
 
 const EXPORT_CHOICE_XML = "format:xml";
 const EXPORT_CHOICE_PRINT_FRIENDLY = "format:print-friendly-markdown";
@@ -220,7 +221,7 @@ export class ExportModal extends Modal {
 		this.sourceControlsEl = rootSection.createDiv();
 		this.renderSourceControls();
 
-		this.selectedFileEl = rootSection.createEl("div", {
+		this.selectedFileEl = rootSection.createDiv({
 			text: "No source selected",
 			cls: "smart-export-selected-file",
 		});
@@ -276,7 +277,7 @@ export class ExportModal extends Modal {
 		});
 		const depthInfo = depthSection.createDiv({ cls: "smart-export-info-box" });
 		depthInfo.createEl("strong", { text: "How depth works: " });
-		depthInfo.createEl("span", {
+		depthInfo.createSpan({
 			text: "Think of depth as how many link steps away from your starting note you want to go. Content depth includes the full text of those notes. Title depth can go farther and includes only note names for extra context.",
 		});
 
@@ -348,16 +349,11 @@ export class ExportModal extends Modal {
 			cls: "smart-export-section-title",
 		});
 
-		const outputDesc = document.createDocumentFragment();
-		outputDesc.append(
-			"Choose XML, print-friendly Markdown, or a Markdown template (built-in or custom). "
-		);
-		const templateDocsLink = document.createElement("a");
-		templateDocsLink.href = TEMPLATE_DOCS_URL;
-		templateDocsLink.textContent = "Template docs";
-		templateDocsLink.target = "_blank";
-		templateDocsLink.rel = "noopener noreferrer";
-		outputDesc.append(templateDocsLink);
+		const outputDesc = createLinkedDescription(exportSection, {
+			text: "Choose XML, print-friendly Markdown, or a Markdown template (built-in or custom). ",
+			linkText: "Template docs",
+			href: TEMPLATE_DOCS_URL,
+		});
 
 		new Setting(exportSection)
 			.setName("Output")
@@ -381,7 +377,7 @@ export class ExportModal extends Modal {
 		});
 		const treeInfo = treeSection.createDiv({ cls: "smart-export-info-box" });
 		treeInfo.createEl("strong", { text: "Tip: " });
-		treeInfo.createEl("span", {
+		treeInfo.createSpan({
 			text: "Shift-click a checkbox to select or deselect content for all notes in that branch.",
 		});
 		const treeControls = treeSection.createDiv({ cls: "smart-export-tree-controls" });
@@ -426,13 +422,13 @@ export class ExportModal extends Modal {
 		// Token count and export section
 		const exportActionSection = contentEl.createDiv({ cls: "smart-export-action-section" });
 
-		this.tokenCountEl = exportActionSection.createEl("div", {
+		this.tokenCountEl = exportActionSection.createDiv({
 			text: "Token estimate: not available",
 			cls: "smart-export-token-count",
 		});
 
 		const tokenInfo = exportActionSection.createDiv({ cls: "smart-export-token-info" });
-		tokenInfo.createEl("span", {
+		tokenInfo.createSpan({
 			text: "Token estimates help you stay within common context limits (~128k, ~200k).",
 		});
 

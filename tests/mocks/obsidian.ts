@@ -4,6 +4,7 @@ type CreateElOptions = {
 	cls?: string;
 	text?: string;
 	attr?: Record<string, string>;
+	href?: string;
 };
 
 type ObsidianHTMLElement = HTMLElement & {
@@ -36,6 +37,9 @@ function applyOptions(element: HTMLElement, options?: CreateElOptions): void {
 			element.setAttribute(key, value);
 		}
 	}
+	if (options.href) {
+		element.setAttribute("href", options.href);
+	}
 }
 
 const elementPrototype = HTMLElement.prototype as ObsidianHTMLElement;
@@ -54,7 +58,7 @@ if (!elementPrototype.setText) {
 
 if (!elementPrototype.appendText) {
 	elementPrototype.appendText = function appendText(this: HTMLElement, text: string): void {
-		this.append(document.createTextNode(text));
+		this.append(this.ownerDocument.createTextNode(text));
 	};
 }
 
@@ -64,7 +68,7 @@ if (!elementPrototype.createEl) {
 		tag: K,
 		options?: CreateElOptions
 	): HTMLElementTagNameMap[K] {
-		const element = document.createElement(tag);
+		const element = this.ownerDocument.createElement(tag);
 		applyOptions(element, options);
 		this.append(element);
 		return element;
@@ -104,6 +108,24 @@ if (!elementPrototype.removeClass) {
 	};
 }
 
+if (!Object.getOwnPropertyDescriptor(elementPrototype, "doc")) {
+	Object.defineProperty(elementPrototype, "doc", {
+		configurable: true,
+		get(this: HTMLElement): Document {
+			return this.ownerDocument;
+		},
+	});
+}
+
+if (!Object.getOwnPropertyDescriptor(elementPrototype, "win")) {
+	Object.defineProperty(elementPrototype, "win", {
+		configurable: true,
+		get(this: HTMLElement): Window {
+			return this.ownerDocument.defaultView ?? window;
+		},
+	});
+}
+
 export class TFile {}
 export class TFolder {}
 export class App {}
@@ -140,8 +162,6 @@ export class Modal {
 
 	onClose(): void {}
 }
-
-export function openExternal(_url: string): void {}
 
 interface MockTagCache {
 	tag: string;

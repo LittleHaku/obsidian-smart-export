@@ -429,6 +429,23 @@ Modern, clean styling for the export modal interface
 	align-items: center;
 	gap: 6px;
 	font-size: 12px;
+	padding: var(--size-4-1) var(--size-4-3);
+	border-radius: var(--radius-s);
+	background: var(--interactive-accent);
+	color: var(--text-on-accent);
+	font-weight: var(--font-medium);
+	text-decoration: none;
+}
+
+.smart-export-support-button-small:hover {
+	background: var(--interactive-accent-hover);
+	color: var(--text-on-accent);
+	text-decoration: none;
+}
+
+.smart-export-support-button-small:focus-visible {
+	outline: 2px solid var(--background-modifier-border-focus);
+	outline-offset: 2px;
 }
 
 .smart-export-support-button-icon {

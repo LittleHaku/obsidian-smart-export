@@ -1,6 +1,5 @@
 import { App, Modal } from "obsidian";
 import { ReleaseNotesEntry } from "../constants/releaseNotes";
-import { openExternalUrl } from "../utils/externalLink";
 
 interface ReleaseNotesModalOptions {
 	fundingUrl?: string;
@@ -10,6 +9,8 @@ interface ReleaseNotesModalOptions {
 
 export class ReleaseNotesModal extends Modal {
 	private okButton: HTMLButtonElement | null = null;
+	private focusAnimationFrame: number | null = null;
+	private focusAnimationWindow: Window | null = null;
 
 	constructor(
 		app: App,
@@ -184,23 +185,22 @@ export class ReleaseNotesModal extends Modal {
 
 		if (this.options.fundingUrl) {
 			const fundingUrl = this.options.fundingUrl;
-			const supportButton = buttonsEl.createEl("button", {
-				cls: "smart-export-support-button-small",
+			const supportLink = buttonsEl.createEl("a", {
+				cls: "smart-export-support-button-small mod-cta",
+				href: fundingUrl,
 				attr: {
-					type: "button",
+					target: "_blank",
+					rel: "noopener noreferrer",
 				},
 			});
 
-			supportButton.createSpan({
+			supportLink.createSpan({
 				cls: "smart-export-support-button-icon",
 				text: "☕",
 			});
-			supportButton.createSpan({
+			supportLink.createSpan({
 				cls: "smart-export-support-button-label",
 				text: "Buy me a coffee",
-			});
-			supportButton.addEventListener("click", () => {
-				openExternalUrl(fundingUrl);
 			});
 		}
 
@@ -219,15 +219,29 @@ export class ReleaseNotesModal extends Modal {
 	open(): void {
 		super.open();
 
-		requestAnimationFrame(() => {
+		this.cancelFocusAnimation();
+		const ownerWindow = this.contentEl.win;
+		this.focusAnimationWindow = ownerWindow;
+		this.focusAnimationFrame = ownerWindow.requestAnimationFrame(() => {
+			this.focusAnimationFrame = null;
+			this.focusAnimationWindow = null;
 			this.okButton?.focus();
 		});
 	}
 
 	onClose(): void {
+		this.cancelFocusAnimation();
 		this.contentEl.empty();
 		this.modalEl.removeClass("smart-export-whats-new-modal");
 		this.okButton = null;
 		this.options.onClose?.();
+	}
+
+	private cancelFocusAnimation(): void {
+		if (this.focusAnimationFrame !== null && this.focusAnimationWindow !== null) {
+			this.focusAnimationWindow.cancelAnimationFrame(this.focusAnimationFrame);
+		}
+		this.focusAnimationFrame = null;
+		this.focusAnimationWindow = null;
 	}
 }
