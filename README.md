@@ -136,6 +136,7 @@ For Markdown template exports, Smart Export can load a custom template from your
 3. Add placeholders from [template docs](templates/README.md) to those notes.
 
 Default folder: `smart-templates` (you can change it).
+The selected folder must be visible inside Obsidian; hidden or excluded folders are not available as template sources.
 
 Template selection:
 
