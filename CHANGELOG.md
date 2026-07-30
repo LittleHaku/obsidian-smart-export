@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.15.1] - 2026-07-30
+
+### Changed
+
+- Updated the supported development environment to Node.js 22-26 and repository-pinned pnpm 11, with separate dependency installations for Windows and WSL/Linux.
+- Updated the Obsidian SDK, TypeScript, linting, formatting, and test tooling within compatible release lines.
+- Modernized CI, coverage upload, artifact creation, and release actions.
+- Corrected the minimum supported Obsidian version to 1.6.6 for Smart Export 1.5.1 and later, matching the `Vault.getAllFolders()` API used by folder suggestions.
+
+### Fixed
+
+- Release tags now fail early when they do not match package, manifest, and compatibility metadata.
+- GitHub-generated release notes are now parsed correctly and API failures no longer pass silently.
+- CI now produces the LCOV report it uploads and runs an explicit TypeScript check.
+
 ## [1.15.0] - 2026-05-17
 
 ### Added

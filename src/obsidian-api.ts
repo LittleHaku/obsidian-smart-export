@@ -207,33 +207,11 @@ export class ObsidianAPI {
 	 */
 	public getNoteFrontmatter(file: TFile): Record<string, unknown> | null {
 		const cache = this.app.metadataCache.getCache(file.path) as
-			| { frontmatter?: Record<string, unknown> }
-			| null
-			| undefined;
+			{ frontmatter?: Record<string, unknown> } | null | undefined;
 		const frontmatter = cache?.frontmatter;
 		if (!frontmatter || typeof frontmatter !== "object" || Array.isArray(frontmatter)) {
 			return null;
 		}
 		return frontmatter;
 	}
-
-	// Future methods for API interaction will go here.
-}
-
-/**
- * A utility class for extracting metadata from notes.
- * @deprecated This is a placeholder and will be implemented in a future version.
- */
-export class NoteMetadataExtractor {
-	private app: App;
-
-	/**
-	 * Creates an instance of NoteMetadataExtractor.
-	 * @param {App} app - The Obsidian App instance.
-	 */
-	constructor(app: App) {
-		this.app = app;
-	}
-
-	// Future methods for metadata extraction will go here.
 }

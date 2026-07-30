@@ -32,9 +32,8 @@ export class PrintFriendlyMarkdownExporter {
 			rootNode,
 			resolvedOptions
 		);
-		const linkIndex = buildExportedMarkdownLinkIndex(
-			allNotes,
-			(note) => headingLabels.get(note.id)!
+		const linkIndex = buildExportedMarkdownLinkIndex(allNotes, (note) =>
+			headingLabels.get(note.id)!
 		);
 		const chunks: string[] = [];
 		if (resolvedOptions.includeTableOfContents) {

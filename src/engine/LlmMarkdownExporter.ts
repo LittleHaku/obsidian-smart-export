@@ -122,9 +122,8 @@ export class LlmMarkdownExporter {
 		allNotes: ExportNode[],
 		headingLabels: Map<string, string>
 	): string {
-		const linkIndex = buildExportedMarkdownLinkIndex(
-			allNotes,
-			(note) => headingLabels.get(note.id)!
+		const linkIndex = buildExportedMarkdownLinkIndex(allNotes, (note) =>
+			headingLabels.get(note.id)!
 		);
 		return allNotes
 			.map((note) => {

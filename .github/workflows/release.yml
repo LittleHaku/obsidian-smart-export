@@ -16,7 +16,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Determine prerelease status
         id: status
@@ -28,15 +28,37 @@ jobs:
           fi
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v3
-        with:
-          version: 9
+        uses: pnpm/action-setup@v6
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
-          node-version: "18"
+          node-version-file: ".nvmrc"
           cache: "pnpm"
+
+      - name: Validate release metadata
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          if [[ ! "$TAG" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-(alpha|beta|canary)\.[0-9]+)?$ ]]; then
+            echo "Release tags must use X.Y.Z or X.Y.Z-{alpha,beta,canary}.N without a v prefix."
+            exit 1
+          fi
+
+          PACKAGE_VERSION=$(node -p "require('./package.json').version")
+          MANIFEST_VERSION=$(node -p "require('./manifest.json').version")
+          MANIFEST_MIN_APP=$(node -p "require('./manifest.json').minAppVersion")
+          VERSIONS_MIN_APP=$(node -p "require('./versions.json')[process.env.TAG] ?? ''")
+
+          if [[ "$TAG" != "$PACKAGE_VERSION" || "$TAG" != "$MANIFEST_VERSION" ]]; then
+            echo "Tag, package.json, and manifest.json versions must match."
+            exit 1
+          fi
+
+          if [[ "$VERSIONS_MIN_APP" != "$MANIFEST_MIN_APP" ]]; then
+            echo "versions.json must map $TAG to manifest.json minAppVersion."
+            exit 1
+          fi
 
       - name: Build
         id: build
@@ -52,7 +74,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           TAG="${{ github.ref_name }}"
-          VERSION="${TAG#v}"
+          VERSION="$TAG"
           if ! grep -q "^## \\[${VERSION}\\]" CHANGELOG.md; then
             {
               echo "## ${VERSION}"
@@ -76,25 +98,20 @@ jobs:
           PREV_TAG=$(git tag --list | grep -E "$TAG_FILTER" | sort -V | awk -v tag="$TAG" '$0==tag {print prev} {prev=$0}')
 
           if [[ -n "$PREV_TAG" ]]; then
-            NOTES_JSON=$(curl -s -X POST \
+            NOTES_JSON=$(curl --fail-with-body --silent --show-error -X POST \
               -H "Authorization: Bearer $GITHUB_TOKEN" \
               -H "Accept: application/vnd.github+json" \
               "https://api.github.com/repos/${{ github.repository }}/releases/generate-notes" \
               -d "{\"tag_name\":\"${TAG}\",\"previous_tag_name\":\"${PREV_TAG}\"}")
           else
-            NOTES_JSON=$(curl -s -X POST \
+            NOTES_JSON=$(curl --fail-with-body --silent --show-error -X POST \
               -H "Authorization: Bearer $GITHUB_TOKEN" \
               -H "Accept: application/vnd.github+json" \
               "https://api.github.com/repos/${{ github.repository }}/releases/generate-notes" \
               -d "{\"tag_name\":\"${TAG}\"}")
           fi
 
-          NOTES_BODY=$(python - <<'PY'
-          import json, sys
-          data = json.load(sys.stdin)
-          print((data.get("body") or "").strip())
-          PY
-          <<<"$NOTES_JSON")
+          NOTES_BODY=$(python -c 'import json, sys; data = json.load(sys.stdin); print((data.get("body") or "").strip())' <<<"$NOTES_JSON")
 
           if [[ -n "$NOTES_BODY" ]]; then
             echo "" >> release-notes.md
@@ -103,7 +120,7 @@ jobs:
 
       - name: Release
         id: release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           prerelease: ${{ steps.status.outputs.prerelease }}
           token: ${{ secrets.GITHUB_TOKEN }}

@@ -95,12 +95,10 @@ function extractStoredSettings(storedData: unknown): Partial<SmartExportSettings
 	}
 
 	if ("settings" in storedData) {
-		return isRecord(storedData.settings)
-			? (storedData.settings as Partial<SmartExportSettings>)
-			: null;
+		return isRecord(storedData.settings) ? storedData.settings : null;
 	}
 
-	return storedData as Partial<SmartExportSettings>;
+	return storedData;
 }
 
 function extractStoredLastSeenVersion(storedData: unknown): string | null {
@@ -108,7 +106,7 @@ function extractStoredLastSeenVersion(storedData: unknown): string | null {
 		return null;
 	}
 
-	return normalizeStoredPluginVersion((storedData as StoredPluginData).lastSeenVersion);
+	return normalizeStoredPluginVersion(storedData.lastSeenVersion);
 }
 
 /**
@@ -302,9 +300,7 @@ export default class SmartExportPlugin extends Plugin {
 
 	async loadSettings() {
 		const storedData = (await this.loadData()) as
-			| StoredPluginData
-			| Partial<SmartExportSettings>
-			| null;
+			StoredPluginData | Partial<SmartExportSettings> | null;
 		this.hasPersistedData = storedData !== null;
 		this.lastSeenVersion = extractStoredLastSeenVersion(storedData);
 		const storedSettings = extractStoredSettings(storedData);

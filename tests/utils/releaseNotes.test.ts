@@ -170,7 +170,7 @@ describe("releaseNotes", () => {
 		expect(isReleaseAutoDisplayEnabled("0.1.0")).toBe(true);
 		expect(
 			shouldAutoDisplayReleaseNotesForUpdate(RELEASE_NOTES[1].version, RELEASE_NOTES[0].version)
-		).toBe(true);
+		).toBe(RELEASE_NOTES[0].showOnUpdate !== false);
 		expect(shouldAutoDisplayReleaseNotesForUpdate("1.10.3", "1.11.0")).toBe(true);
 		expect(shouldAutoDisplayReleaseNotesForUpdate("1.10.2", "1.10.3")).toBe(true);
 		expect(shouldAutoDisplayReleaseNotesForUpdate("1.10.1", "1.10.2")).toBe(true);

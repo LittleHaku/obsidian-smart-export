@@ -55,4 +55,11 @@ export default defineConfig([
 			"import/no-extraneous-dependencies": "off",
 		},
 	},
+	{
+		files: ["benchmarks/**/*", "scripts/**/*"],
+		rules: {
+			"obsidianmd/no-nodejs-modules": "off",
+			"obsidianmd/prefer-window-timers": "off",
+		},
+	},
 ]);

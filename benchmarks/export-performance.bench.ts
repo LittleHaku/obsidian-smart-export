@@ -1,4 +1,3 @@
-/* eslint-disable import/no-nodejs-modules */
 import { performance } from "node:perf_hooks";
 import { writeFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";

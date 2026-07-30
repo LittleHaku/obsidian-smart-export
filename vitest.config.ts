@@ -7,7 +7,7 @@ export default defineConfig({
 		environment: "jsdom",
 		coverage: {
 			provider: "v8",
-			reporter: ["text", "json", "html"],
+			reporter: ["text", "json", "html", "lcov"],
 			include: ["src/**/*.ts"],
 			exclude: ["src/main.ts", "src/types.ts", "src/ui/**", "src/obsidian-api.ts"],
 		},
