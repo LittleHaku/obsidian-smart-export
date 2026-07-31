@@ -42,6 +42,37 @@ function applyOptions(element: HTMLElement, options?: CreateElOptions): void {
 	}
 }
 
+function createNativeElement<K extends keyof HTMLElementTagNameMap>(
+	ownerDocument: Document,
+	tag: K
+): HTMLElementTagNameMap[K] {
+	// The Obsidian helpers do not exist yet while this jsdom mock is bootstrapping them.
+	return ownerDocument.createElementNS(
+		"http://www.w3.org/1999/xhtml",
+		tag
+	) as HTMLElementTagNameMap[K];
+}
+
+function createMockElement<K extends keyof HTMLElementTagNameMap>(
+	ownerDocument: Document,
+	tag: K,
+	options?: CreateElOptions
+): HTMLElementTagNameMap[K] {
+	const element = createNativeElement(ownerDocument, tag);
+	applyOptions(element, options);
+	return element;
+}
+
+function createMockChild<K extends keyof HTMLElementTagNameMap>(
+	parent: HTMLElement,
+	tag: K,
+	options?: CreateElOptions
+): HTMLElementTagNameMap[K] {
+	const element = createMockElement(parent.ownerDocument, tag, options);
+	parent.append(element);
+	return element;
+}
+
 const elementPrototype = HTMLElement.prototype as ObsidianHTMLElement;
 
 if (!elementPrototype.empty) {
@@ -68,10 +99,7 @@ if (!elementPrototype.createEl) {
 		tag: K,
 		options?: CreateElOptions
 	): HTMLElementTagNameMap[K] {
-		const element = this.ownerDocument.createElement(tag);
-		applyOptions(element, options);
-		this.append(element);
-		return element;
+		return createMockChild(this, tag, options);
 	};
 }
 
@@ -80,7 +108,7 @@ if (!elementPrototype.createDiv) {
 		this: HTMLElement,
 		options?: CreateElOptions
 	): HTMLDivElement {
-		return this.createEl("div", options);
+		return createMockChild(this, "div", options);
 	};
 }
 
@@ -89,7 +117,7 @@ if (!elementPrototype.createSpan) {
 		this: HTMLElement,
 		options?: CreateElOptions
 	): HTMLSpanElement {
-		return this.createEl("span", options);
+		return createMockChild(this, "span", options);
 	};
 }
 
@@ -203,6 +231,8 @@ type MockObsidianWindow = Window & {
 		tag: K,
 		options?: CreateElOptions
 	) => HTMLElementTagNameMap[K];
+	createDiv?: (options?: CreateElOptions) => HTMLDivElement;
+	createSpan?: (options?: CreateElOptions) => HTMLSpanElement;
 };
 
 const mockWindow = window as MockObsidianWindow;
@@ -211,10 +241,12 @@ mockWindow.createEl ??= <K extends keyof HTMLElementTagNameMap>(
 	tag: K,
 	options?: CreateElOptions
 ): HTMLElementTagNameMap[K] => {
-	const element = document.body.createEl(tag, options);
-	element.remove();
-	return element;
+	return createMockElement(mockWindow.document, tag, options);
 };
+mockWindow.createDiv ??= (options?: CreateElOptions): HTMLDivElement =>
+	createMockElement(mockWindow.document, "div", options);
+mockWindow.createSpan ??= (options?: CreateElOptions): HTMLSpanElement =>
+	createMockElement(mockWindow.document, "span", options);
 
 export class Plugin {
 	app: App;
@@ -235,7 +267,7 @@ export class PluginSettingTab {
 	constructor(app: App, plugin: Plugin) {
 		this.app = app;
 		this.plugin = plugin;
-		this.containerEl = mockWindow.createEl!("div");
+		this.containerEl = mockWindow.createDiv!();
 	}
 
 	getSettingDefinitions(): unknown[] {
@@ -380,11 +412,9 @@ export class Modal {
 
 	constructor(app: App) {
 		this.app = app;
-		this.modalEl = document.createElement("div");
-		this.modalEl.className = "modal";
-		this.titleEl = document.createElement("h1");
-		this.contentEl = document.createElement("div");
-		this.contentEl.className = "modal-content";
+		this.modalEl = mockWindow.createDiv!({ cls: "modal" });
+		this.titleEl = mockWindow.createEl!("h1");
+		this.contentEl = mockWindow.createDiv!({ cls: "modal-content" });
 		this.modalEl.append(this.titleEl, this.contentEl);
 	}
 
