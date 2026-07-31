@@ -88,8 +88,11 @@ Trigger: tree preview render or export action.
 
 ### Debounced settings writes
 
-- Exclusion text input changes are debounced before `saveSettings()`.
-- Prevents saving to disk on every keystroke.
+- Traversal exclusion inputs wait 300 ms and regular expression rules wait 500 ms before
+  `saveSettings()`.
+- Markdown template folder changes wait 300 ms before saving and refreshing the derived output
+  choices in place.
+- These delays prevent disk writes on every keystroke and keep the active folder input focused.
 
 ## Shutdown Process
 

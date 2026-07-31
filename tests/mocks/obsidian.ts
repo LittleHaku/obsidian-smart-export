@@ -42,6 +42,37 @@ function applyOptions(element: HTMLElement, options?: CreateElOptions): void {
 	}
 }
 
+function createNativeElement<K extends keyof HTMLElementTagNameMap>(
+	ownerDocument: Document,
+	tag: K
+): HTMLElementTagNameMap[K] {
+	// The Obsidian helpers do not exist yet while this jsdom mock is bootstrapping them.
+	return ownerDocument.createElementNS(
+		"http://www.w3.org/1999/xhtml",
+		tag
+	) as HTMLElementTagNameMap[K];
+}
+
+function createMockElement<K extends keyof HTMLElementTagNameMap>(
+	ownerDocument: Document,
+	tag: K,
+	options?: CreateElOptions
+): HTMLElementTagNameMap[K] {
+	const element = createNativeElement(ownerDocument, tag);
+	applyOptions(element, options);
+	return element;
+}
+
+function createMockChild<K extends keyof HTMLElementTagNameMap>(
+	parent: HTMLElement,
+	tag: K,
+	options?: CreateElOptions
+): HTMLElementTagNameMap[K] {
+	const element = createMockElement(parent.ownerDocument, tag, options);
+	parent.append(element);
+	return element;
+}
+
 const elementPrototype = HTMLElement.prototype as ObsidianHTMLElement;
 
 if (!elementPrototype.empty) {
@@ -68,10 +99,7 @@ if (!elementPrototype.createEl) {
 		tag: K,
 		options?: CreateElOptions
 	): HTMLElementTagNameMap[K] {
-		const element = this.ownerDocument.createElement(tag);
-		applyOptions(element, options);
-		this.append(element);
-		return element;
+		return createMockChild(this, tag, options);
 	};
 }
 
@@ -80,7 +108,7 @@ if (!elementPrototype.createDiv) {
 		this: HTMLElement,
 		options?: CreateElOptions
 	): HTMLDivElement {
-		return this.createEl("div", options);
+		return createMockChild(this, "div", options);
 	};
 }
 
@@ -89,7 +117,7 @@ if (!elementPrototype.createSpan) {
 		this: HTMLElement,
 		options?: CreateElOptions
 	): HTMLSpanElement {
-		return this.createEl("span", options);
+		return createMockChild(this, "span", options);
 	};
 }
 
@@ -126,6 +154,15 @@ if (!Object.getOwnPropertyDescriptor(elementPrototype, "win")) {
 	});
 }
 
+if (!Object.getOwnPropertyDescriptor(Document.prototype, "win")) {
+	Object.defineProperty(Document.prototype, "win", {
+		configurable: true,
+		get(this: Document): Window {
+			return this.defaultView ?? window;
+		},
+	});
+}
+
 export class TFile {}
 export class TFolder {}
 export class App {}
@@ -134,6 +171,239 @@ export class MetadataCache {}
 export class LinkCache {}
 export class Position {}
 export class Loc {}
+
+type MockDebouncer<T extends unknown[], V> = {
+	(...args: T): MockDebouncer<T, V>;
+	cancel(): MockDebouncer<T, V>;
+	run(): V | void;
+};
+
+export function debounce<T extends unknown[], V>(
+	callback: (...args: T) => V,
+	timeout = 0,
+	resetTimer = false
+): MockDebouncer<T, V> {
+	let timer: number | null = null;
+	let pendingArgs: T | null = null;
+
+	const invoke = (): V | void => {
+		timer = null;
+		if (!pendingArgs) {
+			return;
+		}
+		const args = pendingArgs;
+		pendingArgs = null;
+		return callback(...args);
+	};
+
+	const debounced = ((...args: T): MockDebouncer<T, V> => {
+		pendingArgs = args;
+		if (timer !== null && resetTimer) {
+			window.clearTimeout(timer);
+			timer = null;
+		}
+		timer ??= window.setTimeout(invoke, timeout);
+		return debounced;
+	}) as MockDebouncer<T, V>;
+
+	debounced.cancel = () => {
+		if (timer !== null) {
+			window.clearTimeout(timer);
+		}
+		timer = null;
+		pendingArgs = null;
+		return debounced;
+	};
+	debounced.run = () => {
+		if (timer === null) {
+			return;
+		}
+		window.clearTimeout(timer);
+		return invoke();
+	};
+
+	return debounced;
+}
+
+type MockObsidianWindow = Window & {
+	createFragment?: () => DocumentFragment;
+	createEl?: <K extends keyof HTMLElementTagNameMap>(
+		tag: K,
+		options?: CreateElOptions
+	) => HTMLElementTagNameMap[K];
+	createDiv?: (options?: CreateElOptions) => HTMLDivElement;
+	createSpan?: (options?: CreateElOptions) => HTMLSpanElement;
+};
+
+const mockWindow = window as MockObsidianWindow;
+mockWindow.createFragment ??= () => new DocumentFragment();
+mockWindow.createEl ??= <K extends keyof HTMLElementTagNameMap>(
+	tag: K,
+	options?: CreateElOptions
+): HTMLElementTagNameMap[K] => {
+	return createMockElement(mockWindow.document, tag, options);
+};
+mockWindow.createDiv ??= (options?: CreateElOptions): HTMLDivElement =>
+	createMockElement(mockWindow.document, "div", options);
+mockWindow.createSpan ??= (options?: CreateElOptions): HTMLSpanElement =>
+	createMockElement(mockWindow.document, "span", options);
+
+export class Plugin {
+	app: App;
+
+	constructor(app = new App()) {
+		this.app = app;
+	}
+
+	async saveData(_data: unknown): Promise<void> {}
+}
+
+export class PluginSettingTab {
+	app: App;
+	containerEl: HTMLDivElement;
+	plugin: Plugin;
+	settingItems: unknown[] = [];
+
+	constructor(app: App, plugin: Plugin) {
+		this.app = app;
+		this.plugin = plugin;
+		this.containerEl = mockWindow.createDiv!();
+	}
+
+	getSettingDefinitions(): unknown[] {
+		return [];
+	}
+
+	getControlValue(_key: string): unknown {
+		return undefined;
+	}
+
+	async setControlValue(_key: string, _value: unknown): Promise<void> {}
+
+	update(): void {
+		this.settingItems = this.getSettingDefinitions();
+	}
+
+	refreshDomState(): void {}
+
+	hide(): void {}
+}
+
+export class DropdownComponent {
+	selectEl: HTMLSelectElement;
+
+	constructor(containerEl: HTMLElement) {
+		this.selectEl = containerEl.createEl("select");
+	}
+
+	addOption(value: string, display: string): this {
+		const option = this.selectEl.createEl("option");
+		option.value = value;
+		option.textContent = display;
+		return this;
+	}
+
+	setValue(value: string): this {
+		this.selectEl.value = value;
+		return this;
+	}
+
+	onChange(callback: (value: string) => unknown): this {
+		this.selectEl.addEventListener("change", () => {
+			void callback(this.selectEl.value);
+		});
+		return this;
+	}
+}
+
+export class SliderComponent {
+	sliderEl: HTMLInputElement;
+	private readonly displayEl: HTMLSpanElement;
+	private displayFormat = (value: number): string => String(value);
+
+	constructor(containerEl: HTMLElement) {
+		this.sliderEl = containerEl.createEl("input", {
+			attr: { type: "range" },
+		});
+		this.displayEl = containerEl.createSpan();
+	}
+
+	setLimits(min: number | null, max: number | null, step: number | "any"): this {
+		if (min === null) {
+			this.sliderEl.removeAttribute("min");
+		} else {
+			this.sliderEl.min = String(min);
+		}
+		if (max === null) {
+			this.sliderEl.removeAttribute("max");
+		} else {
+			this.sliderEl.max = String(max);
+		}
+		this.sliderEl.step = String(step);
+		return this;
+	}
+
+	setValue(value: number): this {
+		this.sliderEl.value = String(value);
+		this.displayEl.textContent = this.displayFormat(value);
+		return this;
+	}
+
+	setDisplayFormat(format: (value: number) => string): this {
+		this.displayFormat = format;
+		this.displayEl.textContent = format(Number(this.sliderEl.value));
+		return this;
+	}
+
+	onChange(callback: (value: number) => unknown): this {
+		this.sliderEl.addEventListener("input", () => {
+			void callback(Number(this.sliderEl.value));
+		});
+		return this;
+	}
+}
+
+export class Setting {
+	settingEl: HTMLDivElement;
+	infoEl: HTMLDivElement;
+	nameEl: HTMLDivElement;
+	descEl: HTMLDivElement;
+	controlEl: HTMLDivElement;
+
+	constructor(containerEl: HTMLElement) {
+		this.settingEl = containerEl.createDiv();
+		this.infoEl = this.settingEl.createDiv();
+		this.nameEl = this.infoEl.createDiv();
+		this.descEl = this.infoEl.createDiv();
+		this.controlEl = this.settingEl.createDiv();
+	}
+
+	setName(name: string): this {
+		this.nameEl.textContent = name;
+		return this;
+	}
+
+	setDesc(desc: string | DocumentFragment): this {
+		this.descEl.replaceChildren(desc);
+		return this;
+	}
+
+	setHeading(): this {
+		this.settingEl.classList.add("setting-item-heading");
+		return this;
+	}
+
+	addDropdown(callback: (component: DropdownComponent) => unknown): this {
+		callback(new DropdownComponent(this.controlEl));
+		return this;
+	}
+
+	addSlider(callback: (component: SliderComponent) => unknown): this {
+		callback(new SliderComponent(this.controlEl));
+		return this;
+	}
+}
+
 export class Modal {
 	app: App;
 	modalEl: HTMLDivElement;
@@ -142,11 +412,9 @@ export class Modal {
 
 	constructor(app: App) {
 		this.app = app;
-		this.modalEl = document.createElement("div");
-		this.modalEl.className = "modal";
-		this.titleEl = document.createElement("h1");
-		this.contentEl = document.createElement("div");
-		this.contentEl.className = "modal-content";
+		this.modalEl = mockWindow.createDiv!({ cls: "modal" });
+		this.titleEl = mockWindow.createEl!("h1");
+		this.contentEl = mockWindow.createDiv!({ cls: "modal-content" });
 		this.modalEl.append(this.titleEl, this.contentEl);
 	}
 

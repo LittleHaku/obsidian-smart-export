@@ -506,6 +506,7 @@ Modern, clean styling for the export modal interface
 
 /* Settings redaction preview */
 .smart-export-redaction-preview {
+	display: block;
 	margin: 10px 0 18px 0;
 	padding: 12px 0;
 	border-top: 1px solid var(--background-modifier-border);

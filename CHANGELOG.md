@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.16.0] - 2026-07-30
+
+### Changed
+
+- Smart Export settings now use Obsidian's declarative settings API, making every setting available to the global settings search.
+- Folder settings now use Obsidian's native vault-folder suggestions, and redaction detail controls appear only when their corresponding redaction mode is enabled.
+- The minimum supported Obsidian version is now 1.13.0. Smart Export 1.15.3 remains available for older Obsidian installations.
+- Removed deprecated imperative settings rendering and obsolete dynamic slider tooltip calls.
+
 ## [1.15.3] - 2026-07-30
 
 ### Fixed
