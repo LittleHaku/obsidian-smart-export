@@ -96,7 +96,7 @@ On Obsidian 1.13+, Smart Export settings are indexed by the global settings sear
 - **Hide notes with tags**: comma-separated tag patterns (for example `archive*, #draft, projects/*/old`) excluded from traversal/export.
 - **Hide notes with property rules**: comma-separated rules using `key` or `key=value` (for example `status=done, published=true, archived`) excluded from traversal/export.
 
-Tag source exports use tags from Obsidian metadata, including inline tags and frontmatter `tag`/`tags`. Matching notes are grouped as top-level export roots in vault-path order, and folder/tag/property exclusions still remove matching notes from the export.
+Tag source exports use tags from Obsidian metadata, including inline tags and frontmatter `tag`/`tags`. Tag suggestions are built on demand and cached until Obsidian reports metadata or vault changes. Matching notes are grouped as top-level export roots in vault-path order, and folder/tag/property exclusions still remove matching notes from the export.
 
 ### Content redaction
 

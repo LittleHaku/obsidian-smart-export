@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.16.1] - 2026-07-31
+
+### Fixed
+
+- Tag pickers now discover inline and frontmatter tags through supported Obsidian APIs and reuse an on-demand cache until metadata or vault files change.
+
 ## [1.16.0] - 2026-07-30
 
 ### Changed

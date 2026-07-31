@@ -41,6 +41,7 @@ import {
 	shouldAutoDisplayReleaseNotesForUpdate,
 } from "./utils/releaseNotes";
 import { DEFAULT_SETTINGS, normalizeTemplateDirectorySetting } from "./settings/defaultSettings";
+import { TagDiscoveryService } from "./tagDiscovery";
 
 interface StoredPluginData {
 	settings?: Partial<SmartExportSettings>;
@@ -84,6 +85,7 @@ export default class SmartExportPlugin extends Plugin {
 	settings: SmartExportSettings;
 	private hasPersistedData = false;
 	private lastSeenVersion: string | null = null;
+	private tagDiscovery: TagDiscoveryService;
 
 	/**
 	 * This method is called when the plugin is first loaded.
@@ -91,11 +93,17 @@ export default class SmartExportPlugin extends Plugin {
 	 */
 	async onload() {
 		await this.loadSettings();
+		this.tagDiscovery = new TagDiscoveryService(new ObsidianAPI(this.app));
+		const invalidateTagDiscovery = () => this.tagDiscovery.invalidate();
+		this.registerEvent(this.app.metadataCache.on("changed", invalidateTagDiscovery));
+		this.registerEvent(this.app.metadataCache.on("deleted", invalidateTagDiscovery));
+		this.registerEvent(this.app.vault.on("delete", invalidateTagDiscovery));
+		this.registerEvent(this.app.vault.on("rename", invalidateTagDiscovery));
 
 		// This creates an icon in the left ribbon.
 		this.addRibbonIcon("brain-circuit", "Smart export", (evt: MouseEvent) => {
 			// Called when the user clicks the icon.
-			new ExportModal(this.app, this.settings).open();
+			new ExportModal(this.app, this.settings, this.tagDiscovery).open();
 		});
 
 		// This adds a command that can be triggered anywhere
@@ -103,7 +111,7 @@ export default class SmartExportPlugin extends Plugin {
 			id: "open-export-modal",
 			name: "Open export",
 			callback: () => {
-				new ExportModal(this.app, this.settings).open();
+				new ExportModal(this.app, this.settings, this.tagDiscovery).open();
 			},
 		});
 
@@ -127,6 +135,7 @@ export default class SmartExportPlugin extends Plugin {
 		this.addSettingTab(new SmartExportSettingTab(this.app, this));
 
 		this.app.workspace.onLayoutReady(() => {
+			this.registerEvent(this.app.vault.on("create", invalidateTagDiscovery));
 			void this.maybeShowReleaseNotes();
 		});
 	}

@@ -155,28 +155,6 @@ describe("BFSTraversal", () => {
 			tags: mockFileTags[path] || [],
 			frontmatter: mockFileFrontmatter[path] || {},
 		}));
-		(mockApp.metadataCache as unknown as { getTags: ReturnType<typeof vi.fn> }).getTags = vi.fn(
-			() => {
-				const tags: Record<string, number> = {};
-				for (const fileTags of Object.values(mockFileTags)) {
-					for (const tag of fileTags) {
-						tags[tag.tag] = (tags[tag.tag] ?? 0) + 1;
-					}
-				}
-				for (const frontmatter of Object.values(mockFileFrontmatter)) {
-					for (const key of ["tag", "tags"]) {
-						const value = frontmatter[key];
-						const values = Array.isArray(value) ? value : [value];
-						for (const tag of values) {
-							if (typeof tag !== "string" || tag.trim().length === 0) continue;
-							const normalizedTag = tag.startsWith("#") ? tag : `#${tag}`;
-							tags[normalizedTag] = (tags[normalizedTag] ?? 0) + 1;
-						}
-					}
-				}
-				return tags;
-			}
-		);
 		mockApp.metadataCache.getFirstLinkpathDest = vi.fn((link: string, sourcePath: string) => {
 			if (link === "missing") return null;
 			const targetFile = Object.values(mockFiles).find((f) => f.basename === link);

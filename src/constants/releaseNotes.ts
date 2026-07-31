@@ -13,6 +13,14 @@ export interface ReleaseNotesEntry {
 
 export const RELEASE_NOTES: ReleaseNotesEntry[] = [
 	{
+		version: "1.16.1",
+		date: "2026-07-31",
+		showOnUpdate: false,
+		fixed: [
+			"Tag pickers now use supported Obsidian metadata APIs and reuse an on-demand cache until note metadata or vault files change.",
+		],
+	},
+	{
 		version: "1.16.0",
 		date: "2026-07-30",
 		showOnUpdate: true,

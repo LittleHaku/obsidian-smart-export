@@ -1,3 +1,5 @@
+// @vitest-environment jsdom
+
 import { performance } from "node:perf_hooks";
 import { writeFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
@@ -8,6 +10,7 @@ import { PrintFriendlyMarkdownExporter } from "../src/engine/PrintFriendlyMarkdo
 import { XMLExporter } from "../src/engine/XMLExporter";
 import { ObsidianAPI } from "../src/obsidian-api";
 import { ExportNode } from "../src/types";
+import { TagDiscoveryService } from "../src/tagDiscovery";
 
 interface GraphFixture {
 	app: App;
@@ -107,6 +110,28 @@ function createSyntheticGraphFixture(
 	return { app, rootPath };
 }
 
+function createSyntheticTagFixture(noteCount: number): App {
+	const vault = {};
+	const files = Array.from({ length: noteCount }, (_, index) =>
+		createMockTFile(`tags/note-${index}.md`, `note-${index}`, vault)
+	);
+
+	return {
+		vault: {
+			getMarkdownFiles: () => files,
+		},
+		metadataCache: {
+			getCache: (path: string) => {
+				const noteIndex = Number.parseInt(path.slice("tags/note-".length, -".md".length), 10);
+				return {
+					tags: [{ tag: `#group/${noteIndex % 100}` }],
+					frontmatter: { tags: [`group/${noteIndex % 100}`, "shared"] },
+				};
+			},
+		},
+	} as unknown as App;
+}
+
 function countNodes(root: ExportNode): { total: number; withContent: number } {
 	const queue: ExportNode[] = [root];
 	let head = 0;
@@ -198,6 +223,22 @@ describe("Performance benchmarks", () => {
 			printLength = printExporter.export(rootTree).length;
 		});
 
+		const tagFileCount = 10_000;
+		const tagColdRuns = 5;
+		const tagCachedRuns = 1_000;
+		const tagDiscovery = new TagDiscoveryService(
+			new ObsidianAPI(createSyntheticTagFixture(tagFileCount))
+		);
+		let tagCount = 0;
+		const tagColdDurations = measureSyncRuns(tagColdRuns, () => {
+			tagDiscovery.invalidate();
+			tagCount = tagDiscovery.getAvailableTags().length;
+		});
+		const tagCachedDurations = measureSyncRuns(tagCachedRuns, () => {
+			tagCount = tagDiscovery.getAvailableTags().length;
+		});
+		expect(tagCount).toBe(101);
+
 		const reportLines = [
 			"Smart Export benchmark (synthetic graph)",
 			`- Nodes traversed: ${nodeCounts.total.toLocaleString()}`,
@@ -208,6 +249,8 @@ describe("Performance benchmarks", () => {
 			`- XML export median (${exporterRuns} runs): ${median(xmlDurations).toFixed(2)} ms (len ${xmlLength.toLocaleString()})`,
 			`- LLM Markdown export median (${exporterRuns} runs): ${median(llmDurations).toFixed(2)} ms (len ${llmLength.toLocaleString()})`,
 			`- Print-friendly export median (${exporterRuns} runs): ${median(printDurations).toFixed(2)} ms (len ${printLength.toLocaleString()})`,
+			`- Tag discovery cold median (${tagColdRuns} runs, ${tagFileCount.toLocaleString()} notes): ${median(tagColdDurations).toFixed(2)} ms`,
+			`- Tag discovery cached median (${tagCachedRuns} runs): ${median(tagCachedDurations).toFixed(4)} ms`,
 		];
 		writeFileSync(
 			"benchmarks/latest-report.json",
@@ -226,6 +269,12 @@ describe("Performance benchmarks", () => {
 					llmLength,
 					printMedianMs: Number(median(printDurations).toFixed(2)),
 					printLength,
+					tagFileCount,
+					tagCount,
+					tagColdRuns,
+					tagColdMedianMs: Number(median(tagColdDurations).toFixed(2)),
+					tagCachedRuns,
+					tagCachedMedianMs: Number(median(tagCachedDurations).toFixed(4)),
 				},
 				null,
 				2
