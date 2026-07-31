@@ -1,6 +1,6 @@
 # Export Architecture
 
-Updated: May 17, 2026
+Updated: August 1, 2026
 
 ## Overview
 
@@ -9,6 +9,7 @@ Smart Export builds a note tree from a selected root note or tag source, applies
 Core modules:
 
 - `src/ui/ExportModal.ts`
+- `src/tagDiscovery.ts`
 - `src/engine/BFSTraversal.ts`
 - `src/engine/exportTreeComposition.ts`
 - `src/engine/XMLExporter.ts`
@@ -110,10 +111,12 @@ Extra notes and tags:
 Tag sources:
 
 1. The export modal can use either a root note or a tag source.
-2. Tag source exports use tags selected from Obsidian metadata.
-3. Matching notes are found from inline tags and frontmatter `tag`/`tags`, sorted by vault path, and represented as top-level roots under an export-only synthetic `Tag: #...` grouping node.
-4. Folder, tag, and property exclusions apply to matching tag roots and to their traversed descendants.
-5. Link direction, content depth, title depth, extra roots, extra tags, and single-note additions continue to apply normally.
+2. `TagDiscoveryService` builds the available tag list on demand from public Obsidian metadata APIs and shares the cached result across both tag pickers.
+3. Metadata and vault events invalidate that cache; no tag scan runs during plugin startup or while an unchanged vault reopens a picker.
+4. Tag source exports use normalized tags selected from inline metadata and frontmatter `tag`/`tags`.
+5. Matching notes are sorted by vault path and represented as top-level roots under an export-only synthetic `Tag: #...` grouping node.
+6. Folder, tag, and property exclusions apply to matching tag roots and to their traversed descendants.
+7. Link direction, content depth, title depth, extra roots, extra tags, and single-note additions continue to apply normally.
 
 Markdown link rewriting in exported note content:
 

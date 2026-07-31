@@ -87,12 +87,20 @@ pnpm install --frozen-lockfile --force
 
 For a repository stored on the Windows filesystem, prefer running Node and pnpm from Windows. Accessing that checkout through `/mnt/c` can make WSL file operations substantially slower.
 
+### Codex Cloud and coding agents
+
+The repository includes `AGENTS.md` and the shared `.agents/skills/obsidian-plugin-dev/`
+workflow so Codex Cloud and fresh clones receive the same project-specific instructions.
+See [Codex Cloud and coding agent setup](docs/codex-cloud.md) for the recommended hosted
+environment, setup script, verification commands, and the capabilities that still require
+separate authorization.
+
 ### Development Workflow
 
 1. **Create a feature branch**:
 
    ```bash
-   git checkout -b feature/your-feature-name
+   git checkout -b feat/your-feature-name
    ```
 
 2. **Make your changes** following the coding standards below
@@ -106,14 +114,16 @@ For a repository stored on the Windows filesystem, prefer running Node and pnpm 
 4. **Commit your changes**:
 
    ```bash
-   git add .
+   git add path/to/changed-file path/to/another-file
    git commit -m "feat: your descriptive commit message"
    ```
 
 5. **Push and create a pull request**:
    ```bash
-   git push origin feature/your-feature-name
+   git push origin feat/your-feature-name
    ```
+
+Use a purpose prefix such as `feat/`, `fix/`, `docs/`, or `chore/`. Do not use `agent/`.
 
 ## Code Standards
 

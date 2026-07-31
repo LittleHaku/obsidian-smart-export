@@ -36,9 +36,12 @@ The release workflow is triggered on tag push and determines prerelease status f
 
 ## Pull request versioning policy
 
-Every pull request must be release-ready and include its intended semantic version.
+Pull requests that change shipped plugin behavior or runtime code must be release-ready and
+include their intended semantic version. Documentation, agent-guidance, CI, or
+infrastructure-only pull requests with no shipped runtime impact may use `Release: none` and
+omit version metadata changes.
 
-Before opening or updating a PR:
+Before opening or updating a runtime PR:
 
 1. Select the appropriate patch, minor, major, or prerelease version.
 2. Run `pnpm version <version> --no-git-tag-version`.

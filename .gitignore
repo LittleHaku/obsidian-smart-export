@@ -30,14 +30,13 @@ coverage/
 # Benchmark output
 benchmarks/latest-report.json
 
-# Local-only AI assistant / agent files
-AGENTS.md
+# Local-only AI assistant files. Shared Codex guidance lives in the tracked
+# AGENTS.md and .agents/skills/ paths.
 CLAUDE.md
 GEMINI.md
 .claude/
 .cursor/
 .cursorrules
 .cursorignore
-.agents/
 .github/copilot-instructions.md
 /.codex
