@@ -42,6 +42,7 @@ import { estimatePrintFriendlyMarkdownCharacterCount } from "../utils/printFrien
 import { getContentRedactionOptions } from "../utils/contentRedaction";
 import { normalizeNoteTag } from "../utils/noteFilters";
 import { createLinkedDescription } from "../utils/linkedDescription";
+import { TagDiscoveryService } from "../tagDiscovery";
 
 const EXPORT_CHOICE_XML = "format:xml";
 const EXPORT_CHOICE_PRINT_FRIENDLY = "format:print-friendly-markdown";
@@ -163,10 +164,13 @@ export class ExportModal extends Modal {
 	private renderedChildListElements: Map<string, HTMLElement> = new Map();
 	/** Ancestor id snapshots by node id. */
 	private renderedAncestorIds: Map<string, string[]> = new Map();
+	/** Shared lazy tag cache used by both tag pickers. */
+	private readonly tagDiscovery: TagDiscoveryService;
 
-	constructor(app: App, settings: SmartExportSettings) {
+	constructor(app: App, settings: SmartExportSettings, tagDiscovery: TagDiscoveryService) {
 		super(app);
 		this.settings = settings;
+		this.tagDiscovery = tagDiscovery;
 		this.contentDepth = settings.defaultContentDepth;
 		this.titleDepth = settings.defaultTitleDepth;
 		this.linkTraversalMode = settings.defaultLinkTraversalMode;
@@ -784,7 +788,7 @@ export class ExportModal extends Modal {
 				.setDesc("Choose the tag to use as the export source.")
 				.addButton((button) => {
 					button.setButtonText("Select tag").onClick(() => {
-						new TagSuggestModal(this.app, (tag) => {
+						new TagSuggestModal(this.app, this.tagDiscovery, (tag) => {
 							this.selectedTag = tag;
 							this.updateSelectedFile();
 						}).open();
@@ -848,7 +852,7 @@ export class ExportModal extends Modal {
 	}
 
 	private openAddedTagPicker() {
-		new TagSuggestModal(this.app, (tag) => {
+		new TagSuggestModal(this.app, this.tagDiscovery, (tag) => {
 			this.addExportTag(tag);
 		}).open();
 	}

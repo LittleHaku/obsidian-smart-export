@@ -165,30 +165,6 @@ export class ObsidianAPI {
 	}
 
 	/**
-	 * Lists normalized tags known to the metadata cache.
-	 */
-	public getAvailableTags(): string[] {
-		const cacheWithTags = this.app.metadataCache as {
-			getTags?: () => Record<string, number>;
-		};
-		const metadataTags = Object.keys(cacheWithTags.getTags?.() ?? {})
-			.map((tag) => normalizeNoteTag(tag))
-			.filter((tag) => tag.length > 0);
-
-		if (metadataTags.length > 0) {
-			return [...new Set(metadataTags)].sort((a, b) => a.localeCompare(b));
-		}
-
-		const scannedTags = new Set<string>();
-		for (const file of this.getMarkdownFiles()) {
-			for (const tag of this.getNoteTags(file)) {
-				scannedTags.add(tag);
-			}
-		}
-		return [...scannedTags].sort((a, b) => a.localeCompare(b));
-	}
-
-	/**
 	 * Finds markdown files whose inline or frontmatter tags match the selected tag.
 	 */
 	public getFilesMatchingTag(tag: string): TFile[] {

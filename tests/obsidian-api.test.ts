@@ -3,11 +3,6 @@ import { TFile, TagCache } from "obsidian";
 import { ObsidianAPI } from "../src/obsidian-api";
 import { mockApp } from "./mocks/mockObsidianAPI";
 
-function setGetTagsMock(getTags: () => Record<string, number>): void {
-	(mockApp.metadataCache as unknown as { getTags: ReturnType<typeof vi.fn> }).getTags =
-		vi.fn(getTags);
-}
-
 function createMockTFile(path: string, basename: string): TFile {
 	const file = new TFile();
 	Object.assign(file, {
@@ -65,29 +60,14 @@ describe("ObsidianAPI", () => {
 		});
 	});
 
-	it("lists tags from the metadata cache when available", () => {
-		setGetTagsMock(() => ({
-			"#Project": 2,
-			"#Archive/2026": 1,
-			"#project": 1,
-		}));
-
+	it("reads normalized inline and frontmatter tags from public metadata APIs", () => {
 		const api = new ObsidianAPI(mockApp);
 
-		expect(api.getAvailableTags()).toEqual(["archive/2026", "project"]);
-		expect(getMarkdownFilesMock).not.toHaveBeenCalled();
-	});
-
-	it("falls back to scanning note metadata when cache tags are unavailable", () => {
-		setGetTagsMock(() => ({}));
-
-		const api = new ObsidianAPI(mockApp);
-
-		expect(api.getAvailableTags()).toEqual(["archive", "project", "project/alpha"]);
+		expect(api.getNoteTags(files[1])).toEqual(["project/alpha"]);
+		expect(api.getNoteTags(files[0])).toEqual(["project", "archive"]);
 	});
 
 	it("finds files matching a normalized selected tag in path order", () => {
-		setGetTagsMock(() => ({}));
 		const api = new ObsidianAPI(mockApp);
 
 		expect(api.getFilesMatchingTag("#project").map((file) => file.path)).toEqual([

@@ -13,7 +13,6 @@ export const mockVault = {
 export const mockMetadataCache = {
 	getCache: vi.fn(),
 	getFirstLinkpathDest: vi.fn(),
-	getTags: vi.fn(() => ({})),
 	resolvedLinks: {},
 } as unknown as MetadataCache;
 

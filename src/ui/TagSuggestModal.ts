@@ -1,19 +1,21 @@
 import { App, FuzzySuggestModal } from "obsidian";
-import { ObsidianAPI } from "../obsidian-api";
+import { TagDiscoveryService } from "../tagDiscovery";
 
 /**
  * A fuzzy suggestion modal for selecting a tag as an export source.
  */
 export class TagSuggestModal extends FuzzySuggestModal<string> {
-	private onSelect: (tag: string) => void;
+	private readonly onSelect: (tag: string) => void;
+	private readonly tagDiscovery: TagDiscoveryService;
 
-	constructor(app: App, onSelect: (tag: string) => void) {
+	constructor(app: App, tagDiscovery: TagDiscoveryService, onSelect: (tag: string) => void) {
 		super(app);
+		this.tagDiscovery = tagDiscovery;
 		this.onSelect = onSelect;
 	}
 
 	getItems(): string[] {
-		return new ObsidianAPI(this.app).getAvailableTags();
+		return this.tagDiscovery.getAvailableTags();
 	}
 
 	getItemText(item: string): string {
