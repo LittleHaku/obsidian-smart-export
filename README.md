@@ -250,6 +250,9 @@ Benchmark:
 pnpm benchmark
 ```
 
+See [recorded benchmark results](benchmarks/README.md) for the current synthetic baseline
+and methodology.
+
 ## Support
 
 - Star the repo.
