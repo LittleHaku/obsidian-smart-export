@@ -51,22 +51,21 @@ Smart Export 1.16.1 is the maintenance baseline:
 - Preserved inline/frontmatter tag normalization, deduplication, and deterministic sorting.
 - Added empty-vault, nested-tag, frontmatter, duplicate, invalidation, and 10,000-note coverage plus a recorded cold/warm benchmark baseline.
 
+## Completed for 1.16.2
+
+- Enabled the complete TypeScript `strict` family and additional switch-fallthrough and file-casing
+  guarantees ([#99](https://github.com/LittleHaku/obsidian-smart-export/issues/99)).
+- Aligned TypeScript's target and standard library with the production bundle's conservative ES2018
+  target for the supported Obsidian 1.13 desktop and mobile range.
+- Normalized SDK dropdown values at runtime and explicitly marked modal-lifecycle fields, resolving
+  strict diagnostics without weakening their public types.
+- Documented the JavaScript compatibility baseline and the required build and runtime verification
+  process in [TypeScript and JavaScript compatibility](typescript-compatibility.md).
+
 ## Next maintenance work
 
 The GitHub issues linked below are the durable source of truth for implementation scope,
 acceptance criteria, and validation evidence.
-
-### Priority 1: TypeScript guarantees ([#99](https://github.com/LittleHaku/obsidian-smart-export/issues/99))
-
-- Enable full TypeScript `strict` mode.
-- Select a modern compilation target and library set that remains compatible with the supported
-  Obsidian desktop and mobile versions.
-
-Completion criteria:
-
-- type checking succeeds without weakening types or adding `any`;
-- the target decision and mobile compatibility rationale are documented;
-- mocks continue to detect public Obsidian API drift.
 
 ### Priority 1: coverage guarantees ([#100](https://github.com/LittleHaku/obsidian-smart-export/issues/100))
 

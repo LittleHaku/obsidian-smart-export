@@ -82,10 +82,10 @@ function normalizeExportTarget(value: unknown): ExportTarget {
  * and unloading the plugin when it's disabled.
  */
 export default class SmartExportPlugin extends Plugin {
-	settings: SmartExportSettings;
+	settings!: SmartExportSettings;
 	private hasPersistedData = false;
 	private lastSeenVersion: string | null = null;
-	private tagDiscovery: TagDiscoveryService;
+	private tagDiscovery!: TagDiscoveryService;
 
 	/**
 	 * This method is called when the plugin is first loaded.

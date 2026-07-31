@@ -85,15 +85,15 @@ export class ExportModal extends Modal {
 	/** Dropdown used to switch export source modes. */
 	private sourceModeDropdown: DropdownComponent | null = null;
 	/** Container for source-specific controls. */
-	private sourceControlsEl: HTMLElement;
+	private sourceControlsEl!: HTMLElement;
 	/** The HTML element that displays the name of the selected file. */
-	private selectedFileEl: HTMLElement;
+	private selectedFileEl!: HTMLElement;
 	/** Session-only notes and tags manually added to the export. */
 	private addedNotes: AddedExportItem[] = [];
 	/** Container for manually added note/tag rows. */
-	private addedNotesListEl: HTMLElement;
+	private addedNotesListEl!: HTMLElement;
 	/** Description for extra-note context that reflects the selected root note. */
-	private addedNotesDescriptionEl: HTMLElement;
+	private addedNotesDescriptionEl!: HTMLElement;
 	/** The depth for including full note content. */
 	private contentDepth: number;
 	/** The depth for including only note titles. */
@@ -109,7 +109,7 @@ export class ExportModal extends Modal {
 	/** Dropdown used to select format/template options in one control. */
 	private exportChoiceDropdown: DropdownComponent | null = null;
 	/** The HTML element that displays the estimated token count. */
-	private tokenCountEl: HTMLElement;
+	private tokenCountEl!: HTMLElement;
 	/** A debounced function to update the token count dynamically. */
 	private debouncedTokenUpdate = debounce(() => this.calculateAndDisplayTokens(), 500, true);
 	/** Plugin settings for default values. */
@@ -139,9 +139,9 @@ export class ExportModal extends Modal {
 	/** Whether to select all nodes on the next tree build. */
 	private shouldSelectAllOnBuild = false;
 	/** Container element for the tree visualization. */
-	private treeContainerEl: HTMLElement;
+	private treeContainerEl!: HTMLElement;
 	/** Summary element for selected notes count. */
-	private treeSummaryEl: HTMLElement;
+	private treeSummaryEl!: HTMLElement;
 	/** Incremented on each tree invalidation to discard stale builds. */
 	private treeBuildId = 0;
 	/** Incremented on each token calculation to discard stale UI updates. */
@@ -215,8 +215,8 @@ export class ExportModal extends Modal {
 					.addOption("note", "Root note")
 					.addOption("tag", "Tag")
 					.setValue(this.sourceMode)
-					.onChange((value: ExportSourceMode) => {
-						this.sourceMode = value;
+					.onChange((value) => {
+						this.sourceMode = value === "tag" ? "tag" : "note";
 						this.renderSourceControls();
 						this.updateSelectedFile();
 					});
@@ -337,8 +337,8 @@ export class ExportModal extends Modal {
 					.addOption("incoming", "Incoming (backlinks)")
 					.addOption("both", "Outgoing + incoming")
 					.setValue(this.linkTraversalMode)
-					.onChange((value: LinkTraversalMode) => {
-						this.linkTraversalMode = value;
+					.onChange((value) => {
+						this.linkTraversalMode = value === "incoming" || value === "both" ? value : "outgoing";
 						this.invalidateExportTree();
 						this.debouncedTokenUpdate();
 					});
@@ -1287,7 +1287,7 @@ export class ExportModal extends Modal {
 	 */
 	private enforceCacheLimit() {
 		while (this.exportTreeCache.size > ExportModal.MAX_TREE_CACHE_ENTRIES) {
-			const firstKey = this.exportTreeCache.keys().next().value as string | undefined;
+			const firstKey = this.exportTreeCache.keys().next().value;
 			if (!firstKey) {
 				break;
 			}
