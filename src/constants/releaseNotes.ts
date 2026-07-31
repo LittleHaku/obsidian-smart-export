@@ -13,6 +13,14 @@ export interface ReleaseNotesEntry {
 
 export const RELEASE_NOTES: ReleaseNotesEntry[] = [
 	{
+		version: "1.16.2",
+		date: "2026-07-31",
+		showOnUpdate: false,
+		changed: [
+			"Production and type-checking builds now share a strict ES2018 compatibility baseline for supported desktop and mobile clients.",
+		],
+	},
+	{
 		version: "1.16.1",
 		date: "2026-07-31",
 		showOnUpdate: false,
