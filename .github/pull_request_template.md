@@ -4,6 +4,8 @@ Briefly describe what this PR does and why it's needed.
 
 **Related Issue(s):** Fixes #(issue_number)
 
+**Release:** X.Y.Z or `none` for documentation/infrastructure-only changes
+
 ## Type of Change
 
 - [ ] Bug fix
@@ -27,7 +29,7 @@ Briefly describe what this PR does and why it's needed.
 - [ ] Code follows existing style
 - [ ] Self-review completed
 - [ ] Documentation updated (if needed)
-- [ ] Release version and metadata are aligned
+- [ ] Release version and metadata are aligned, or `Release: none` is justified
 - [ ] No new warnings/errors
 - [ ] Linting passes
 - [ ] Backwards compatibility maintained

@@ -1,10 +1,10 @@
 # Maintenance plan
 
-Updated: July 30, 2026
+Updated: August 1, 2026
 
 ## Current baseline
 
-Smart Export 1.16.0 is the maintenance baseline:
+Smart Export 1.16.1 is the maintenance baseline:
 
 - Node.js 24 LTS is the recommended development runtime; Node.js 22-26 is supported.
 - pnpm 11.18.0 is pinned through `package.json`.
@@ -44,23 +44,17 @@ Smart Export 1.16.0 is the maintenance baseline:
 - Added conditional visibility for marked-section and regular-expression redaction details, preserved the live preview and dynamic template dropdown, and removed obsolete dynamic slider tooltip calls.
 - Added tests for definition generation, explicit defaults, normalized persistence, conditional visibility, and the derived output selector.
 
+## Completed for 1.16.1
+
+- Replaced the undocumented aggregate tag lookup with supported Obsidian metadata APIs ([#96](https://github.com/LittleHaku/obsidian-smart-export/issues/96)).
+- Added a shared on-demand tag cache that is invalidated by lifecycle-managed metadata and vault events without scanning during plugin startup.
+- Preserved inline/frontmatter tag normalization, deduplication, and deterministic sorting.
+- Added empty-vault, nested-tag, frontmatter, duplicate, invalidation, and 10,000-note coverage plus a recorded cold/warm benchmark baseline.
+
 ## Next maintenance work
 
 The GitHub issues linked below are the durable source of truth for implementation scope,
 acceptance criteria, and validation evidence.
-
-### Priority 1: supported tag discovery ([#96](https://github.com/LittleHaku/obsidian-smart-export/issues/96))
-
-Replace the locally typed optional `MetadataCache.getTags()` call with supported Obsidian APIs.
-Avoid repeatedly scanning every Markdown file when tag suggestions are opened, and keep all
-tag discovery out of `onload()`.
-
-Completion criteria:
-
-- inline and frontmatter tags keep their current normalization and sorting;
-- unchanged vaults are not repeatedly rescanned;
-- metadata changes invalidate or update the result;
-- mobile and large-vault behavior are covered by tests and benchmarks.
 
 ### Priority 1: TypeScript guarantees ([#99](https://github.com/LittleHaku/obsidian-smart-export/issues/99))
 

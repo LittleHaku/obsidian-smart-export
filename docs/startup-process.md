@@ -1,6 +1,6 @@
 # Smart Export Startup Process
 
-Updated: April 21, 2026
+Updated: August 1, 2026
 
 ## Table of Contents
 
@@ -11,6 +11,7 @@ Updated: April 21, 2026
   - [Phase 3: Tree build and export](#phase-3-tree-build-and-export)
 - [Critical Runtime Mechanisms](#critical-runtime-mechanisms)
   - [Traversal cache keys](#traversal-cache-keys)
+  - [Tag discovery cache](#tag-discovery-cache)
   - [Ignored note filtering](#ignored-note-filtering)
   - [Debounced settings writes](#debounced-settings-writes)
 - [Shutdown Process](#shutdown-process)
@@ -24,11 +25,13 @@ sequenceDiagram
     participant Obsidian
     participant Plugin as SmartExportPlugin
     participant ReleaseNotes as ReleaseNotesModal
+    participant Tags as TagDiscoveryService
     participant Modal as ExportModal
     participant Traversal as BFSTraversal
 
     Obsidian->>Plugin: onload()
     Plugin->>Plugin: loadSettings()
+    Plugin->>Tags: create lazy cache + register invalidation events
     Plugin->>Obsidian: register ribbon + command + settings tab
     Obsidian->>Plugin: workspace.onLayoutReady()
     Plugin->>ReleaseNotes: optional what's new modal after version change
@@ -46,9 +49,10 @@ Trigger: `Plugin.onload()` in `src/main.ts`.
 2. Register ribbon icon (`Smart export`).
 3. Register command (`Smart Export: Open export`).
 4. Register settings tab UI.
-5. After `workspace.onLayoutReady(...)`, compare the persisted plugin version with `manifest.json` and optionally open the what's new modal once per version.
+5. Create the shared `TagDiscoveryService` without scanning the vault and register metadata/vault invalidation events through plugin lifecycle helpers.
+6. After `workspace.onLayoutReady(...)`, register the vault `create` invalidation listener, compare the persisted plugin version with `manifest.json`, and optionally open the what's new modal once per version.
 
-No traversal is executed during plugin startup. The only deferred post-start action is the lightweight release-notes/version check.
+No traversal or tag scan is executed during plugin startup. Deferred post-start work is limited to event registration and the lightweight release-notes/version check.
 
 ### Phase 2: User opens export modal
 
@@ -75,6 +79,14 @@ Trigger: tree preview render or export action.
 - Implemented in `ExportModal.getTreeCacheKey()`.
 - Uses `JSON.stringify(...)` on ignored folders/tags/property rules to avoid delimiter collisions.
 
+### Tag discovery cache
+
+- `TagDiscoveryService` builds normalized tag suggestions only when a tag picker first requests them.
+- Reopening either tag picker reuses the shared deterministic result while the vault is unchanged.
+- Metadata `changed`/`deleted` and vault `create`/`delete`/`rename` events invalidate the cache.
+- The vault `create` listener is registered only after layout readiness to avoid initialization storms.
+- All event references use plugin lifecycle registration and are disposed when the plugin unloads.
+
 ### Ignored note filtering
 
 - Configured via:
@@ -98,4 +110,5 @@ Trigger: tree preview render or export action.
 
 Trigger: `Plugin.onunload()` in `src/main.ts`.
 
-Current behavior is minimal: no long-lived background workers are started by Smart Export, so unload remains lightweight.
+No long-lived background workers are started by Smart Export. Obsidian disposes the registered
+tag-cache event references through the plugin lifecycle, so unload remains lightweight.
