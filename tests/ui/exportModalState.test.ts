@@ -12,6 +12,7 @@ import {
 	formatTokenCountMessage,
 	getAddedItemScopeText,
 	getCurrentExportChoiceValue,
+	getExportTreeSource,
 	getTreeCacheKey,
 	markUserDeselectedSubtree,
 	selectAllNodes,
@@ -72,6 +73,21 @@ describe("exportModalState", () => {
 
 		expect(key).toContain('added:[["note","Projects/Extra.md","extra-root"],["tag","project"]]');
 		expect(key).toContain("|mode:both|");
+	});
+
+	it("creates valid note and tag traversal sources", () => {
+		const root = createFile("Projects/Root.md");
+
+		expect(getExportTreeSource("note", root, "")).toEqual({
+			mode: "note",
+			path: "Projects/Root.md",
+		});
+		expect(getExportTreeSource("note", null, "")).toBeNull();
+		expect(getExportTreeSource("tag", null, " #Project ")).toEqual({
+			mode: "tag",
+			tag: "project",
+		});
+		expect(getExportTreeSource("tag", root, " ")).toBeNull();
 	});
 
 	it("keeps locked roots selected while projecting and counting content nodes", () => {

@@ -16,6 +16,7 @@ export const MAX_TREE_CACHE_ENTRIES = 5;
 
 export type ExportFormat = "xml" | "llm-markdown" | "print-friendly-markdown";
 export type ExportSourceMode = "note" | "tag";
+export type ExportTreeSource = { mode: "note"; path: string } | { mode: "tag"; tag: string };
 export type AddedNoteMode = "single-note" | "extra-root";
 export type AddedExportItem =
 	{ kind: "note"; file: TFile; mode: AddedNoteMode } | { kind: "tag"; tag: string };
@@ -71,7 +72,19 @@ export function hasExportSource(
 	selectedFile: TFile | null,
 	selectedTag: string
 ): boolean {
-	return mode === "tag" ? getSelectedTag(selectedTag).length > 0 : selectedFile !== null;
+	return getExportTreeSource(mode, selectedFile, selectedTag) !== null;
+}
+
+export function getExportTreeSource(
+	mode: ExportSourceMode,
+	selectedFile: TFile | null,
+	selectedTag: string
+): ExportTreeSource | null {
+	if (mode === "tag") {
+		const tag = getSelectedTag(selectedTag);
+		return tag ? { mode: "tag", tag } : null;
+	}
+	return selectedFile ? { mode: "note", path: selectedFile.path } : null;
 }
 
 export function getExportSourceName(

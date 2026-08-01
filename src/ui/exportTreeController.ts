@@ -3,14 +3,12 @@ import { BFSTraversal } from "../engine/BFSTraversal";
 import { composeExportTree, createStandaloneExportNode } from "../engine/exportTreeComposition";
 import { ObsidianAPI } from "../obsidian-api";
 import { ExportNode, LinkTraversalMode, SmartExportSettings } from "../types";
-import { AddedExportItem, ExportSourceMode, getSelectedTag } from "./exportModalState";
+import { AddedExportItem, ExportTreeSource } from "./exportModalState";
 
 export interface ExportTreeBuildOptions {
 	app: App;
 	settings: SmartExportSettings;
-	sourceMode: ExportSourceMode;
-	selectedFilePath: string | null;
-	selectedTag: string;
+	source: ExportTreeSource;
 	addedNotes: AddedExportItem[];
 	contentDepth: number;
 	titleDepth: number;
@@ -44,9 +42,9 @@ export async function buildExportTreeFromSelection(
 
 	const traversal = createTraversal();
 	const primaryTree =
-		options.sourceMode === "tag"
-			? await traversal.traverseTag(getSelectedTag(options.selectedTag))
-			: await traversal.traverse(options.selectedFilePath!);
+		options.source.mode === "tag"
+			? await traversal.traverseTag(options.source.tag)
+			: await traversal.traverse(options.source.path);
 	if (!options.isCurrent()) return { status: "stale" };
 	if (!primaryTree) return { status: "empty" };
 

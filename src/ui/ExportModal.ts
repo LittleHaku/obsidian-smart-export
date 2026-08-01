@@ -57,6 +57,7 @@ import {
 	getCurrentExportChoiceValue as getExportChoiceValue,
 	getDomSafeId as createDomSafeId,
 	getExportSourceName as createExportSourceName,
+	getExportTreeSource as createExportTreeSource,
 	getExportTreeFailureMessage as createExportTreeFailureMessage,
 	getSelectedTag as normalizeSelectedTag,
 	getTreeCacheKey as createTreeCacheKey,
@@ -948,7 +949,8 @@ export class ExportModal extends Modal {
 	 * @private
 	 */
 	private async buildExportTree(buildId: number): Promise<ExportNode | null> {
-		if (!this.hasExportSource()) {
+		const source = createExportTreeSource(this.sourceMode, this.selectedFile, this.selectedTag);
+		if (!source) {
 			this.exportTreePromise = null;
 			return null;
 		}
@@ -957,9 +959,7 @@ export class ExportModal extends Modal {
 			const result = await buildExportTreeFromSelection({
 				app: this.app,
 				settings: this.settings,
-				sourceMode: this.sourceMode,
-				selectedFilePath: this.sourceMode === "note" ? this.selectedFile!.path : null,
-				selectedTag: this.selectedTag,
+				source,
 				addedNotes: this.addedNotes,
 				contentDepth: this.contentDepth,
 				titleDepth: this.titleDepth,
