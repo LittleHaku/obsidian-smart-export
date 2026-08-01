@@ -15,6 +15,7 @@ Updated: August 1, 2026
   - [Ignored note filtering](#ignored-note-filtering)
   - [Debounced settings writes](#debounced-settings-writes)
 - [Shutdown Process](#shutdown-process)
+- [Startup Validation](#startup-validation)
 
 ## Overview
 
@@ -113,3 +114,21 @@ Trigger: `Plugin.onunload()` in `src/main.ts`.
 
 No long-lived background workers are started by Smart Export. Obsidian disposes the registered
 tag-cache event references through the plugin lifecycle, so unload remains lightweight.
+
+## Startup Validation
+
+Use a production bundle and follow Obsidian's official load-time workflow:
+
+1. Run `pnpm build` and install the generated bundle in a disposable test vault.
+2. Open **Settings → General → Advanced** and select the stopwatch icon for startup profiling.
+3. Keep the vault, enabled-plugin set, Obsidian version, and device unchanged between candidates.
+4. Fully close Obsidian, perform five cold launches, and record Smart Export's load time for each.
+5. Record the median and compare it with the previous accepted release candidate.
+
+The lifecycle test also asserts that plugin load does not enumerate vault files, scan Markdown
+metadata, read note contents, or start export traversal. The `create` listener remains deferred
+until `workspace.onLayoutReady(...)`, matching Obsidian's load-time guidance.
+
+Record measurements in a copy of the
+[release evidence template](qa-results/template.md). The complete platform matrix, tolerances, and
+release-blocking rules live in the [release QA checklist](qa-release-checklist.md).

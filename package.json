@@ -19,7 +19,8 @@
 		"typecheck": "tsc --noEmit --skipLibCheck",
 		"test": "vitest run --coverage",
 		"check": "pnpm run format:check && pnpm run lint && pnpm run typecheck && pnpm run test",
-		"benchmark": "vitest run --config vitest.benchmark.config.ts"
+		"benchmark": "vitest run --config vitest.benchmark.config.ts",
+		"benchmark:check": "pnpm run benchmark && node scripts/check-benchmark-regression.mjs"
 	},
 	"keywords": [
 		"obsidian",

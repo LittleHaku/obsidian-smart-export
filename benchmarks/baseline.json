@@ -1,0 +1,22 @@
+{
+  "capturedAt": "2026-07-31",
+  "commit": "0389579",
+  "environment": {
+    "operatingSystem": "Windows build 26200",
+    "architecture": "AMD64",
+    "node": "24.14.1",
+    "pnpm": "11.18.0"
+  },
+  "tolerances": {
+    "maximumMedianRegressionPercent": 25,
+    "maximumTraversalSpeedupDropPercent": 20
+  },
+  "metrics": {
+    "traversalMedianMs": 58.34,
+    "estimatedTraversalSpeedup": 7.29,
+    "xmlMedianMs": 0.86,
+    "llmMedianMs": 1.87,
+    "printMedianMs": 3.06,
+    "tagColdMedianMs": 11.81
+  }
+}

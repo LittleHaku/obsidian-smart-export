@@ -8,8 +8,12 @@ on:
 
 jobs:
   test:
-    name: Test & Lint
-    runs-on: ubuntu-latest
+    name: Test & Lint (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
 
     steps:
       - name: Checkout code
@@ -40,6 +44,7 @@ jobs:
         run: pnpm test
 
       - name: Upload coverage reports
+        if: runner.os == 'Linux'
         uses: codecov/codecov-action@v6
         with:
           files: ./coverage/lcov.info
@@ -49,10 +54,27 @@ jobs:
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
-  build:
-    name: Build Plugin
+  test-status:
+    name: Test & Lint
     runs-on: ubuntu-latest
+    if: ${{ always() }}
     needs: test
+
+    steps:
+      - name: Require all test matrix jobs
+        run: |
+          if [ "${{ needs.test.result }}" != "success" ]; then
+            exit 1
+          fi
+
+  build:
+    name: Build Plugin (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    needs: test-status
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
 
     steps:
       - name: Checkout code
@@ -74,6 +96,7 @@ jobs:
         run: pnpm build
 
       - name: Upload build artifacts
+        if: runner.os == 'Linux'
         uses: actions/upload-artifact@v7
         with:
           name: plugin-build
@@ -82,3 +105,16 @@ jobs:
             manifest.json
             styles.css
           retention-days: 7
+
+  build-status:
+    name: Build Plugin
+    runs-on: ubuntu-latest
+    if: ${{ always() }}
+    needs: build
+
+    steps:
+      - name: Require all build matrix jobs
+        run: |
+          if [ "${{ needs.build.result }}" != "success" ]; then
+            exit 1
+          fi

@@ -17,6 +17,19 @@ interface GraphFixture {
 	rootPath: string;
 }
 
+const GRAPH_FIXTURE = {
+	branchingFactor: 4,
+	maxDepth: 5,
+	contentDepth: 3,
+	contentSize: 400,
+	readDelayMs: 5,
+} as const;
+
+const TAG_FIXTURE = {
+	noteCount: 10_000,
+	groupCount: 100,
+} as const;
+
 function sleep(ms: number): Promise<void> {
 	return new Promise((resolve) => setTimeout(resolve, ms));
 }
@@ -124,8 +137,10 @@ function createSyntheticTagFixture(noteCount: number): App {
 			getCache: (path: string) => {
 				const noteIndex = Number.parseInt(path.slice("tags/note-".length, -".md".length), 10);
 				return {
-					tags: [{ tag: `#group/${noteIndex % 100}` }],
-					frontmatter: { tags: [`group/${noteIndex % 100}`, "shared"] },
+					tags: [{ tag: `#group/${noteIndex % TAG_FIXTURE.groupCount}` }],
+					frontmatter: {
+						tags: [`group/${noteIndex % TAG_FIXTURE.groupCount}`, "shared"],
+					},
 				};
 			},
 		},
@@ -180,22 +195,23 @@ function measureSyncRuns(runs: number, task: () => void): number[] {
 
 describe("Performance benchmarks", () => {
 	it("benchmarks traversal and exporter throughput on a 1k+ note synthetic graph", async () => {
-		const branchingFactor = 4;
-		const traversalDepth = 5;
-		const contentDepth = 3;
-		const perReadDelayMs = 5;
 		const traversalRuns = 5;
 		const exporterRuns = 30;
 		const fixture = createSyntheticGraphFixture(
-			branchingFactor,
-			traversalDepth,
-			400,
-			perReadDelayMs
+			GRAPH_FIXTURE.branchingFactor,
+			GRAPH_FIXTURE.maxDepth,
+			GRAPH_FIXTURE.contentSize,
+			GRAPH_FIXTURE.readDelayMs
 		);
 		const obsidianAPI = new ObsidianAPI(fixture.app);
 		let lastTree: ExportNode | null = null;
 		const traversalDurations = await measureAsyncRuns(traversalRuns, async () => {
-			const traversal = new BFSTraversal(obsidianAPI, contentDepth, traversalDepth, "outgoing");
+			const traversal = new BFSTraversal(
+				obsidianAPI,
+				GRAPH_FIXTURE.contentDepth,
+				GRAPH_FIXTURE.maxDepth,
+				"outgoing"
+			);
 			lastTree = await traversal.traverse(fixture.rootPath);
 		});
 
@@ -203,7 +219,7 @@ describe("Performance benchmarks", () => {
 		const rootTree = lastTree as ExportNode;
 		const nodeCounts = countNodes(rootTree);
 		const traversalMedian = median(traversalDurations);
-		const expectedSerialReadCostMs = nodeCounts.withContent * perReadDelayMs;
+		const expectedSerialReadCostMs = nodeCounts.withContent * GRAPH_FIXTURE.readDelayMs;
 		const estimatedSpeedup = expectedSerialReadCostMs / traversalMedian;
 
 		const xmlExporter = new XMLExporter();
@@ -223,7 +239,7 @@ describe("Performance benchmarks", () => {
 			printLength = printExporter.export(rootTree).length;
 		});
 
-		const tagFileCount = 10_000;
+		const tagFileCount = TAG_FIXTURE.noteCount;
 		const tagColdRuns = 5;
 		const tagCachedRuns = 1_000;
 		const tagDiscovery = new TagDiscoveryService(
@@ -256,6 +272,10 @@ describe("Performance benchmarks", () => {
 			"benchmarks/latest-report.json",
 			`${JSON.stringify(
 				{
+					fixture: {
+						graph: GRAPH_FIXTURE,
+						tags: TAG_FIXTURE,
+					},
 					nodesTraversed: nodeCounts.total,
 					nodesWithContentReads: nodeCounts.withContent,
 					traversalRuns,
