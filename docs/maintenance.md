@@ -92,15 +92,16 @@ Completion criteria:
 
 ### Priority 2: mobile and performance verification ([#102](https://github.com/LittleHaku/obsidian-smart-export/issues/102))
 
-- Test clipboard export, note creation, folder suggestions, custom templates, and release notes on Android and iOS.
-- Test the settings migration on desktop, phone, and tablet layouts.
-- Run Obsidian startup profiling and the export benchmark before release.
+- Validate the platform-neutral source and manifest automatically for every pull request.
+- Run formatting, linting, type checking, tests, and builds on Windows, Linux, and macOS.
+- Enforce registration-only startup behavior and the synthetic export benchmark in CI.
 
 Completion criteria:
 
 - no desktop-only runtime dependency is introduced;
-- a real Android or iOS run is recorded in the release evidence;
-- startup work remains registration-only and export performance does not regress materially.
+- the mobile compatibility audit passes without requiring an Android or iOS device;
+- startup work remains registration-only and export performance does not regress materially;
+- the aggregate GitHub checks fail when any platform or performance job fails.
 
 ### Priority 2: major toolchain migrations ([#103](https://github.com/LittleHaku/obsidian-smart-export/issues/103))
 
@@ -130,17 +131,14 @@ Completion criteria:
 
 Before publishing any version:
 
-1. Complete the versioned [release QA checklist](qa-release-checklist.md) and commit or link its
-   release-candidate evidence.
+1. Confirm the exact release commit passes the automated [release QA gate](qa-release-checklist.md).
 2. Run `pnpm format`.
 3. Run `pnpm format:check`.
 4. Run `pnpm lint`.
 5. Run `pnpm typecheck`.
 6. Run `pnpm test`.
 7. Run `pnpm build`.
-8. Run `pnpm benchmark:check` and record startup profiling on Windows and Linux.
-9. Test the production bundle on Windows, Linux, one real Android device, and one real iPhone or
-   iPad, including supported desktop pop-out windows.
-10. Confirm `package.json`, `manifest.json`, `versions.json`, `CHANGELOG.md`, and bundled release
-    notes use the same version.
-11. Create the stable tag from `main` without a `v` prefix; [#104](https://github.com/LittleHaku/obsidian-smart-export/issues/104) tracks automated enforcement.
+8. Run `pnpm mobile:check` and `pnpm benchmark:check` (GitHub Actions runs both automatically).
+9. Confirm `package.json`, `manifest.json`, `versions.json`, `CHANGELOG.md`, and bundled release
+   notes use the same version.
+10. Create the stable tag from `main` without a `v` prefix; [#104](https://github.com/LittleHaku/obsidian-smart-export/issues/104) tracks automated enforcement.

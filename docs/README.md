@@ -7,7 +7,7 @@ This directory contains public, plugin-specific documentation for Smart Export.
 - [API reference](api-reference.md)
 - [Export architecture](export-architecture.md)
 - [Startup process](startup-process.md)
-- [Release QA checklist](qa-release-checklist.md)
+- [Automated release QA](qa-release-checklist.md)
 - [Exclusion rules](exclude-folders.md)
 - [Content redaction](content-redaction.md)
 - [Codex Cloud and coding agent setup](codex-cloud.md)

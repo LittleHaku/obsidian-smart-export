@@ -117,18 +117,14 @@ tag-cache event references through the plugin lifecycle, so unload remains light
 
 ## Startup Validation
 
-Use a production bundle and follow Obsidian's official load-time workflow:
+The automated lifecycle test asserts that plugin load does not enumerate vault files, scan
+Markdown metadata, read note contents, or start export traversal. The `create` listener remains
+deferred until `workspace.onLayoutReady(...)`, matching Obsidian's load-time guidance. GitHub
+Actions runs this gate on Windows, Linux, and macOS for every pull request.
 
-1. Run `pnpm build` and install the generated bundle in a disposable test vault.
-2. Open **Settings → General → Advanced** and select the stopwatch icon for startup profiling.
-3. Keep the vault, enabled-plugin set, Obsidian version, and device unchanged between candidates.
-4. Fully close Obsidian, perform five cold launches, and record Smart Export's load time for each.
-5. Record the median and compare it with the previous accepted release candidate.
+Obsidian's startup profiler can still help diagnose a reported load-time problem. For an
+investigation, build the production bundle, install it in a disposable vault, and use the
+stopwatch under **Settings → General → Advanced**. This diagnostic workflow is optional: releases
+do not require repeated cold launches, manually recorded medians, or a separate evidence file.
 
-The lifecycle test also asserts that plugin load does not enumerate vault files, scan Markdown
-metadata, read note contents, or start export traversal. The `create` listener remains deferred
-until `workspace.onLayoutReady(...)`, matching Obsidian's load-time guidance.
-
-Record measurements in a copy of the
-[release evidence template](qa-results/template.md). The complete platform matrix, tolerances, and
-release-blocking rules live in the [release QA checklist](qa-release-checklist.md).
+The complete automated gate lives in the [release QA checklist](qa-release-checklist.md).

@@ -13,7 +13,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest]
+        os: [ubuntu-latest, windows-latest, macos-latest]
 
     steps:
       - name: Checkout code
@@ -37,11 +37,37 @@ jobs:
       - name: Run linting
         run: pnpm lint
 
+      - name: Check mobile compatibility
+        run: pnpm mobile:check
+
       - name: Check types
         run: pnpm typecheck
 
       - name: Run tests
         run: pnpm test
+
+      - name: Checkout performance baseline
+        if: runner.os == 'Windows'
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.base.sha || github.event.before }}
+          path: .benchmark-base
+
+      - name: Install performance baseline dependencies
+        if: runner.os == 'Windows'
+        working-directory: .benchmark-base
+        run: pnpm install --frozen-lockfile
+
+      - name: Measure performance baseline
+        if: runner.os == 'Windows'
+        working-directory: .benchmark-base
+        run: pnpm benchmark
+
+      - name: Check performance regression
+        if: runner.os == 'Windows'
+        run: |
+          pnpm benchmark
+          node scripts/check-benchmark-regression.mjs .benchmark-base/benchmarks/latest-report.json benchmarks/latest-report.json
 
       - name: Upload coverage reports
         if: runner.os == 'Linux'
@@ -74,7 +100,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest]
+        os: [ubuntu-latest, windows-latest, macos-latest]
 
     steps:
       - name: Checkout code

@@ -68,7 +68,7 @@ does not automatically inherit:
 - globally installed skills or plugins;
 - GitHub, Gmail, Calendar, or other connector authorization;
 - local environment variables and secrets;
-- an Obsidian desktop or mobile runtime for manual smoke tests.
+- an Obsidian runtime for optional exploratory or bug-reproduction testing.
 
 Configure those capabilities separately when a task requires them. Repository work must still
 be possible with the checked-in guidance and the standard pnpm toolchain alone.
