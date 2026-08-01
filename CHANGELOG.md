@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.16.4] - 2026-08-01
+
+### Changed
+
+- Split plugin data normalization, automatic release notes, quick export, modal state, tree construction, export serialization, and settings UI into focused modules without changing export behavior or persisted setting keys.
+- Documented the lifecycle, view, state, traversal-controller, and export-execution boundaries used by Smart Export.
+
 ## [1.16.3] - 2026-08-01
 
 ### Changed

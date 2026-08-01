@@ -11,21 +11,11 @@ import {
 } from "obsidian";
 import { RootNoteSuggestModal } from "./RootNoteSuggestModal";
 import { TagSuggestModal } from "./TagSuggestModal";
-import { BFSTraversal } from "../engine/BFSTraversal";
-import { buildExportOutput } from "../engine/exportOutput";
-import {
-	composeExportTree,
-	createStandaloneExportNode,
-	isSyntheticExportNode,
-} from "../engine/exportTreeComposition";
-import { ObsidianAPI } from "../obsidian-api";
 import { ExportNode, LinkTraversalMode, SmartExportSettings } from "../types";
-import { applyContentSelection } from "./treeContentSelection";
 import {
 	DEFAULT_BUILTIN_LLM_TEMPLATE_ID,
 	LlmMarkdownTemplateOption,
 	listLlmMarkdownTemplateOptions,
-	resolveLlmMarkdownTemplate,
 } from "../utils/llmMarkdownTemplateResolver";
 import { TEMPLATE_DOCS_URL } from "../constants/templateDocs";
 import {
@@ -37,16 +27,44 @@ import {
 } from "./treeSelection";
 import { createExportNote } from "../utils/exportNote";
 import { ExportNoteDestinationModal } from "./ExportNoteDestinationModal";
-import { getPrintFriendlyMarkdownOptions } from "../utils/printFriendlyMarkdownOptions";
-import { estimatePrintFriendlyMarkdownCharacterCount } from "../utils/printFriendlyMarkdownEstimate";
-import { getContentRedactionOptions } from "../utils/contentRedaction";
 import { normalizeNoteTag } from "../utils/noteFilters";
 import { createLinkedDescription } from "../utils/linkedDescription";
 import { TagDiscoveryService } from "../tagDiscovery";
-
-const EXPORT_CHOICE_XML = "format:xml";
-const EXPORT_CHOICE_PRINT_FRIENDLY = "format:print-friendly-markdown";
-const EXPORT_CHOICE_LLM_PREFIX = "template:";
+import { serializeSelectedExport } from "./exportExecution";
+import { buildExportTreeFromSelection } from "./exportTreeController";
+import {
+	AddedExportItem,
+	AddedNoteMode,
+	applyExportChoiceSelection as selectExportChoice,
+	buildContentDisplayTree as createContentDisplayTree,
+	clearNodeIdsInSubtree,
+	collapseAllNodes as collapseTree,
+	collapseRootOnly as collapseTreeRoot,
+	countTreeNodes as countTreeContentNodes,
+	estimateExportCharacterCount as estimateTreeExportCharacters,
+	estimateTokensFromCharacterCount,
+	expandAllNodes as expandTree,
+	ExportSourceMode,
+	EXPORT_CHOICE_LLM_PREFIX,
+	EXPORT_CHOICE_PRINT_FRIENDLY,
+	EXPORT_CHOICE_XML,
+	flattenExportTree as flattenTree,
+	formatTokenCountMessage as formatTokenEstimate,
+	getAddedItemPathText as getExportItemPathText,
+	getAddedItemScopeText as getExportItemScopeText,
+	getAddedItemTitle as getExportItemTitle,
+	getAvailableLlmTemplateOptions as getTemplateOptions,
+	getCurrentExportChoiceValue as getExportChoiceValue,
+	getDomSafeId as createDomSafeId,
+	getExportSourceName as createExportSourceName,
+	getExportTreeFailureMessage as createExportTreeFailureMessage,
+	getSelectedTag as normalizeSelectedTag,
+	getTreeCacheKey as createTreeCacheKey,
+	hasExportSource as sourceIsSelected,
+	markUserDeselectedSubtree as markDeselectedTree,
+	MAX_TREE_CACHE_ENTRIES,
+	selectAllNodes as selectTree,
+} from "./exportModalState";
 
 interface PreparedExportOutput {
 	rootFile: TFile | null;
@@ -55,27 +73,12 @@ interface PreparedExportOutput {
 	tokenCount: number;
 }
 
-type ExportSourceMode = "note" | "tag";
-type AddedNoteMode = "single-note" | "extra-root";
-
-type AddedExportItem =
-	| {
-			kind: "note";
-			file: TFile;
-			mode: AddedNoteMode;
-	  }
-	| {
-			kind: "tag";
-			tag: string;
-	  };
-
 /**
  * The main modal for configuring and triggering a smart export.
  * It allows users to select a root note, adjust traversal depth,
  * and export the resulting note tree to the clipboard or a new note.
  */
 export class ExportModal extends Modal {
-	private static readonly MAX_TREE_CACHE_ENTRIES = 5;
 	/** The currently selected file to be used as the root of the export. */
 	private selectedFile: TFile | null = null;
 	/** Which source type is used for this export. */
@@ -499,32 +502,14 @@ export class ExportModal extends Modal {
 	}
 
 	private getAvailableLlmTemplateOptions(): LlmMarkdownTemplateOption[] {
-		if (this.llmTemplateOptions.length > 0) {
-			return this.llmTemplateOptions;
-		}
-		return [
-			{
-				id: DEFAULT_BUILTIN_LLM_TEMPLATE_ID,
-				label: "LLM-ready",
-				source: "builtin",
-			},
-		];
+		return getTemplateOptions(this.llmTemplateOptions);
 	}
 
 	private getCurrentExportChoiceValue(): string {
-		if (this.exportFormat === "xml") {
-			return EXPORT_CHOICE_XML;
-		}
-		if (this.exportFormat === "print-friendly-markdown") {
-			return EXPORT_CHOICE_PRINT_FRIENDLY;
-		}
-		const hasSelectedTemplate = this.getAvailableLlmTemplateOptions().some(
-			(option) => option.id === this.selectedLlmTemplateId
+		return getExportChoiceValue(
+			{ format: this.exportFormat, templateId: this.selectedLlmTemplateId },
+			this.llmTemplateOptions
 		);
-		const selectedTemplateId = hasSelectedTemplate
-			? this.selectedLlmTemplateId
-			: DEFAULT_BUILTIN_LLM_TEMPLATE_ID;
-		return `${EXPORT_CHOICE_LLM_PREFIX}${selectedTemplateId}`;
 	}
 
 	private applyExportChoiceOptions(): void {
@@ -547,20 +532,12 @@ export class ExportModal extends Modal {
 	}
 
 	private applyExportChoiceSelection(value: string): void {
-		if (value === EXPORT_CHOICE_XML) {
-			this.exportFormat = "xml";
-			return;
-		}
-		if (value === EXPORT_CHOICE_PRINT_FRIENDLY) {
-			this.exportFormat = "print-friendly-markdown";
-			return;
-		}
-		if (value.startsWith(EXPORT_CHOICE_LLM_PREFIX)) {
-			const templateId = value.slice(EXPORT_CHOICE_LLM_PREFIX.length);
-			this.exportFormat = "llm-markdown";
-			this.selectedLlmTemplateId =
-				templateId.length > 0 ? templateId : DEFAULT_BUILTIN_LLM_TEMPLATE_ID;
-		}
+		const state = selectExportChoice(
+			{ format: this.exportFormat, templateId: this.selectedLlmTemplateId },
+			value
+		);
+		this.exportFormat = state.format;
+		this.selectedLlmTemplateId = state.templateId;
 	}
 
 	/**
@@ -583,30 +560,19 @@ export class ExportModal extends Modal {
 			return null;
 		}
 		this.enforceLockedRootSelection();
-		const adjustedTree = applyContentSelection(exportTree, this.selectedNodeIds);
-		const llmMarkdownTemplate =
-			this.exportFormat === "llm-markdown"
-				? (
-						await resolveLlmMarkdownTemplate(
-							this.app,
-							this.settings.llmMarkdownTemplateDirectory,
-							this.selectedLlmTemplateId
-						)
-					).template
-				: null;
-		const output = buildExportOutput({
-			rootNode: adjustedTree,
-			vaultPath: this.app.vault.getName(),
+		const serialized = await serializeSelectedExport({
+			app: this.app,
+			settings: this.settings,
+			rootNode: exportTree,
+			selectedNodeIds: this.selectedNodeIds,
 			format: this.exportFormat,
-			llmMarkdownTemplate,
-			printFriendlyMarkdownOptions: getPrintFriendlyMarkdownOptions(this.settings),
-			contentRedactionOptions: getContentRedactionOptions(this.settings),
+			selectedLlmTemplateId: this.selectedLlmTemplateId,
 			missingNotesCount: this.missingNotesCount,
 			onInvalidFormat: () => {
 				new Notice("Unknown export format selected; falling back to XML.");
 			},
 		});
-		const tokenCount = this.estimateTokens(output);
+		const { output, tokenCount } = serialized;
 		this.tokenCountEl.setText(this.formatTokenCountMessage(tokenCount));
 
 		return {
@@ -685,7 +651,7 @@ export class ExportModal extends Modal {
 	}
 
 	private estimateTokensFromCharacterCount(characterCount: number): number {
-		return Math.ceil(characterCount / 4);
+		return estimateTokensFromCharacterCount(characterCount);
 	}
 
 	private estimateExportTokens(rootNode: ExportNode): number {
@@ -694,86 +660,34 @@ export class ExportModal extends Modal {
 	}
 
 	private estimateExportCharacterCount(rootNode: ExportNode): number {
-		const notes = this.flattenExportTree(rootNode);
-		let maxDepth = 0;
-		let titleChars = 0;
-		let selectedContentChars = 0;
-
-		for (const note of notes) {
-			maxDepth = Math.max(maxDepth, note.depth);
-			titleChars += note.title.length;
-			if (note.includeContent && this.selectedNodeIds.has(note.id)) {
-				selectedContentChars += note.content?.length ?? 0;
-			}
-		}
-
-		const vaultPathLength = this.app.vault.getName().length;
-		const metadataChars =
-			240 +
-			vaultPathLength +
-			rootNode.title.length +
-			String(notes.length).length +
-			String(this.missingNotesCount).length +
-			String(maxDepth).length;
-
-		switch (this.exportFormat) {
-			case "xml":
-				return metadataChars + titleChars * 2 + selectedContentChars + notes.length * 120;
-			case "llm-markdown":
-				return metadataChars + titleChars * 2 + selectedContentChars + notes.length * 80;
-			case "print-friendly-markdown":
-				return estimatePrintFriendlyMarkdownCharacterCount(
-					rootNode,
-					this.selectedNodeIds,
-					getPrintFriendlyMarkdownOptions(this.settings)
-				);
-			default:
-				return titleChars + selectedContentChars;
-		}
+		return estimateTreeExportCharacters(
+			rootNode,
+			this.selectedNodeIds,
+			this.exportFormat,
+			this.settings,
+			this.app.vault.getName(),
+			this.missingNotesCount
+		);
 	}
 
 	private flattenExportTree(rootNode: ExportNode): ExportNode[] {
-		const notes: ExportNode[] = [];
-		const queue: ExportNode[] = [rootNode];
-		let head = 0;
-
-		while (head < queue.length) {
-			const node = queue[head++];
-			if (!isSyntheticExportNode(node)) {
-				notes.push(node);
-			}
-			for (const child of node.children) {
-				queue.push(child);
-			}
-		}
-
-		return notes;
+		return flattenTree(rootNode);
 	}
 
 	private getSelectedTag(): string {
-		return normalizeNoteTag(this.selectedTag);
+		return normalizeSelectedTag(this.selectedTag);
 	}
 
 	private hasExportSource(): boolean {
-		if (this.sourceMode === "tag") {
-			return this.getSelectedTag().length > 0;
-		}
-		return this.selectedFile !== null;
+		return sourceIsSelected(this.sourceMode, this.selectedFile, this.selectedTag);
 	}
 
 	private getExportSourceName(): string {
-		if (this.sourceMode === "tag") {
-			const tag = this.getSelectedTag();
-			return tag ? `Tag #${tag}` : "Tag export";
-		}
-		return this.selectedFile?.basename ?? "Smart export";
+		return createExportSourceName(this.sourceMode, this.selectedFile, this.selectedTag);
 	}
 
 	private getExportTreeFailureMessage(): string {
-		if (this.sourceMode === "tag") {
-			return "No notes matched the selected tag after exclusions.";
-		}
-		return "Failed to generate export. See console for details.";
+		return createExportTreeFailureMessage(this.sourceMode);
 	}
 
 	private renderSourceControls(): void {
@@ -959,27 +873,15 @@ export class ExportModal extends Modal {
 	}
 
 	private getAddedItemTitle(item: AddedExportItem): string {
-		if (item.kind === "tag") {
-			return `#${normalizeNoteTag(item.tag)}`;
-		}
-		return item.file.basename;
+		return getExportItemTitle(item);
 	}
 
 	private getAddedItemPathText(item: AddedExportItem): string {
-		if (item.kind === "tag") {
-			return "Tag";
-		}
-		return item.file.path;
+		return getExportItemPathText(item);
 	}
 
 	private getAddedItemScopeText(item: AddedExportItem): string {
-		if (item.kind === "tag") {
-			return "Tag: starts export trees from all matching notes using the current depth and link direction.";
-		}
-		if (item.mode === "extra-root") {
-			return "New root: starts another tree from this note using the current depth and link direction.";
-		}
-		return "Single note: includes only this note.";
+		return getExportItemScopeText(item);
 	}
 
 	/**
@@ -1052,30 +954,25 @@ export class ExportModal extends Modal {
 		}
 
 		try {
-			const obsidianAPI = new ObsidianAPI(this.app);
-			const traversalOptions = {
-				ignoredTraversalFolders: this.settings.ignoredTraversalFolders,
-				ignoredTraversalTagPatterns: this.settings.ignoredTraversalTagPatterns,
-				ignoredTraversalPropertyRules: this.settings.ignoredTraversalPropertyRules,
-			};
-			const traversal = new BFSTraversal(
-				obsidianAPI,
-				this.contentDepth,
-				this.titleDepth,
-				this.linkTraversalMode,
-				traversalOptions
-			);
-			const primaryTree =
-				this.sourceMode === "tag"
-					? await traversal.traverseTag(this.getSelectedTag())
-					: await traversal.traverse(this.selectedFile!.path);
+			const result = await buildExportTreeFromSelection({
+				app: this.app,
+				settings: this.settings,
+				sourceMode: this.sourceMode,
+				selectedFilePath: this.sourceMode === "note" ? this.selectedFile!.path : null,
+				selectedTag: this.selectedTag,
+				addedNotes: this.addedNotes,
+				contentDepth: this.contentDepth,
+				titleDepth: this.titleDepth,
+				linkTraversalMode: this.linkTraversalMode,
+				isCurrent: () => buildId === this.treeBuildId,
+			});
 
-			if (buildId !== this.treeBuildId) {
+			if (result.status === "stale") {
 				this.exportTreePromise = null;
 				return null;
 			}
 
-			if (!primaryTree) {
+			if (result.status === "empty") {
 				this.exportTree = null;
 				this.missingNotesCount = 0;
 				this.exportTreePromise = null;
@@ -1085,72 +982,11 @@ export class ExportModal extends Modal {
 				return null;
 			}
 
-			const missingNotes = new Set(traversal.getMissingNotes());
-			const extraRootTrees: ExportNode[] = [];
-			const singleNoteNodes: ExportNode[] = [];
-
-			for (const addedNote of this.addedNotes) {
-				if (addedNote.kind === "tag") {
-					const extraTraversal = new BFSTraversal(
-						obsidianAPI,
-						this.contentDepth,
-						this.titleDepth,
-						this.linkTraversalMode,
-						traversalOptions
-					);
-					const extraRootTree = await extraTraversal.traverseTag(addedNote.tag);
-					if (buildId !== this.treeBuildId) {
-						this.exportTreePromise = null;
-						return null;
-					}
-					if (extraRootTree) {
-						extraRootTrees.push(extraRootTree);
-					}
-					for (const missingNote of extraTraversal.getMissingNotes()) {
-						missingNotes.add(missingNote);
-					}
-					continue;
-				}
-
-				if (addedNote.mode === "extra-root") {
-					const extraTraversal = new BFSTraversal(
-						obsidianAPI,
-						this.contentDepth,
-						this.titleDepth,
-						this.linkTraversalMode,
-						traversalOptions
-					);
-					const extraRootTree = await extraTraversal.traverse(addedNote.file.path);
-					if (buildId !== this.treeBuildId) {
-						this.exportTreePromise = null;
-						return null;
-					}
-					if (extraRootTree) {
-						extraRootTrees.push(extraRootTree);
-					}
-					for (const missingNote of extraTraversal.getMissingNotes()) {
-						missingNotes.add(missingNote);
-					}
-					continue;
-				}
-
-				const content = await obsidianAPI.getNoteContent(addedNote.file.path);
-				if (buildId !== this.treeBuildId) {
-					this.exportTreePromise = null;
-					return null;
-				}
-				singleNoteNodes.push(createStandaloneExportNode(addedNote.file, { content }));
-			}
-
-			const exportTree = composeExportTree({
-				primaryTree,
-				extraRootTrees,
-				singleNoteNodes,
-			});
+			const exportTree = result.tree;
 
 			this.exportTree = exportTree;
 			this.treeIsStale = false;
-			this.missingNotesCount = missingNotes.size;
+			this.missingNotesCount = result.missingNotesCount;
 			this.exportTreePromise = null;
 			this.exportTreeCacheKey = this.getTreeCacheKey();
 			this.exportTreeCache.set(this.exportTreeCacheKey, {
@@ -1187,12 +1023,7 @@ export class ExportModal extends Modal {
 	 * @private
 	 */
 	private selectAllNodes(node: ExportNode) {
-		if (node.includeContent) {
-			this.selectedNodeIds.add(node.id);
-		}
-		for (const child of node.children) {
-			this.selectAllNodes(child);
-		}
+		selectTree(node, this.selectedNodeIds);
 	}
 
 	/**
@@ -1225,12 +1056,7 @@ export class ExportModal extends Modal {
 	 * @private
 	 */
 	private markUserDeselectedSubtree(node: ExportNode) {
-		if (node.includeContent && !this.isPrimaryRootNode(node)) {
-			this.userDeselectedNodeIds.add(node.id);
-		}
-		for (const child of node.children) {
-			this.markUserDeselectedSubtree(child);
-		}
+		markDeselectedTree(node, this.userDeselectedNodeIds, this.getLockedRootNodeIds());
 	}
 
 	/**
@@ -1238,10 +1064,7 @@ export class ExportModal extends Modal {
 	 * @private
 	 */
 	private clearUserDeselectedSubtree(node: ExportNode) {
-		this.userDeselectedNodeIds.delete(node.id);
-		for (const child of node.children) {
-			this.clearUserDeselectedSubtree(child);
-		}
+		clearNodeIdsInSubtree(node, this.userDeselectedNodeIds);
 	}
 
 	/**
@@ -1259,23 +1082,16 @@ export class ExportModal extends Modal {
 	 * @private
 	 */
 	private getTreeCacheKey(): string {
-		const source =
-			this.sourceMode === "tag"
-				? `tag:${this.getSelectedTag()}`
-				: `note:${this.selectedFile?.path ?? "unknown"}`;
-		const addedNotes = JSON.stringify(
-			this.addedNotes.map((note) =>
-				note.kind === "tag"
-					? (["tag", normalizeNoteTag(note.tag)] as const)
-					: (["note", note.file.path, note.mode] as const)
-			)
-		);
-		const ignoredTraversalFolders = JSON.stringify(this.settings.ignoredTraversalFolders);
-		const ignoredTraversalTagPatterns = JSON.stringify(this.settings.ignoredTraversalTagPatterns);
-		const ignoredTraversalPropertyRules = JSON.stringify(
-			this.settings.ignoredTraversalPropertyRules
-		);
-		return `${source}|added:${addedNotes}|content:${this.contentDepth}|title:${this.titleDepth}|mode:${this.linkTraversalMode}|traversalIgnored:${ignoredTraversalFolders}|traversalIgnoredTags:${ignoredTraversalTagPatterns}|traversalIgnoredProperties:${ignoredTraversalPropertyRules}`;
+		return createTreeCacheKey({
+			sourceMode: this.sourceMode,
+			selectedFile: this.selectedFile,
+			selectedTag: this.selectedTag,
+			addedNotes: this.addedNotes,
+			contentDepth: this.contentDepth,
+			titleDepth: this.titleDepth,
+			linkTraversalMode: this.linkTraversalMode,
+			settings: this.settings,
+		});
 	}
 
 	/**
@@ -1283,7 +1099,7 @@ export class ExportModal extends Modal {
 	 * @private
 	 */
 	private enforceCacheLimit() {
-		while (this.exportTreeCache.size > ExportModal.MAX_TREE_CACHE_ENTRIES) {
+		while (this.exportTreeCache.size > MAX_TREE_CACHE_ENTRIES) {
 			const firstKey = this.exportTreeCache.keys().next().value!;
 			this.exportTreeCache.delete(firstKey);
 		}
@@ -1294,9 +1110,7 @@ export class ExportModal extends Modal {
 	 * @private
 	 */
 	private collapseRootOnly(node: ExportNode) {
-		if (node.children.length > 0) {
-			this.collapsedNodeIds.add(node.id);
-		}
+		collapseTreeRoot(node, this.collapsedNodeIds);
 	}
 
 	/**
@@ -1304,12 +1118,7 @@ export class ExportModal extends Modal {
 	 * @private
 	 */
 	private collapseAllNodes(node: ExportNode) {
-		if (node.children.length > 0) {
-			this.collapsedNodeIds.add(node.id);
-			for (const child of node.children) {
-				this.collapseAllNodes(child);
-			}
-		}
+		collapseTree(node, this.collapsedNodeIds);
 	}
 
 	/**
@@ -1317,10 +1126,7 @@ export class ExportModal extends Modal {
 	 * @private
 	 */
 	private expandAllNodes(node: ExportNode) {
-		this.collapsedNodeIds.delete(node.id);
-		for (const child of node.children) {
-			this.expandAllNodes(child);
-		}
+		expandTree(node, this.collapsedNodeIds);
 	}
 
 	private clearRenderedTreeState() {
@@ -1721,17 +1527,7 @@ export class ExportModal extends Modal {
 	 * @private
 	 */
 	private formatTokenCountMessage(tokenCount: number): string {
-		let tokenText = `Estimated tokens: ~${tokenCount.toLocaleString()}`;
-
-		if (tokenCount > 200000) {
-			tokenText += " — exceeds most context limits";
-		} else if (tokenCount > 128000) {
-			tokenText += " — may exceed common context limits";
-		} else if (tokenCount > 100000) {
-			tokenText += " — large export";
-		}
-
-		return tokenText;
+		return formatTokenEstimate(tokenCount);
 	}
 
 	/**
@@ -1739,7 +1535,7 @@ export class ExportModal extends Modal {
 	 * @private
 	 */
 	private getDomSafeId(value: string): string {
-		return value.replace(/[^a-zA-Z0-9_-]+/g, "-");
+		return createDomSafeId(value);
 	}
 
 	private getNodeChildrenListId(nodeId: string): string {
@@ -1761,22 +1557,7 @@ export class ExportModal extends Modal {
 	 * @private
 	 */
 	private buildContentDisplayTree(node: ExportNode): ExportNode | null {
-		const children: ExportNode[] = [];
-		for (const child of node.children) {
-			const displayChild = this.buildContentDisplayTree(child);
-			if (displayChild) {
-				children.push(displayChild);
-			}
-		}
-
-		if (!node.includeContent && children.length === 0) {
-			return null;
-		}
-
-		return {
-			...node,
-			children,
-		};
+		return createContentDisplayTree(node);
 	}
 
 	/**
@@ -1784,16 +1565,7 @@ export class ExportModal extends Modal {
 	 * @private
 	 */
 	private countTreeNodes(node: ExportNode): { total: number; selected: number } {
-		let total = node.includeContent ? 1 : 0;
-		let selected = node.includeContent && this.selectedNodeIds.has(node.id) ? 1 : 0;
-
-		for (const child of node.children) {
-			const childCounts = this.countTreeNodes(child);
-			total += childCounts.total;
-			selected += childCounts.selected;
-		}
-
-		return { total, selected };
+		return countTreeContentNodes(node, this.selectedNodeIds);
 	}
 
 	/**

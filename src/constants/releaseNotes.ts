@@ -13,6 +13,14 @@ export interface ReleaseNotesEntry {
 
 export const RELEASE_NOTES: ReleaseNotesEntry[] = [
 	{
+		version: "1.16.4",
+		date: "2026-08-01",
+		showOnUpdate: false,
+		changed: [
+			"Smart Export internals now use focused lifecycle, settings, modal state, traversal, and export-execution modules while preserving existing behavior and saved settings.",
+		],
+	},
+	{
 		version: "1.16.3",
 		date: "2026-08-01",
 		showOnUpdate: false,

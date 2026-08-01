@@ -8,13 +8,13 @@ import {
 	SettingDefinitionItem,
 	SliderComponent,
 } from "obsidian";
-import { TEMPLATE_DOCS_URL } from "../constants/templateDocs";
+import { TEMPLATE_DOCS_URL } from "../../constants/templateDocs";
 import {
 	DEFAULT_REDACTION_REGEX_PATTERNS,
 	DEFAULT_SETTINGS,
 	normalizeTemplateDirectorySetting,
-} from "../settings/defaultSettings";
-import { ExportTarget, LinkTraversalMode, SmartExportSettings } from "../types";
+} from "../../settings/defaultSettings";
+import { ExportTarget, LinkTraversalMode, SmartExportSettings } from "../../types";
 import {
 	DEFAULT_REDACTION_DELIMITER,
 	DEFAULT_REDACTION_REPLACEMENT,
@@ -24,17 +24,17 @@ import {
 	normalizeRedactionReplacement,
 	normalizeRedactionRegexPatterns,
 	redactMarkedContent,
-} from "../utils/contentRedaction";
-import { normalizeExportNoteFolderPath } from "../utils/exportNote";
-import { normalizeFolderFilterList } from "../utils/folderFilters";
+} from "../../utils/contentRedaction";
+import { normalizeExportNoteFolderPath } from "../../utils/exportNote";
+import { normalizeFolderFilterList } from "../../utils/folderFilters";
 import {
 	DEFAULT_BUILTIN_LLM_TEMPLATE_ID,
 	LLM_MARKDOWN_TEMPLATE_DIRECTORY,
 	LlmMarkdownTemplateOption,
 	listLlmMarkdownTemplateOptions,
-} from "../utils/llmMarkdownTemplateResolver";
-import { createLinkedDescription } from "../utils/linkedDescription";
-import { normalizePropertyFilterList, normalizeTagFilterList } from "../utils/noteFilters";
+} from "../../utils/llmMarkdownTemplateResolver";
+import { createLinkedDescription } from "../../utils/linkedDescription";
+import { normalizePropertyFilterList, normalizeTagFilterList } from "../../utils/noteFilters";
 
 const DEFAULT_OUTPUT_CHOICE_XML = "format:xml";
 const DEFAULT_OUTPUT_CHOICE_PRINT_FRIENDLY = "format:print-friendly-markdown";
