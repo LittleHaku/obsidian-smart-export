@@ -93,4 +93,45 @@ describe("ReleaseNotesModal", () => {
 		expect(cancelAnimationFrame).toHaveBeenCalledWith(73);
 		expect(onClose).toHaveBeenCalledOnce();
 	});
+
+	it("renders formatted multi-paragraph notes, every category, and invalid dates safely", () => {
+		const modal = new ReleaseNotesModal(new App(), [
+			{
+				version: "next",
+				date: "not-a-date",
+				info: [
+					"Plain ==highlight with **bold**== and [docs](https://example.com/docs).",
+					"Visit https://example.com/path, or https://example.org",
+				].join("\n\n"),
+				new: ["New line one\nline two"],
+				improved: ["Improved **rendering**"],
+				changed: ["Changed at https://example.com/change!"],
+				fixed: ["Fixed [issue](https://example.com/issue)"],
+			},
+		]);
+
+		modal.onOpen();
+
+		expect(modal.contentEl.querySelector("h3")?.textContent).toBe("Version next");
+		expect(modal.contentEl.querySelectorAll(".smart-export-whats-new-info")).toHaveLength(2);
+		expect(modal.contentEl.querySelector("mark")).toBeNull();
+		expect(modal.contentEl.querySelector(".smart-export-whats-new-highlight")?.textContent).toBe(
+			"highlight with bold"
+		);
+		expect(modal.contentEl.querySelectorAll("strong").length).toBeGreaterThan(1);
+		expect(modal.contentEl.querySelectorAll("h4")).toHaveLength(4);
+		expect(modal.contentEl.querySelectorAll("br")).toHaveLength(1);
+		const links = Array.from(modal.contentEl.querySelectorAll<HTMLAnchorElement>("a"));
+		expect(links.map((link) => link.href)).toEqual(
+			expect.arrayContaining([
+				"https://example.com/docs",
+				"https://example.com/path",
+				"https://example.org/",
+			])
+		);
+		expect(modal.contentEl.textContent).toContain("path,");
+
+		modal.contentEl.querySelector<HTMLButtonElement>(".mod-cta")?.click();
+		expect(modal.contentEl.childElementCount).toBe(0);
+	});
 });

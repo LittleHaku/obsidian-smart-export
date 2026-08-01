@@ -781,4 +781,13 @@ describe("BFSTraversal", () => {
 		).cachedRead.mock.calls.length;
 		expect(cachedReadCalls).toBe(0);
 	});
+
+	it("should use a generic title when a custom API returns roots for an empty tag", async () => {
+		vi.spyOn(obsidianAPI, "getFilesMatchingTag").mockReturnValue([mockFiles["root.md"]]);
+		const traversal = new BFSTraversal(obsidianAPI, 0, 0);
+
+		const rootNode = await traversal.traverseTag("");
+
+		expect(rootNode?.title).toBe("Tag export");
+	});
 });

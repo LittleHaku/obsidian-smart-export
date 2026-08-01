@@ -5,6 +5,7 @@ type CreateElOptions = {
 	text?: string;
 	attr?: Record<string, string>;
 	href?: string;
+	type?: string;
 };
 
 type ObsidianHTMLElement = HTMLElement & {
@@ -19,6 +20,7 @@ type ObsidianHTMLElement = HTMLElement & {
 	createSpan: (options?: CreateElOptions) => HTMLSpanElement;
 	addClass: (...classes: string[]) => void;
 	removeClass: (...classes: string[]) => void;
+	setAttr: (name: string, value: string) => void;
 };
 
 function applyOptions(element: HTMLElement, options?: CreateElOptions): void {
@@ -39,6 +41,9 @@ function applyOptions(element: HTMLElement, options?: CreateElOptions): void {
 	}
 	if (options.href) {
 		element.setAttribute("href", options.href);
+	}
+	if (options.type) {
+		element.setAttribute("type", options.type);
 	}
 }
 
@@ -133,6 +138,16 @@ if (!elementPrototype.removeClass) {
 		...classes: string[]
 	): void {
 		this.classList.remove(...classes);
+	};
+}
+
+if (!elementPrototype.setAttr) {
+	elementPrototype.setAttr = function setAttr(
+		this: HTMLElement,
+		name: string,
+		value: string
+	): void {
+		this.setAttribute(name, value);
 	};
 }
 
@@ -250,12 +265,37 @@ mockWindow.createSpan ??= (options?: CreateElOptions): HTMLSpanElement =>
 
 export class Plugin {
 	app: App;
+	manifest = { name: "Smart Export", version: "1.0.0" };
 
 	constructor(app = new App()) {
 		this.app = app;
 	}
 
+	async loadData(): Promise<unknown> {
+		return null;
+	}
+
 	async saveData(_data: unknown): Promise<void> {}
+
+	registerEvent<T>(eventRef: T): T {
+		return eventRef;
+	}
+
+	addRibbonIcon(
+		_icon: string,
+		_title: string,
+		_callback: (event: MouseEvent) => unknown
+	): HTMLElement {
+		return mockWindow.createDiv!();
+	}
+
+	addCommand<T>(command: T): T {
+		return command;
+	}
+
+	addSettingTab<T>(settingTab: T): T {
+		return settingTab;
+	}
 }
 
 export class PluginSettingTab {
@@ -311,6 +351,56 @@ export class DropdownComponent {
 	onChange(callback: (value: string) => unknown): this {
 		this.selectEl.addEventListener("change", () => {
 			void callback(this.selectEl.value);
+		});
+		return this;
+	}
+}
+
+export class ButtonComponent {
+	buttonEl: HTMLButtonElement;
+
+	constructor(containerEl: HTMLElement) {
+		this.buttonEl = containerEl.createEl("button");
+	}
+
+	setButtonText(value: string): this {
+		this.buttonEl.textContent = value;
+		return this;
+	}
+
+	setCta(): this {
+		this.buttonEl.classList.add("mod-cta");
+		return this;
+	}
+
+	onClick(callback: (event: MouseEvent) => unknown): this {
+		this.buttonEl.addEventListener("click", (event) => {
+			void callback(event);
+		});
+		return this;
+	}
+}
+
+export class TextComponent {
+	inputEl: HTMLInputElement;
+
+	constructor(containerEl: HTMLElement) {
+		this.inputEl = containerEl.createEl("input", { type: "text" });
+	}
+
+	setPlaceholder(value: string): this {
+		this.inputEl.placeholder = value;
+		return this;
+	}
+
+	setValue(value: string): this {
+		this.inputEl.value = value;
+		return this;
+	}
+
+	onChange(callback: (value: string) => unknown): this {
+		this.inputEl.addEventListener("input", () => {
+			void callback(this.inputEl.value);
 		});
 		return this;
 	}
@@ -402,6 +492,16 @@ export class Setting {
 		callback(new SliderComponent(this.controlEl));
 		return this;
 	}
+
+	addButton(callback: (component: ButtonComponent) => unknown): this {
+		callback(new ButtonComponent(this.controlEl));
+		return this;
+	}
+
+	addText(callback: (component: TextComponent) => unknown): this {
+		callback(new TextComponent(this.controlEl));
+		return this;
+	}
 }
 
 export class Modal {
@@ -426,9 +526,59 @@ export class Modal {
 		this.onClose();
 	}
 
+	setTitle(title: string): this {
+		this.titleEl.textContent = title;
+		return this;
+	}
+
 	onOpen(): void {}
 
 	onClose(): void {}
+}
+
+export class FuzzySuggestModal<T> extends Modal {
+	getItems(): T[] {
+		return [];
+	}
+
+	getItemText(_item: T): string {
+		return "";
+	}
+
+	onChooseItem(_item: T, _event: MouseEvent | KeyboardEvent): void {}
+}
+
+export type EventRef = { id?: string };
+
+export class AbstractInputSuggest<T> {
+	protected readonly app: App;
+	protected readonly inputEl: HTMLInputElement;
+	closed = false;
+
+	constructor(app: App, inputEl: HTMLInputElement) {
+		this.app = app;
+		this.inputEl = inputEl;
+	}
+
+	setValue(value: T): void {
+		this.inputEl.value = String(value);
+	}
+
+	close(): void {
+		this.closed = true;
+	}
+}
+
+export const noticeMessages: string[] = [];
+
+export class Notice {
+	constructor(public message: string) {
+		noticeMessages.push(message);
+	}
+}
+
+export function setTooltip(element: HTMLElement, tooltip: string): void {
+	element.setAttribute("aria-label", tooltip);
 }
 
 interface MockTagCache {

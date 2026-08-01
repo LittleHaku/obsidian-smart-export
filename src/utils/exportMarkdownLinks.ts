@@ -353,9 +353,6 @@ function parseHeadingLine(
 	}
 
 	headingText = headingText.replace(TRAILING_HEADING_HASHES_REGEX, "").trimEnd();
-	if (headingText.length === 0) {
-		return null;
-	}
 
 	const headingLookupKey = normalizeHeadingLookupKey(headingText);
 	const occurrenceIndex = headingOccurrences.get(headingLookupKey) ?? 0;
@@ -453,7 +450,7 @@ function collectReferencedHeadingBlockTargets(
 
 	const blockTargets = new Map<string, string>();
 	const headingOccurrences = new Map<string, number>();
-	const lines = content.match(/.*(?:\r?\n|$)/g) ?? [];
+	const lines = content.match(/.*(?:\r?\n|$)/g)!;
 	let isInFrontmatter = false;
 	let currentFence: { character: string; length: number } | null = null;
 	let isFirstLine = true;
@@ -516,7 +513,7 @@ function annotateReferencedHeadingsForExport(
 	}
 
 	const headingOccurrences = new Map<string, number>();
-	const lines = content.match(/.*(?:\r?\n|$)/g) ?? [];
+	const lines = content.match(/.*(?:\r?\n|$)/g)!;
 	const rewrittenLines: string[] = [];
 	let isInFrontmatter = false;
 	let currentFence: { character: string; length: number } | null = null;

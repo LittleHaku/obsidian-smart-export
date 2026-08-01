@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.16.3] - 2026-08-01
+
+### Changed
+
+- Test coverage now includes the complete executable plugin runtime, with exact 100% thresholds enforced locally and for both project and patch coverage in CI.
+- Simplified redundant or unreachable defensive paths in export UI, release-note rendering, and Markdown link processing without changing observable output.
+
 ## [1.16.2] - 2026-07-31
 
 ### Changed
