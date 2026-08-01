@@ -1,14 +1,21 @@
 # Performance benchmarks
 
-Run the synthetic performance suite from the repository root:
+Run the synthetic performance suite and enforce the accepted regression tolerances from the
+repository root:
 
 ```bash
-pnpm benchmark
+pnpm benchmark:check
 ```
 
-The command measures traversal/export throughput and tag discovery on a synthetic large vault.
-It writes the most recent machine-readable result to the ignored
-`benchmarks/latest-report.json` file so local runs do not create working-tree changes.
+`pnpm benchmark` remains available when a report is needed without enforcing the gate. Both
+commands measure traversal/export throughput and tag discovery on synthetic large-vault fixtures:
+
+- a deterministic 1,365-note, five-level graph with 85 simulated content reads;
+- 10,000 tagged notes distributed across 100 nested tag groups plus a shared tag.
+
+No private vault data is read or stored. The suite writes the latest machine-readable result to
+the ignored `benchmarks/latest-report.json` file. `benchmark:check` compares it with the committed
+`benchmarks/baseline.json` file.
 
 ## Recorded baseline
 
@@ -28,3 +35,18 @@ an indicative baseline rather than a universal threshold.
 The traversal fixture estimates 425 ms of serial read cost, corresponding to a 7.29x
 speedup in this run. The tag benchmark invalidates the cache before every cold run and
 reuses the same result for every warm run.
+
+## Regression tolerances
+
+The release gate allows traversal/export/tag-discovery duration medians to increase by at most
+25%. Estimated traversal speedup may drop by at most 20%. The warm-cache tag timing is reported but
+is not gated because sub-microsecond timer noise makes ratios misleading.
+
+Run the check on the same machine with background workloads minimized. When it fails, rerun once to
+exclude transient contention. A repeatable failure blocks release unless the completed
+[release QA evidence](../docs/qa-release-checklist.md) documents the environment difference, user
+impact, owner, and follow-up issue.
+
+Promote a new baseline only for an intentional, reviewed fixture or environment change. Record the
+capture date, commit, operating system, architecture, Node.js, and pnpm versions in
+`benchmarks/baseline.json`; never replace the baseline merely to make a regression pass.

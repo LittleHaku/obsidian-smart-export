@@ -140,9 +140,19 @@ function createApp(activeFile: TFile | null = null): {
 	app: App;
 	layoutCallbacks: Array<() => void>;
 	eventCallbacks: Array<() => void>;
+	startupReads: {
+		cachedRead: ReturnType<typeof vi.fn>;
+		getCache: ReturnType<typeof vi.fn>;
+		getFiles: ReturnType<typeof vi.fn>;
+		getMarkdownFiles: ReturnType<typeof vi.fn>;
+	};
 } {
 	const layoutCallbacks: Array<() => void> = [];
 	const eventCallbacks: Array<() => void> = [];
+	const cachedRead = vi.fn(async () => "");
+	const getCache = vi.fn(() => null);
+	const getFiles = vi.fn(() => []);
+	const getMarkdownFiles = vi.fn(() => []);
 	const app = new App();
 	Object.assign(app, {
 		metadataCache: {
@@ -150,16 +160,18 @@ function createApp(activeFile: TFile | null = null): {
 				eventCallbacks.push(callback);
 				return { name };
 			}),
-			getCache: vi.fn(() => null),
+			getCache,
 		},
 		vault: {
 			on: vi.fn((name: string, callback: () => void) => {
 				eventCallbacks.push(callback);
 				return { name };
 			}),
+			cachedRead,
+			getFiles,
 			getName: vi.fn(() => "Test vault"),
 			getFileByPath: vi.fn(() => null),
-			getMarkdownFiles: vi.fn(() => []),
+			getMarkdownFiles,
 		},
 		workspace: {
 			getActiveFile: vi.fn(() => activeFile),
@@ -168,7 +180,12 @@ function createApp(activeFile: TFile | null = null): {
 			}),
 		},
 	});
-	return { app, layoutCallbacks, eventCallbacks };
+	return {
+		app,
+		layoutCallbacks,
+		eventCallbacks,
+		startupReads: { cachedRead, getCache, getFiles, getMarkdownFiles },
+	};
 }
 
 function createPlugin(app = createApp().app): SmartExportPlugin {
@@ -228,7 +245,7 @@ describe("SmartExportPlugin lifecycle", () => {
 
 	it("registers lifecycle-safe events, entry points, settings, and deferred work", async () => {
 		const activeFile = createFile("Root.md");
-		const { app, layoutCallbacks, eventCallbacks } = createApp(activeFile);
+		const { app, layoutCallbacks, eventCallbacks, startupReads } = createApp(activeFile);
 		const plugin = createPlugin(app);
 		const loadSettings = vi.spyOn(plugin, "loadSettings").mockResolvedValue();
 		const ribbonCallbacks: Array<(event: MouseEvent) => void> = [];
@@ -251,6 +268,10 @@ describe("SmartExportPlugin lifecycle", () => {
 
 		await plugin.onload();
 		expect(loadSettings).toHaveBeenCalledOnce();
+		expect(startupReads.getFiles).not.toHaveBeenCalled();
+		expect(startupReads.getMarkdownFiles).not.toHaveBeenCalled();
+		expect(startupReads.cachedRead).not.toHaveBeenCalled();
+		expect(startupReads.getCache).not.toHaveBeenCalled();
 		expect(registerEvent).toHaveBeenCalledTimes(4);
 		expect(addSettingTab).toHaveBeenCalledOnce();
 		expect(layoutCallbacks).toHaveLength(1);
@@ -269,6 +290,10 @@ describe("SmartExportPlugin lifecycle", () => {
 		expect(quickExport).toHaveBeenCalledWith(activeFile);
 
 		layoutCallbacks[0]?.();
+		expect(startupReads.getFiles).not.toHaveBeenCalled();
+		expect(startupReads.getMarkdownFiles).not.toHaveBeenCalled();
+		expect(startupReads.cachedRead).not.toHaveBeenCalled();
+		expect(startupReads.getCache).not.toHaveBeenCalled();
 		expect(registerEvent).toHaveBeenCalledTimes(5);
 		expect(maybeShowReleaseNotes).toHaveBeenCalledOnce();
 		plugin.onunload();

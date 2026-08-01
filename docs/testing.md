@@ -38,6 +38,8 @@ Use focused Vitest commands while developing, but always finish with `pnpm test`
 
 ## Cross-platform determinism
 
-Coverage uses Vitest's V8 provider, repository-relative source globs, and LCOV/JSON/HTML/text reporters. The same `pnpm test` command is used on Windows development machines and Linux CI; generated `coverage/` output is ignored and must not be committed.
+Coverage uses Vitest's V8 provider, repository-relative source globs, and LCOV/JSON/HTML/text
+reporters. GitHub Actions runs the same formatting, linting, type checking, and test commands on
+Windows and Linux; generated `coverage/` output is ignored and must not be committed.
 
 Tests must not depend on platform-specific path separators, locale-formatted coverage paths, network access, wall-clock timing, or test execution order.

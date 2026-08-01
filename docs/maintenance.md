@@ -130,12 +130,17 @@ Completion criteria:
 
 Before publishing any version:
 
-1. Run `pnpm format`.
-2. Run `pnpm format:check`.
-3. Run `pnpm lint`.
-4. Run `pnpm typecheck`.
-5. Run `pnpm test`.
-6. Run `pnpm build`.
-7. Test the production bundle in Obsidian desktop and at least one mobile runtime.
-8. Confirm `package.json`, `manifest.json`, `versions.json`, `CHANGELOG.md`, and bundled release notes use the same version.
-9. Create the stable tag from `main` without a `v` prefix; [#104](https://github.com/LittleHaku/obsidian-smart-export/issues/104) tracks automated enforcement.
+1. Complete the versioned [release QA checklist](qa-release-checklist.md) and commit or link its
+   release-candidate evidence.
+2. Run `pnpm format`.
+3. Run `pnpm format:check`.
+4. Run `pnpm lint`.
+5. Run `pnpm typecheck`.
+6. Run `pnpm test`.
+7. Run `pnpm build`.
+8. Run `pnpm benchmark:check` and record startup profiling on Windows and Linux.
+9. Test the production bundle on Windows, Linux, one real Android device, and one real iPhone or
+   iPad, including supported desktop pop-out windows.
+10. Confirm `package.json`, `manifest.json`, `versions.json`, `CHANGELOG.md`, and bundled release
+    notes use the same version.
+11. Create the stable tag from `main` without a `v` prefix; [#104](https://github.com/LittleHaku/obsidian-smart-export/issues/104) tracks automated enforcement.
