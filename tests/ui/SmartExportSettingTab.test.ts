@@ -20,6 +20,10 @@ type NamedDefinition = {
 	render?: (setting: Setting, group: never) => void | (() => void);
 };
 
+type SettingTabInternals = {
+	loadDefaultOutputTemplateOptions(): Promise<unknown[]>;
+};
+
 function createSettings(): SmartExportSettings {
 	return {
 		...DEFAULT_SETTINGS,
@@ -286,7 +290,9 @@ describe("SmartExportSettingTab", () => {
 		const setting = new Setting(document.body);
 		const cleanup = definition.render?.(setting, {} as never);
 		const dropdown = setting.controlEl.querySelector("select");
-		await Promise.resolve();
+		await vi.waitFor(() => {
+			expect(dropdown?.querySelector('option[value="template:builtin:default"]')).not.toBeNull();
+		});
 
 		await tab.setControlValue("llmMarkdownTemplateDirectory", "Templates/First");
 		await tab.setControlValue("llmMarkdownTemplateDirectory", "Templates/Final");
@@ -391,5 +397,168 @@ describe("SmartExportSettingTab", () => {
 		if (typeof rerenderCleanup === "function") {
 			rerenderCleanup();
 		}
+	});
+
+	it("covers every default-output choice and template fallback", async () => {
+		const { tab, plugin, saveSettings } = createSettingTab();
+		plugin.settings.defaultExportFormat = "llm-markdown";
+		plugin.settings.defaultLlmTemplateId = "missing";
+		const definition = findDefinition(tab, "Default output");
+		const setting = new Setting(document.body);
+		const cleanup = definition.render?.(setting, {} as never);
+		const dropdown = setting.controlEl.querySelector("select");
+		await vi.waitFor(() => {
+			expect(dropdown?.querySelector('option[value="template:builtin:default"]')).not.toBeNull();
+		});
+
+		expect(dropdown?.value).toBe("template:builtin:default");
+		const emptyTemplateOption = document.body.createEl("option");
+		emptyTemplateOption.value = "template:";
+		dropdown?.append(emptyTemplateOption);
+		if (dropdown) {
+			dropdown.value = "template:";
+			dropdown.dispatchEvent(new Event("change"));
+		}
+		await Promise.resolve();
+		for (const value of [
+			"format:xml",
+			"format:print-friendly-markdown",
+			"template:builtin:default",
+			"unsupported",
+		]) {
+			if (dropdown) {
+				dropdown.value = value;
+				dropdown.dispatchEvent(new Event("change"));
+			}
+			await Promise.resolve();
+		}
+		expect(plugin.settings.defaultExportFormat).toBe("llm-markdown");
+		expect(plugin.settings.defaultLlmTemplateId).toBe("builtin:default");
+		expect(saveSettings).toHaveBeenCalled();
+		expect(tab.getControlValue("missingSetting")).toBeUndefined();
+
+		if (typeof cleanup === "function") cleanup();
+		const rerenderCleanup = definition.render?.(setting, {} as never);
+		await Promise.resolve();
+		expect(setting.controlEl.querySelector("select")?.value).toBe("template:builtin:default");
+		if (typeof rerenderCleanup === "function") rerenderCleanup();
+	});
+
+	it("rejects invalid control types and accepts every validated enum and boolean", async () => {
+		const { tab, plugin } = createSettingTab();
+		const invalidUpdates: Array<[string, unknown]> = [
+			["defaultContentDepth", "3"],
+			["defaultTitleDepth", null],
+			["defaultExportTarget", "other"],
+			["defaultExportNoteFolderPath", 1],
+			["defaultLinkTraversalMode", "sideways"],
+			["ignoredTraversalFolders", []],
+			["ignoredTraversalTagPatterns", []],
+			["ignoredTraversalPropertyRules", []],
+			["redactMarkedSections", "true"],
+			["redactRegexMatches", "true"],
+			["redactionDelimiter", 1],
+			["redactionReplacement", 1],
+			["redactionRegexReplacement", 1],
+			["redactionRegexPatterns", []],
+			["llmMarkdownTemplateDirectory", 1],
+			["printFriendlyIncludeTableOfContents", "true"],
+			["showTokenEstimatesInTree", "true"],
+		];
+		for (const [key, value] of invalidUpdates) {
+			await tab.setControlValue(key, value);
+		}
+
+		for (const mode of ["outgoing", "incoming", "both"]) {
+			await tab.setControlValue("defaultLinkTraversalMode", mode);
+		}
+		for (const target of ["clipboard", "new-note"]) {
+			await tab.setControlValue("defaultExportTarget", target);
+		}
+		for (const key of [
+			"printFriendlyIncludeTableOfContents",
+			"printFriendlyNumberHeadings",
+			"printFriendlyInsertSectionDividers",
+			"printFriendlyInsertPageBreaks",
+			"printFriendlyNormalizeContentHeadings",
+			"autoSelectCurrentNote",
+			"closeModalAfterExport",
+			"openCreatedExportNote",
+			"showTokenEstimatesInTree",
+		]) {
+			await tab.setControlValue(key, true);
+		}
+		await tab.setControlValue("redactionReplacement", "MASKED");
+		await tab.setControlValue("redactionRegexReplacement", "");
+		await tab.setControlValue(
+			"llmMarkdownTemplateDirectory",
+			plugin.settings.llmMarkdownTemplateDirectory
+		);
+
+		expect(plugin.settings.defaultLinkTraversalMode).toBe("both");
+		expect(plugin.settings.defaultExportTarget).toBe("new-note");
+		expect(plugin.settings.showTokenEstimatesInTree).toBe(true);
+	});
+
+	it("evaluates all conditional rows and flushes pending debounced work on hide", async () => {
+		vi.useFakeTimers();
+		const { tab } = createSettingTab();
+		for (const name of [
+			"Redaction delimiter",
+			"Marked section replacement",
+			"Regular expression replacement",
+			"Regular expression redaction rules",
+		]) {
+			const visible = findDefinition(tab, name).visible as () => boolean;
+			expect(visible()).toBe(false);
+		}
+		await tab.setControlValue("redactMarkedSections", true);
+		await tab.setControlValue("redactRegexMatches", true);
+		for (const name of [
+			"Redaction delimiter",
+			"Marked section replacement",
+			"Regular expression replacement",
+			"Regular expression redaction rules",
+		]) {
+			const visible = findDefinition(tab, name).visible as () => boolean;
+			expect(visible()).toBe(true);
+		}
+
+		await tab.setControlValue("ignoredTraversalFolders", "Archive");
+		await tab.setControlValue("redactionRegexPatterns", "secret");
+		await tab.setControlValue("llmMarkdownTemplateDirectory", "Templates/New");
+		tab.hide();
+		await Promise.resolve();
+	});
+
+	it("discards stale template loads and resets missing selected templates", async () => {
+		const { tab, plugin, saveSettings } = createSettingTab();
+		const internals = tab as unknown as SettingTabInternals;
+		plugin.settings.defaultExportFormat = "llm-markdown";
+		plugin.settings.defaultLlmTemplateId = "missing";
+
+		const first = internals.loadDefaultOutputTemplateOptions();
+		plugin.settings.llmMarkdownTemplateDirectory = "Templates/Changed";
+		const second = internals.loadDefaultOutputTemplateOptions();
+		await first;
+		await second;
+
+		expect(plugin.settings.defaultLlmTemplateId).toBe("builtin:default");
+		expect(saveSettings).toHaveBeenCalled();
+	});
+
+	it("removes every stale redaction preview grid before rerendering", () => {
+		const { tab } = createSettingTab();
+		const definition = findDefinition(tab, "Test content redaction");
+		const setting = new Setting(document.body);
+		setting.settingEl.createDiv({ cls: "smart-export-redaction-preview__grid" });
+		setting.settingEl.createDiv({ cls: "smart-export-redaction-preview__grid" });
+
+		const cleanup = definition.render?.(setting, {} as never);
+
+		expect(
+			setting.settingEl.querySelectorAll(".smart-export-redaction-preview__grid")
+		).toHaveLength(1);
+		if (typeof cleanup === "function") cleanup();
 	});
 });

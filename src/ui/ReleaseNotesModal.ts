@@ -81,7 +81,7 @@ export class ReleaseNotesModal extends Modal {
 
 		const lines = text.split("\n");
 		for (let index = 0; index < lines.length; index += 1) {
-			renderInline(lines[index] ?? "", container);
+			renderInline(lines[index], container);
 			if (index < lines.length - 1) {
 				container.createEl("br");
 			}

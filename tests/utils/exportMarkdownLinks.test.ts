@@ -714,4 +714,98 @@ describe("exportMarkdownLinks", () => {
 			"Array syntax [x] and excitement!"
 		);
 	});
+
+	it("annotates a CRLF heading after rejecting malformed heading candidates", () => {
+		const source = createMockExportNode("Source", "Source.md", [], "[[Target#Wanted]]");
+		const target = createMockExportNode(
+			"Target",
+			"Target.md",
+			[],
+			"#NoSpace\r\n#   \r\n####### Too deep\r\n# ###\r\n# Wanted\r\n"
+		);
+		const notes = [source, target];
+		const labels = buildExportedHeadingLabels(notes);
+		const index = buildExportedMarkdownLinkIndex(
+			notes,
+			(note) => labels.get(note.id) ?? note.title
+		);
+
+		const rewritten = rewriteMarkdownLinksForExport(target.content ?? "", index, target.id);
+		expect(rewritten).toMatch(/# Wanted \^smart-export-[a-z0-9]+\r\n$/);
+		expect(rewritten).toContain("#NoSpace\r\n#   \r\n####### Too deep\r\n# ###\r\n");
+	});
+
+	it("waits for a valid matching fence before annotating a referenced heading", () => {
+		const source = createMockExportNode("Source", "Source.md", [], "[[Target#Wanted]]");
+		const target = createMockExportNode(
+			"Target",
+			"Target.md",
+			[],
+			"````md\n# Wanted\n```\n```` not-a-close\n````\n# Wanted\n"
+		);
+		const notes = [source, target];
+		const labels = buildExportedHeadingLabels(notes);
+		const index = buildExportedMarkdownLinkIndex(
+			notes,
+			(note) => labels.get(note.id) ?? note.title
+		);
+
+		const rewritten = rewriteMarkdownLinksForExport(target.content ?? "", index, target.id);
+		expect(rewritten.match(/\^smart-export-/g)).toHaveLength(1);
+		expect(rewritten).toContain("```` not-a-close\n````\n# Wanted ^smart-export-");
+	});
+
+	it("preserves short tilde runs and malformed local block links", () => {
+		const child = createMockExportNode("Child", "Child.md");
+		const labels = buildExportedHeadingLabels([child]);
+		const index = buildExportedMarkdownLinkIndex(
+			[child],
+			(note) => labels.get(note.id) ?? note.title
+		);
+
+		expect(rewriteMarkdownLinksForExport("~~ [[Child]] [[^]]", index)).toBe(
+			"~~ [[#Child|Child]] [[^]]"
+		);
+	});
+
+	it("ignores heading references to notes outside the export", () => {
+		const source = createMockExportNode("Source", "Source.md", [], "[[Missing#Wanted]]");
+		const labels = buildExportedHeadingLabels([source]);
+
+		expect(() =>
+			buildExportedMarkdownLinkIndex([source], (note) => labels.get(note.id) ?? note.title)
+		).not.toThrow();
+	});
+
+	it("indexes references after short tilde runs and closed inline code", () => {
+		const source = createMockExportNode(
+			"Source",
+			"Source.md",
+			[],
+			"`[[Target#Ignored]]` ~~ [[Target#Wanted]]"
+		);
+		const target = createMockExportNode("Target", "Target.md", [], "~~\n# Wanted");
+		const notes = [source, target];
+		const labels = buildExportedHeadingLabels(notes);
+		const index = buildExportedMarkdownLinkIndex(
+			notes,
+			(note) => labels.get(note.id) ?? note.title
+		);
+
+		const rewritten = rewriteMarkdownLinksForExport(target.content ?? "", index, target.id);
+		expect(rewritten).toMatch(/^~~\n# Wanted \^smart-export-[a-z0-9]+$/);
+	});
+
+	it("stops heading-reference indexing at unterminated fences", () => {
+		const source = createMockExportNode("Source", "Source.md", [], "~~~md\n[[Target#Wanted]]");
+		const target = createMockExportNode("Target", "Target.md", [], "# Wanted");
+		const notes = [source, target];
+		const labels = buildExportedHeadingLabels(notes);
+		const index = buildExportedMarkdownLinkIndex(
+			notes,
+			(note) => labels.get(note.id) ?? note.title
+		);
+
+		expect(rewriteMarkdownLinksForExport(target.content ?? "", index, target.id)).toBe("# Wanted");
+	});
 });

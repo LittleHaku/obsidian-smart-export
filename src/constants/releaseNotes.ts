@@ -13,6 +13,14 @@ export interface ReleaseNotesEntry {
 
 export const RELEASE_NOTES: ReleaseNotesEntry[] = [
 	{
+		version: "1.16.3",
+		date: "2026-08-01",
+		showOnUpdate: false,
+		changed: [
+			"Automated tests now validate the complete executable plugin runtime with exact 100% project and patch coverage requirements.",
+		],
+	},
+	{
 		version: "1.16.2",
 		date: "2026-07-31",
 		showOnUpdate: false,

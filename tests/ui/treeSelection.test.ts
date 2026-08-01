@@ -152,4 +152,18 @@ describe("treeSelection", () => {
 		expect(selected.has(extraRootPath)).toBe(true);
 		expect(userDeselected.has(primaryRootPath)).toBe(false);
 	});
+
+	it("removes a previously selected descendant when its parent remains deselected", () => {
+		const grandchild = createNode("grandchild");
+		const child = createNode("child", [grandchild]);
+		const root = createNode("root", [child]);
+		const selected = new Set<string>(["root", "grandchild"]);
+		const knownContent = new Set<string>(["root", "child", "grandchild"]);
+		const userDeselected = new Set<string>(["child"]);
+
+		reconcileContentSelectionState(selected, knownContent, userDeselected, root);
+
+		expect(selected.has("child")).toBe(false);
+		expect(selected.has("grandchild")).toBe(false);
+	});
 });

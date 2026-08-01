@@ -165,6 +165,7 @@ refactor: improve token calculation performance
 - **Integration tests** for complex features
 - **Manual testing** in Obsidian
 - **Maintain 100% project and patch coverage**
+- Follow the executable scope, exclusion rationale, and cross-platform rules in [Testing and coverage](docs/testing.md)
 
 ```bash
 pnpm test              # Run tests with coverage

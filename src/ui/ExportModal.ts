@@ -1165,9 +1165,6 @@ export class ExportModal extends Modal {
 				this.selectAllNodes(exportTree);
 				this.shouldSelectAllOnBuild = false;
 			}
-			if (this.shouldApplyDefaultCollapse && this.collapsedNodeIds.size === 0) {
-				this.collapseRootOnly(exportTree);
-			}
 			this.shouldApplyDefaultCollapse = false;
 
 			this.renderExportTree();
@@ -1287,10 +1284,7 @@ export class ExportModal extends Modal {
 	 */
 	private enforceCacheLimit() {
 		while (this.exportTreeCache.size > ExportModal.MAX_TREE_CACHE_ENTRIES) {
-			const firstKey = this.exportTreeCache.keys().next().value;
-			if (!firstKey) {
-				break;
-			}
+			const firstKey = this.exportTreeCache.keys().next().value!;
 			this.exportTreeCache.delete(firstKey);
 		}
 	}

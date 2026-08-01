@@ -9,7 +9,13 @@ export default defineConfig({
 			provider: "v8",
 			reporter: ["text", "json", "html", "lcov"],
 			include: ["src/**/*.ts"],
-			exclude: ["src/main.ts", "src/types.ts", "src/ui/**", "src/obsidian-api.ts"],
+			exclude: ["src/types.ts"],
+			thresholds: {
+				statements: 100,
+				branches: 100,
+				functions: 100,
+				lines: 100,
+			},
 		},
 	},
 	resolve: {
