@@ -54,10 +54,23 @@ jobs:
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
+  test-status:
+    name: Test & Lint
+    runs-on: ubuntu-latest
+    if: ${{ always() }}
+    needs: test
+
+    steps:
+      - name: Require all test matrix jobs
+        run: |
+          if [ "${{ needs.test.result }}" != "success" ]; then
+            exit 1
+          fi
+
   build:
     name: Build Plugin (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
-    needs: test
+    needs: test-status
     strategy:
       fail-fast: false
       matrix:
@@ -92,3 +105,16 @@ jobs:
             manifest.json
             styles.css
           retention-days: 7
+
+  build-status:
+    name: Build Plugin
+    runs-on: ubuntu-latest
+    if: ${{ always() }}
+    needs: build
+
+    steps:
+      - name: Require all build matrix jobs
+        run: |
+          if [ "${{ needs.build.result }}" != "success" ]; then
+            exit 1
+          fi
