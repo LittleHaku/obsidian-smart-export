@@ -45,7 +45,7 @@ sequenceDiagram
 
 Trigger: `Plugin.onload()` in `src/main.ts`.
 
-1. Load and normalize persisted settings.
+1. Load and normalize persisted settings through `src/settings/pluginData.ts`.
 2. Register ribbon icon (`Smart export`).
 3. Register command (`Smart Export: Open export`).
 4. Register settings tab UI.
@@ -61,22 +61,23 @@ Trigger: ribbon click or command invocation.
 1. `ExportModal` is instantiated with current settings.
 2. Modal initializes default values (depths, direction, format).
 3. Optional auto-selection of active file is applied.
+4. DOM-free source, export-choice, cache-key, selection, collapse, and estimate rules are delegated to `src/ui/exportModalState.ts`.
 
 ### Phase 3: Tree build and export
 
 Trigger: tree preview render or export action.
 
 1. Modal computes a traversal cache key from root/depth/mode/folder/tag/property filters.
-2. On cache miss, `BFSTraversal.traverse(...)` builds the note tree.
+2. On cache miss, `src/ui/exportTreeController.ts` coordinates `BFSTraversal` and composes any extra roots, tags, or standalone notes.
 3. Folder/tag/property exclusions are applied before nodes enter the tree.
-4. Exporter serializes to XML, LLM Markdown, or Print-friendly Markdown.
+4. `src/ui/exportExecution.ts` applies content selection, resolves templates, and delegates serialization to XML, LLM Markdown, or Print-friendly Markdown exporters.
 5. Output is copied to clipboard.
 
 ## Critical Runtime Mechanisms
 
 ### Traversal cache keys
 
-- Implemented in `ExportModal.getTreeCacheKey()`.
+- Implemented in `exportModalState.getTreeCacheKey()` and called by `ExportModal`.
 - Uses `JSON.stringify(...)` on ignored folders/tags/property rules to avoid delimiter collisions.
 
 ### Tag discovery cache

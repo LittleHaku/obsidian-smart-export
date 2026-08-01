@@ -9,6 +9,9 @@ Smart Export builds a note tree from a selected root note or tag source, applies
 Core modules:
 
 - `src/ui/ExportModal.ts`
+- `src/ui/exportModalState.ts`
+- `src/ui/exportTreeController.ts`
+- `src/ui/exportExecution.ts`
 - `src/tagDiscovery.ts`
 - `src/engine/BFSTraversal.ts`
 - `src/engine/exportTreeComposition.ts`
@@ -19,23 +22,38 @@ Core modules:
 - `src/utils/noteFilters.ts`
 - `src/utils/llmMarkdownTemplateResolver.ts`
 
+## Module boundaries
+
+The export UI is split into four layers with one-way dependencies:
+
+- `ExportModal` is the Obsidian view. It creates controls, binds user events, and renders the current tree state.
+- `exportModalState` contains DOM-free value types and reusable state rules for sources, export choices, tree selection/collapse, cache keys, content projections, and estimates.
+- `exportTreeController` performs traversal and combines the primary source, extra roots, tags, and standalone notes. It receives an `isCurrent` guard so stale asynchronous builds never commit modal state.
+- `exportExecution` applies content selection, resolves the selected template, and serializes output. Delivery-specific UI (notices, destination modal, and optional modal close) remains in `ExportModal`.
+
+The plugin entrypoint does not implement these rules. `src/main.ts` only loads state, registers lifecycle-safe entrypoints, and delegates quick export and update-note work.
+
 ## 1) Export Runtime Flow
 
 ```mermaid
 sequenceDiagram
     actor User
     participant Modal as ExportModal
+    participant Controller as exportTreeController
     participant Traversal as BFSTraversal
     participant API as ObsidianAPI
+    participant Execution as exportExecution
     participant Exporter as Selected exporter
 
     User->>Modal: Open export + choose root note or tag/options/extra notes/tags
     alt Tag source
         Modal->>API: find notes matching selected tag
-        Modal->>Traversal: traverse each matching note as a root
+        Modal->>Controller: build selected source
+        Controller->>Traversal: traverse each matching note as a root
         Traversal-->>Modal: synthetic tag root with matching note roots
     else Root note source
-        Modal->>Traversal: traverse(rootPath)
+        Modal->>Controller: build selected source
+        Controller->>Traversal: traverse(rootPath)
         Traversal->>API: getFileByPath(rootPath)
     end
     loop BFS levels
@@ -44,23 +62,26 @@ sequenceDiagram
         Traversal->>Traversal: add node + queue children
     end
     Traversal->>API: read content for content-eligible nodes
-    Traversal-->>Modal: primary export tree + missing notes count
+    Traversal-->>Controller: primary export tree + missing notes count
     opt Extra notes as new roots
-        Modal->>Traversal: traverse(extraRootPath)
-        Traversal-->>Modal: extra root export tree + missing notes count
+        Controller->>Traversal: traverse(extraRootPath)
+        Traversal-->>Controller: extra root export tree + missing notes count
     end
     opt Extra tags
-        Modal->>Traversal: traverseTag(extraTag)
-        Traversal-->>Modal: extra tag root collection + missing notes count
+        Controller->>Traversal: traverseTag(extraTag)
+        Traversal-->>Controller: extra tag root collection + missing notes count
     end
     opt Extra notes as single notes
-        Modal->>API: read single-note content
-        API-->>Modal: standalone export node
+        Controller->>API: read single-note content
+        API-->>Controller: standalone export node
     end
-    Modal->>Modal: compose primary tree + extra notes
-    Modal->>Modal: resolve custom Markdown template (optional)
-    Modal->>Exporter: export(tree, vault, missingNotes, template?)
-    Exporter-->>Modal: serialized output
+    Controller->>Controller: compose primary tree + extra notes
+    Controller-->>Modal: composed tree + missing notes count
+    Modal->>Execution: serialize selected content
+    Execution->>Execution: resolve custom Markdown template (optional)
+    Execution->>Exporter: export(tree, vault, missingNotes, template?)
+    Exporter-->>Execution: serialized output
+    Execution-->>Modal: output + token estimate
     alt Clipboard export
         Modal-->>User: copy to clipboard
     else New note export

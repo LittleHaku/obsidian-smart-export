@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import {
 	SmartExportSettingTab,
 	SmartExportSettingsPlugin,
-} from "../../src/ui/SmartExportSettingTab";
+} from "../../src/ui/settings/SmartExportSettingTab";
 import { DEFAULT_SETTINGS } from "../../src/settings/defaultSettings";
 import { SmartExportSettings } from "../../src/types";
 
