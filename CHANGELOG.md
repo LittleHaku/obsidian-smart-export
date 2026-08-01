@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.16.2] - 2026-07-31
+
+### Changed
+
+- Production and type-checking builds now share an ES2018 compatibility baseline.
+- Development type checking now enforces the complete TypeScript strict family, switch fallthrough protection, and consistently cased file references.
+
 ## [1.16.1] - 2026-07-31
 
 ### Fixed
