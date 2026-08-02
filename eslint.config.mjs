@@ -62,4 +62,10 @@ export default defineConfig([
 			"obsidianmd/prefer-window-timers": "off",
 		},
 	},
+	{
+		files: ["tests/scripts/**/*"],
+		rules: {
+			"obsidianmd/no-nodejs-modules": "off",
+		},
+	},
 ]);

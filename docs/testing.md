@@ -29,9 +29,11 @@ Run the repository checks in this order before publishing changes:
 pnpm format
 pnpm format:check
 pnpm lint
+pnpm mobile:check
 pnpm typecheck
 pnpm test
 pnpm build
+pnpm benchmark:check
 ```
 
 Use focused Vitest commands while developing, but always finish with `pnpm test` so the complete instrumented source scope and global thresholds are evaluated.
@@ -39,7 +41,8 @@ Use focused Vitest commands while developing, but always finish with `pnpm test`
 ## Cross-platform determinism
 
 Coverage uses Vitest's V8 provider, repository-relative source globs, and LCOV/JSON/HTML/text
-reporters. GitHub Actions runs the same formatting, linting, type checking, and test commands on
-Windows and Linux; generated `coverage/` output is ignored and must not be committed.
+reporters. GitHub Actions runs the same formatting, linting, mobile compatibility, type checking,
+tests, and builds on Windows, Linux, and macOS. The Windows job also enforces the synthetic
+performance baseline. Generated `coverage/` output is ignored and must not be committed.
 
 Tests must not depend on platform-specific path separators, locale-formatted coverage paths, network access, wall-clock timing, or test execution order.

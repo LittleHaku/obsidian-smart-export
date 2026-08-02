@@ -25,12 +25,14 @@ ES2018 is a deliberately conservative baseline for the plugin's minimum Obsidian
 - no ES2019-or-newer standard library is declared, preventing TypeScript from accepting newer
   built-ins without an explicit compatibility review or polyfill.
 
-The production validation is `pnpm build`: it runs strict type checking first and then creates the
-minified CommonJS bundle with esbuild's ES2018 target. Physical desktop and mobile smoke testing is
-still required before publishing a stable tag; issue #102 tracks that runtime verification matrix.
+Production validation combines `pnpm mobile:check` and `pnpm build`: the first rejects known
+desktop-only runtime constructs and the second runs strict type checking before creating the
+minified CommonJS bundle with esbuild's ES2018 target. GitHub Actions runs both across the desktop
+platform matrix; physical-device testing is optional exploratory testing rather than a release
+gate.
 
 ## Changing the baseline
 
 Any future target or library change must update `tsconfig.json` and `esbuild.config.mjs` together,
-document the minimum desktop and mobile engine support, build the production bundle, and smoke-test
-that bundle on the oldest supported Obsidian desktop, Android, and iOS clients.
+document the minimum desktop and mobile engine support, pass `pnpm mobile:check`, and build and test
+the production bundle across the GitHub Actions platform matrix.

@@ -42,10 +42,11 @@ The release gate allows traversal/export/tag-discovery duration medians to incre
 25%. Estimated traversal speedup may drop by at most 20%. The warm-cache tag timing is reported but
 is not gated because sub-microsecond timer noise makes ratios misleading.
 
-Run the check on the same machine with background workloads minimized. When it fails, rerun once to
-exclude transient contention. A repeatable failure blocks release unless the completed
-[release QA evidence](../docs/qa-release-checklist.md) documents the environment difference, user
-impact, owner, and follow-up issue.
+GitHub Actions checks out the target branch and candidate commit side by side, benchmarks both on
+the same Windows runner, and compares their reports using the target branch's accepted tolerances.
+The candidate cannot relax its own performance gate. Contributors do not need to reproduce the
+baseline environment or record results manually. A failure blocks the aggregate `Test & Lint`
+check and must be explained and corrected in the pull request.
 
 Promote a new baseline only for an intentional, reviewed fixture or environment change. Record the
 capture date, commit, operating system, architecture, Node.js, and pnpm versions in

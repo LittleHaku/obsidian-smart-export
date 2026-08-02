@@ -82,7 +82,8 @@ Complete this section when `isDesktopOnly` is `false`.
 - [ ] `process.platform` is not used for app-platform branching; Obsidian `Platform` helpers are used.
 - [ ] Regex lookbehind has fallback behavior for iOS versions below 16.4 (if applicable).
 - [ ] Networking uses Obsidian `requestUrl` where needed instead of browser/library defaults when Obsidian API behavior is required.
-- [ ] Plugin works under mobile emulation and on at least one real mobile runtime before release.
+- [ ] `pnpm mobile:check` passes; physical-device testing is optional exploratory testing when a
+      suitable device is available.
 
 ## Performance and startup behavior
 
@@ -91,7 +92,8 @@ Complete this section when `isDesktopOnly` is `false`.
 - [ ] `vault.on("create")` handlers are layout-ready aware to avoid startup storms.
 - [ ] Custom view constructors avoid expensive work at startup.
 - [ ] Production build is released, and `main.js` is minimized.
-- [ ] Plugin startup time was checked with Obsidian startup profiling tools before release.
+- [ ] Automated lifecycle tests prove startup remains registration-only; interactive profiling is
+      reserved for investigating reported regressions.
 
 ## Repository hygiene before submission
 

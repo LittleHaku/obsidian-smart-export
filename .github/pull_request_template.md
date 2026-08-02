@@ -20,9 +20,9 @@ Briefly describe what this PR does and why it's needed.
 
 ## Testing
 
-- [ ] Manual testing performed
 - [ ] Tests added/updated
-- [ ] All existing tests pass
+- [ ] All automated checks pass
+- [ ] Optional exploratory testing is described below when performed
 
 ## Checklist
 
