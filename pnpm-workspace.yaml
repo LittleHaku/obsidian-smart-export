@@ -7,3 +7,10 @@ allowBuilds:
 peerDependencyRules:
   allowedVersions:
     "eslint-plugin-obsidianmd>obsidian": "1.13.1"
+    # These plugins already run against ESLint 10 in this repository but have not widened
+    # their published peer ranges yet. Keep the exceptions scoped to the tested major.
+    "eslint-plugin-obsidianmd>@eslint/js": "^10.0.0"
+    "eslint-plugin-obsidianmd>@eslint/json": "^2.0.0"
+    "@microsoft/eslint-plugin-sdl>eslint": "^10.0.0"
+    "eslint-plugin-import>eslint": "^10.0.0"
+    "eslint-plugin-react>eslint": "^10.0.0"
