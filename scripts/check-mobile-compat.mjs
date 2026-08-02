@@ -18,6 +18,14 @@ const lookbehindMarkers = [
 ];
 const violations = [];
 
+function containsLookbehind(pattern) {
+	return lookbehindMarkers.some((marker) => pattern.includes(marker));
+}
+
+function getStaticPattern(node) {
+	return ts.isStringLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node) ? node.text : null;
+}
+
 async function findSourceFiles(directory) {
 	const entries = await readdir(directory, { withFileTypes: true });
 	const nestedFiles = await Promise.all(
@@ -97,11 +105,24 @@ function inspectSourceFile(filePath, sourceText) {
 			report(sourceFile, node, "uses process.platform instead of Obsidian Platform helpers");
 		}
 
-		if (
-			ts.isRegularExpressionLiteral(node) &&
-			lookbehindMarkers.some((marker) => node.text.includes(marker))
-		) {
+		if (ts.isRegularExpressionLiteral(node) && containsLookbehind(node.text)) {
 			report(sourceFile, node, "uses regular-expression lookbehind without a mobile fallback");
+		}
+
+		if (
+			(ts.isCallExpression(node) || ts.isNewExpression(node)) &&
+			ts.isIdentifier(node.expression) &&
+			node.expression.text === "RegExp" &&
+			node.arguments?.[0]
+		) {
+			const pattern = getStaticPattern(node.arguments[0]);
+			if (pattern !== null && containsLookbehind(pattern)) {
+				report(
+					sourceFile,
+					node.arguments[0],
+					"uses regular-expression lookbehind without a mobile fallback"
+				);
+			}
 		}
 
 		ts.forEachChild(node, visit);

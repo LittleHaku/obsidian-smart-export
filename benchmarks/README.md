@@ -43,9 +43,10 @@ The release gate allows traversal/export/tag-discovery duration medians to incre
 is not gated because sub-microsecond timer noise makes ratios misleading.
 
 GitHub Actions checks out the target branch and candidate commit side by side, benchmarks both on
-the same Windows runner, and compares their reports with the accepted tolerances. Contributors do
-not need to reproduce the baseline environment or record results manually. A failure blocks the
-aggregate `Test & Lint` check and must be explained and corrected in the pull request.
+the same Windows runner, and compares their reports using the target branch's accepted tolerances.
+The candidate cannot relax its own performance gate. Contributors do not need to reproduce the
+baseline environment or record results manually. A failure blocks the aggregate `Test & Lint`
+check and must be explained and corrected in the pull request.
 
 Promote a new baseline only for an intentional, reviewed fixture or environment change. Record the
 capture date, commit, operating system, architecture, Node.js, and pnpm versions in

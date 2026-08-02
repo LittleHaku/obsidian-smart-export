@@ -67,7 +67,7 @@ jobs:
         if: runner.os == 'Windows'
         run: |
           pnpm benchmark
-          node scripts/check-benchmark-regression.mjs .benchmark-base/benchmarks/latest-report.json benchmarks/latest-report.json
+          node scripts/check-benchmark-regression.mjs .benchmark-base/benchmarks/latest-report.json benchmarks/latest-report.json .benchmark-base/benchmarks/baseline.json
 
       - name: Upload coverage reports
         if: runner.os == 'Linux'

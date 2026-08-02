@@ -1,9 +1,12 @@
 import { readFile } from "node:fs/promises";
 import process from "node:process";
 
-const [baselinePath = "benchmarks/baseline.json", currentPath = "benchmarks/latest-report.json"] =
-	process.argv.slice(2);
-const acceptedBaseline = JSON.parse(await readFile("benchmarks/baseline.json", "utf8"));
+const [
+	baselinePath = "benchmarks/baseline.json",
+	currentPath = "benchmarks/latest-report.json",
+	policyPath = "benchmarks/baseline.json",
+] = process.argv.slice(2);
+const acceptedBaseline = JSON.parse(await readFile(policyPath, "utf8"));
 const baselineDocument = JSON.parse(await readFile(baselinePath, "utf8"));
 const baseline = baselineDocument.metrics ?? baselineDocument;
 const current = JSON.parse(await readFile(currentPath, "utf8"));

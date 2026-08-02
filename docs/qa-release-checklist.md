@@ -32,8 +32,9 @@ pnpm test
 pnpm build
 ```
 
-The Windows test job also runs `pnpm benchmark:check`. The aggregate `Test & Lint` check requires
-the entire matrix, including that performance gate, to succeed.
+The Windows test job benchmarks the target branch and candidate on the same runner, then applies
+the target branch's committed tolerances. The aggregate `Test & Lint` check requires the entire
+matrix, including that performance gate, to succeed.
 
 ## Mobile compatibility
 
@@ -41,7 +42,8 @@ the entire matrix, including that performance gate, to succeed.
 
 - a Node.js or Electron module import, export, `require()`, or dynamic import;
 - `process.platform` instead of Obsidian's `Platform` helpers;
-- regular-expression lookbehind without an older-mobile fallback;
+- regular-expression lookbehind in literals or statically defined `RegExp` constructors without an
+  older-mobile fallback;
 - a manifest that no longer declares `isDesktopOnly` as `false`.
 
 ESLint's Obsidian rules provide an independent API-policy check. Vitest exercises the plugin with
@@ -67,8 +69,8 @@ regression. Repeated cold launches and manually transcribed medians are not rele
 `pnpm benchmark:check` runs deterministic synthetic 1,365-note traversal and 10,000-note tag
 fixtures. Locally it compares their medians with `benchmarks/baseline.json`. GitHub Actions instead
 benchmarks the target branch and candidate on the same Windows runner, avoiding comparisons
-between unrelated hardware. Both modes fail when the accepted regression tolerances are exceeded,
-and neither reads a private vault.
+between unrelated hardware and anchoring the accepted tolerances to the target branch. Both modes
+fail when those tolerances are exceeded, and neither reads a private vault.
 
 The benchmark is executed automatically by GitHub Actions. A baseline may be updated only for an
 intentional, reviewed fixture or environment change, never simply to turn a failing check green.
