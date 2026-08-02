@@ -91,6 +91,10 @@ describe("normalizeMarkdownHeadingsBelowParent", () => {
 		);
 	});
 
+	it("normalizes quoted headings without a space after the quote marker", () => {
+		expect(normalizeMarkdownHeadingsBelowParent("># Heading", 1)).toBe(">## Heading");
+	});
+
 	it("leaves non-headings unchanged", () => {
 		const content = ["#NoSpace", "    # Indented code", "``", "# Heading"].join("\n");
 

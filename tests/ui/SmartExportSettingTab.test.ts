@@ -175,6 +175,7 @@ describe("SmartExportSettingTab", () => {
 
 		if (typeof defaultOutputCleanup === "function") {
 			defaultOutputCleanup();
+			defaultOutputCleanup();
 		}
 	});
 
@@ -201,9 +202,12 @@ describe("SmartExportSettingTab", () => {
 		expect(plugin.settings.defaultContentDepth).toBe(9);
 		expect(plugin.settings.defaultTitleDepth).toBe(9);
 		expect(update).not.toHaveBeenCalled();
+		await tab.setControlValue("defaultContentDepth", 3);
+		expect(plugin.settings.defaultContentDepth).toBe(3);
+		expect(plugin.settings.defaultTitleDepth).toBe(9);
 
 		await tab.setControlValue("defaultTitleDepth", 2);
-		expect(plugin.settings.defaultTitleDepth).toBe(9);
+		expect(plugin.settings.defaultTitleDepth).toBe(3);
 
 		await tab.setControlValue("ignoredTraversalFolders", " Templates, /Archive ");
 		await tab.setControlValue("ignoredTraversalTagPatterns", " #draft, projects/* ");
@@ -217,11 +221,11 @@ describe("SmartExportSettingTab", () => {
 		expect(plugin.settings.defaultExportNoteFolderPath).toBe("Exports/Generated");
 		expect(plugin.settings.redactionDelimiter).toBe(DEFAULT_SETTINGS.redactionDelimiter);
 		expect(tab.getControlValue("ignoredTraversalFolders")).toBe("Templates, /Archive");
-		expect(saveSettings).toHaveBeenCalledTimes(4);
+		expect(saveSettings).toHaveBeenCalledTimes(5);
 
 		await tab.setControlValue("defaultExportTarget", "unsupported");
 		await tab.setControlValue("missingSetting", true);
-		expect(saveSettings).toHaveBeenCalledTimes(4);
+		expect(saveSettings).toHaveBeenCalledTimes(5);
 	});
 
 	it("restores the title slider when its value is clamped to the content depth", async () => {
@@ -246,6 +250,7 @@ describe("SmartExportSettingTab", () => {
 		expect(saveSettings).toHaveBeenCalledTimes(2);
 
 		if (typeof cleanup === "function") {
+			cleanup();
 			cleanup();
 		}
 	});
@@ -437,7 +442,10 @@ describe("SmartExportSettingTab", () => {
 		expect(saveSettings).toHaveBeenCalled();
 		expect(tab.getControlValue("missingSetting")).toBeUndefined();
 
-		if (typeof cleanup === "function") cleanup();
+		if (typeof cleanup === "function") {
+			cleanup();
+			cleanup();
+		}
 		const rerenderCleanup = definition.render?.(setting, {} as never);
 		await Promise.resolve();
 		expect(setting.controlEl.querySelector("select")?.value).toBe("template:builtin:default");
@@ -559,6 +567,9 @@ describe("SmartExportSettingTab", () => {
 		expect(
 			setting.settingEl.querySelectorAll(".smart-export-redaction-preview__grid")
 		).toHaveLength(1);
-		if (typeof cleanup === "function") cleanup();
+		if (typeof cleanup === "function") {
+			cleanup();
+			cleanup();
+		}
 	});
 });

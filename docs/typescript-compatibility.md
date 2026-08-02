@@ -1,6 +1,6 @@
 # TypeScript and JavaScript compatibility
 
-Updated: July 31, 2026
+Updated: August 2, 2026
 
 ## Compiler guarantees
 
@@ -12,6 +12,14 @@ normalized back to the plugin's closed unions instead of asserted.
 Both TypeScript and esbuild target ES2018, and TypeScript exposes only the DOM and ES2018 standard
 libraries. Keeping the type-checking target and emitted bundle target aligned prevents source code
 from accidentally depending on a newer JavaScript built-in than the production bundle contract.
+TypeScript 7 resolves modules in `bundler` mode to match esbuild, and path aliases use explicit
+project-relative targets because TypeScript 7 no longer supports `baseUrl`.
+
+TypeScript 7.0 does not expose a programmatic API. The repository therefore follows Microsoft's
+side-by-side migration pattern: `@typescript/native` aliases the TypeScript 7 package and provides
+the `tsc` executable used by `pnpm typecheck`, while `typescript` aliases the official
+`@typescript/typescript6` compatibility package for `typescript-eslint` and the mobile compatibility
+script. This keeps project type checking on the native compiler without unsupported peer overrides.
 
 ## Compatibility rationale
 

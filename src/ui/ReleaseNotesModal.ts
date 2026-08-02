@@ -52,7 +52,8 @@ export class ReleaseNotesModal extends Modal {
 					destination.createEl("strong", {
 						text: match[4],
 					});
-				} else if (match[5]) {
+				} else {
+					// The regular expression alternatives guarantee that the final match is a bare URL.
 					let url = match[5];
 					let trailingPunctuation = "";
 					const trailingMatch = url.match(/[.,;:!?)]+$/);

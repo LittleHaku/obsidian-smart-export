@@ -588,6 +588,20 @@ describe("exportMarkdownLinks", () => {
 		);
 	});
 
+	it("recognizes blockquote fences without a space after the quote marker", () => {
+		const child = createMockExportNode("Child", "Child.md");
+		const labels = buildExportedHeadingLabels([child]);
+		const index = buildExportedMarkdownLinkIndex(
+			[child],
+			(note) => labels.get(note.id) ?? note.title
+		);
+		const content = [">```md", ">[[Child]]", ">```", "Outside [[Child]]"].join("\n");
+
+		expect(rewriteMarkdownLinksForExport(content, index)).toBe(
+			[">```md", ">[[Child]]", ">```", "Outside [[#Child|Child]]"].join("\n")
+		);
+	});
+
 	it("does not use a later-line backtick run to close a non-fence inline code span", () => {
 		const child = createMockExportNode("Child", "Child.md");
 		const labels = buildExportedHeadingLabels([child]);
@@ -689,6 +703,17 @@ describe("exportMarkdownLinks", () => {
 		);
 	});
 
+	it("builds a title lookup when an exported note path normalizes to blank", () => {
+		const target = createMockExportNode("Target", "   ");
+		const labels = buildExportedHeadingLabels([target]);
+		const index = buildExportedMarkdownLinkIndex(
+			[target],
+			(note) => labels.get(note.id) ?? note.title
+		);
+
+		expect(rewriteMarkdownLinksForExport("[[Target]]", index)).toBe("[[#Target|Target]]");
+	});
+
 	it("leaves unterminated code spans, embeds, and links unchanged", () => {
 		const child = createMockExportNode("Child", "Child.md");
 		const labels = buildExportedHeadingLabels([child]);
@@ -733,6 +758,20 @@ describe("exportMarkdownLinks", () => {
 		const rewritten = rewriteMarkdownLinksForExport(target.content ?? "", index, target.id);
 		expect(rewritten).toMatch(/# Wanted \^smart-export-[a-z0-9]+\r\n$/);
 		expect(rewritten).toContain("#NoSpace\r\n#   \r\n####### Too deep\r\n# ###\r\n");
+	});
+
+	it("uses only the first duplicate heading as an exported block target", () => {
+		const source = createMockExportNode("Source", "Source.md", [], "[[Target#Wanted]]");
+		const target = createMockExportNode("Target", "Target.md", [], "# Wanted\n# Wanted\n");
+		const notes = [source, target];
+		const labels = buildExportedHeadingLabels(notes);
+		const index = buildExportedMarkdownLinkIndex(
+			notes,
+			(note) => labels.get(note.id) ?? note.title
+		);
+
+		const rewritten = rewriteMarkdownLinksForExport(target.content ?? "", index, target.id);
+		expect(rewritten.match(/\^smart-export-/g)).toHaveLength(1);
 	});
 
 	it("waits for a valid matching fence before annotating a referenced heading", () => {

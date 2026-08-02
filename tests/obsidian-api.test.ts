@@ -34,12 +34,9 @@ describe("ObsidianAPI", () => {
 		createMockTFile("folder/a.md", "a"),
 		createMockTFile("c.md", "c"),
 	];
-	let getMarkdownFilesMock: ReturnType<typeof vi.fn>;
-
 	beforeEach(() => {
 		vi.resetAllMocks();
-		getMarkdownFilesMock = vi.fn(() => files);
-		mockApp.vault.getMarkdownFiles = getMarkdownFilesMock;
+		mockApp.vault.getMarkdownFiles = vi.fn(() => files);
 		mockApp.metadataCache.getCache = vi.fn((path: string) => {
 			if (path === "folder/a.md") {
 				return {
