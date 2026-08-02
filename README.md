@@ -234,7 +234,8 @@ Quick setup:
 ```bash
 git clone https://github.com/LittleHaku/obsidian-smart-export.git
 cd obsidian-smart-export
-pnpm install
+corepack enable pnpm
+pnpm install --frozen-lockfile
 pnpm run dev
 ```
 

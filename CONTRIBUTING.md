@@ -17,7 +17,7 @@ We welcome contributions of all types:
 
 ### Prerequisites
 
-- **Node.js 24 LTS** (Node 22 is also supported)
+- **Node.js 24.15.0** (the version in `.nvmrc`)
 - **Corepack** with the repository-pinned **pnpm** version
 - **Obsidian** (for testing your changes)
 - **Git** for version control
@@ -39,7 +39,8 @@ We welcome contributions of all types:
    pnpm install
    ```
 
-   The exact pnpm version is declared in `package.json`; npm is not a supported workflow for this repository.
+   The exact pnpm `11.18.0` version is declared in `package.json` and activated through Corepack;
+   npm is not a supported workflow for this repository.
 
 4. **Start development mode**:
 

@@ -1,7 +1,7 @@
 // @vitest-environment node
 /// <reference types="node" />
 
-import { spawnSync } from "node:child_process";
+import { execFileSync, spawnSync } from "node:child_process";
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import * as path from "node:path";
@@ -10,6 +10,7 @@ import { afterEach, describe, expect, it } from "vitest";
 const repositoryRoot = process.cwd();
 const mobileCheckScript = path.join(repositoryRoot, "scripts", "check-mobile-compat.mjs");
 const benchmarkCheckScript = path.join(repositoryRoot, "scripts", "check-benchmark-regression.mjs");
+const releaseValidationScript = path.join(repositoryRoot, "scripts", "validate-release.mjs");
 const temporaryDirectories: string[] = [];
 const positiveLookbehind = ["(", "?", "<", "="].join("");
 const negativeLookbehind = ["(", "?", "<", "!"].join("");
@@ -25,6 +26,40 @@ function runNodeScript(script: string, args: string[], cwd: string) {
 		cwd,
 		encoding: "utf8",
 	});
+}
+
+function runGit(args: string[], cwd: string) {
+	return execFileSync("git", args, { cwd, encoding: "utf8" }).trim();
+}
+
+function createReleaseRepository() {
+	const fixtureRoot = createTemporaryDirectory();
+	runGit(["init", "-b", "main"], fixtureRoot);
+	runGit(["config", "user.email", "tests@example.com"], fixtureRoot);
+	runGit(["config", "user.name", "Release tests"], fixtureRoot);
+	writeFileSync(
+		path.join(fixtureRoot, "package.json"),
+		`${JSON.stringify({ version: "1.2.3" })}\n`
+	);
+	writeFileSync(
+		path.join(fixtureRoot, "manifest.json"),
+		`${JSON.stringify({ version: "1.2.3", minAppVersion: "1.13.0" })}\n`
+	);
+	writeFileSync(
+		path.join(fixtureRoot, "versions.json"),
+		`${JSON.stringify({ "1.2.3": "1.13.0" })}\n`
+	);
+	mkdirSync(path.join(fixtureRoot, "release-assets"));
+	writeFileSync(path.join(fixtureRoot, "release-assets", "main.js"), "production bundle\n");
+	writeFileSync(path.join(fixtureRoot, "release-assets", "manifest.json"), "release manifest\n");
+	writeFileSync(path.join(fixtureRoot, "release-assets", "styles.css"), "release styles\n");
+	runGit(["add", "."], fixtureRoot);
+	runGit(["commit", "-m", "fixture"], fixtureRoot);
+	return fixtureRoot;
+}
+
+function runReleaseValidation(args: string[], cwd: string) {
+	return runNodeScript(releaseValidationScript, args, cwd);
 }
 
 function runMobileCheck(source: string) {
@@ -56,6 +91,70 @@ afterEach(() => {
 });
 
 describe("release validation scripts", () => {
+	it("accepts a stable tag reachable from main and validates release assets", () => {
+		const fixtureRoot = createReleaseRepository();
+		const sha = runGit(["rev-parse", "HEAD"], fixtureRoot);
+
+		const result = runReleaseValidation(
+			[
+				"--tag",
+				"1.2.3",
+				"--sha",
+				sha,
+				"--main-ref",
+				"main",
+				"--assets-dir",
+				path.join(fixtureRoot, "release-assets"),
+			],
+			fixtureRoot
+		);
+
+		expect(result.status).toBe(0);
+		expect(result.stdout).toContain("Release validation passed");
+	});
+
+	it("rejects a stable tag commit that is not reachable from main", () => {
+		const fixtureRoot = createReleaseRepository();
+		runGit(["switch", "-c", "feature"], fixtureRoot);
+		writeFileSync(path.join(fixtureRoot, "feature.txt"), "feature\n");
+		runGit(["add", "feature.txt"], fixtureRoot);
+		runGit(["commit", "-m", "feature"], fixtureRoot);
+		const sha = runGit(["rev-parse", "HEAD"], fixtureRoot);
+
+		const result = runReleaseValidation(
+			["--tag", "1.2.3", "--sha", sha, "--main-ref", "main"],
+			fixtureRoot
+		);
+
+		expect(result.status).toBe(1);
+		expect(result.stderr).toContain("not reachable from main");
+	});
+
+	it("allows prerelease tags from a branch and rejects unexpected assets", () => {
+		const fixtureRoot = createReleaseRepository();
+		const packageJsonPath = path.join(fixtureRoot, "package.json");
+		const manifestPath = path.join(fixtureRoot, "manifest.json");
+		const versionsPath = path.join(fixtureRoot, "versions.json");
+		writeFileSync(packageJsonPath, `${JSON.stringify({ version: "1.2.4-beta.1" })}\n`);
+		writeFileSync(
+			manifestPath,
+			`${JSON.stringify({ version: "1.2.4-beta.1", minAppVersion: "1.13.0" })}\n`
+		);
+		writeFileSync(versionsPath, `${JSON.stringify({ "1.2.4-beta.1": "1.13.0" })}\n`);
+
+		const result = runReleaseValidation(["--tag", "1.2.4-beta.1"], fixtureRoot);
+		expect(result.status).toBe(0);
+
+		writeFileSync(path.join(fixtureRoot, "release-assets", "README.md"), "not shipped\n");
+		const assetResult = runReleaseValidation(
+			["--tag", "1.2.4-beta.1", "--assets-dir", path.join(fixtureRoot, "release-assets")],
+			fixtureRoot
+		);
+
+		expect(assetResult.status).toBe(1);
+		expect(assetResult.stderr).toContain("Unexpected release asset: README.md");
+	});
+
 	it.each([
 		["RegExp call", `const pattern = RegExp("${positiveLookbehind}prefix)value");`],
 		["RegExp constructor", `const pattern = new RegExp(\`${negativeLookbehind}prefix)value\`);`],

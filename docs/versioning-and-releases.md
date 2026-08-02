@@ -1,6 +1,18 @@
 # Versioning and Releases
 
-Updated: July 30, 2026
+Updated: August 2, 2026
+
+## Reproducible toolchain
+
+Use the versions committed by the repository on every supported development machine and CI
+runner:
+
+- Node.js `24.15.0`, recorded in `.nvmrc` and enforced by `package.json.engines`.
+- pnpm `11.18.0`, declared in `packageManager` and activated with `corepack enable pnpm`.
+- `pnpm-lock.yaml` installed with `pnpm install --frozen-lockfile`.
+
+Do not substitute another Node or pnpm version for release validation. This keeps Windows and
+Linux dependency resolution on the same toolchain and lockfile.
 
 ## Overview
 
@@ -32,7 +44,10 @@ The release workflow is triggered on tag push and determines prerelease status f
 
 - Prefer merging release-ready PRs into `main` as a **single squash commit** to keep history clean.
 - Create and push **stable release tags only from `main`** (after merge), not from feature branches.
-- This avoids duplicate release builds and keeps release provenance unambiguous.
+- The release workflow rejects a stable tag whose commit is not reachable from `main`.
+- Prerelease tags intentionally remain allowed from a feature branch for BRAT testing; the
+  workflow still validates their tag and metadata versions.
+- This avoids duplicate stable release builds and keeps release provenance unambiguous.
 
 ## Pull request versioning policy
 
@@ -140,3 +155,14 @@ git push origin 1.3.0
 - `package.json`
 - `manifest.json` (via `version-bump.mjs`)
 - `versions.json` (via `version-bump.mjs`)
+
+## Release workflow checks
+
+The tag workflow runs `scripts/validate-release.mjs` before publishing. It checks the tag format,
+the `package.json` and `manifest.json` versions, the `versions.json` compatibility mapping, and
+stable-tag ancestry from `main`. After the production build it also checks that the release
+directory contains only `main.js`, `manifest.json`, and the optional `styles.css`.
+
+The validator has a Vitest dry-run path in `tests/scripts/releaseChecks.test.ts`, including a
+stable tag on `main`, an unreachable stable tag, a prerelease branch exception, and an unexpected
+release asset.
