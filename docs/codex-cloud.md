@@ -20,7 +20,7 @@ credentials or machine-specific paths.
 Codex Cloud checks out the selected branch into a hosted container. Configure the repository
 environment in Codex settings with these values:
 
-- Runtime: Node.js 24, matching `.nvmrc`.
+- Runtime: Node.js `24.15.0`, matching `.nvmrc` and `package.json.engines`.
 - Package manager: the Corepack-managed pnpm version declared in `package.json`.
 - Setup script:
 
@@ -53,8 +53,8 @@ pnpm test
 pnpm build
 ```
 
-Expected runtime versions are Node.js 24 and pnpm 11. The repository also supports the wider
-ranges declared in `package.json`, but CI and `.nvmrc` use Node.js 24.
+Expected runtime versions are Node.js `24.15.0` and pnpm `11.18.0`. CI, local setup, and the
+repository engine policy use these exact versions.
 
 To verify Codex instruction discovery, ask it to list the repository instruction files and
 skills it loaded. The response should include `AGENTS.md` and `obsidian-plugin-dev`.

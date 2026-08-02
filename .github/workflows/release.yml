@@ -17,6 +17,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
 
       - name: Determine prerelease status
         id: status
@@ -36,38 +38,26 @@ jobs:
           node-version-file: ".nvmrc"
           cache: "pnpm"
 
+      - name: Enable Corepack
+        run: corepack enable pnpm
+
+      - name: Verify pinned pnpm
+        run: corepack pnpm --version
+
       - name: Validate release metadata
         env:
           TAG: ${{ github.ref_name }}
         run: |
-          if [[ ! "$TAG" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-(alpha|beta|canary)\.[0-9]+)?$ ]]; then
-            echo "Release tags must use X.Y.Z or X.Y.Z-{alpha,beta,canary}.N without a v prefix."
-            exit 1
-          fi
-
-          PACKAGE_VERSION=$(node -p "require('./package.json').version")
-          MANIFEST_VERSION=$(node -p "require('./manifest.json').version")
-          MANIFEST_MIN_APP=$(node -p "require('./manifest.json').minAppVersion")
-          VERSIONS_MIN_APP=$(node -p "require('./versions.json')[process.env.TAG] ?? ''")
-
-          if [[ "$TAG" != "$PACKAGE_VERSION" || "$TAG" != "$MANIFEST_VERSION" ]]; then
-            echo "Tag, package.json, and manifest.json versions must match."
-            exit 1
-          fi
-
-          if [[ "$VERSIONS_MIN_APP" != "$MANIFEST_MIN_APP" ]]; then
-            echo "versions.json must map $TAG to manifest.json minAppVersion."
-            exit 1
-          fi
+          node scripts/validate-release.mjs --tag "$TAG" --sha "$GITHUB_SHA" --main-ref origin/main
 
       - name: Build
-        id: build
         run: |
           pnpm install --frozen-lockfile
           pnpm run build
-          mkdir ${{ env.PLUGIN_NAME }}
-          cp main.js manifest.json styles.css README.md ${{ env.PLUGIN_NAME }}
-          zip -r ${{ env.PLUGIN_NAME }}-${{ github.ref_name }}.zip ${{ env.PLUGIN_NAME }}
+          mkdir release-assets
+          cp main.js manifest.json release-assets/
+          if [[ -f styles.css ]]; then cp styles.css release-assets/; fi
+          node scripts/validate-release.mjs --tag "${{ github.ref_name }}" --sha "$GITHUB_SHA" --main-ref origin/main --assets-dir release-assets
 
       - name: Generate release notes
         env:
@@ -119,14 +109,9 @@ jobs:
           fi
 
       - name: Release
-        id: release
         uses: softprops/action-gh-release@v3
         with:
           prerelease: ${{ steps.status.outputs.prerelease }}
           token: ${{ secrets.GITHUB_TOKEN }}
           body_path: release-notes.md
-          files: |
-            ${{ env.PLUGIN_NAME }}-${{ github.ref_name }}.zip
-            main.js
-            manifest.json
-            styles.css
+          files: release-assets/*

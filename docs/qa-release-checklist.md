@@ -32,6 +32,10 @@ pnpm test
 pnpm build
 ```
 
+The runners use Node.js `24.15.0` from `.nvmrc` and pnpm `11.18.0` from `package.json` through
+Corepack. The release workflow additionally checks stable-tag ancestry and the exact release
+asset allowlist before creating the GitHub release.
+
 The Windows test job benchmarks the target branch and candidate on the same runner, then applies
 the target branch's committed tolerances. The aggregate `Test & Lint` check requires the entire
 matrix, including that performance gate, to succeed.
@@ -84,6 +88,9 @@ The release PR or workflow URL is the validation record. Before tagging, verify 
 3. `package.json`, `manifest.json`, `versions.json`, `CHANGELOG.md`, and bundled release notes are
    aligned;
 4. no unresolved release-blocking regression is linked from the PR.
+
+The release workflow's metadata and artifact validator is covered by
+`tests/scripts/releaseChecks.test.ts`; it can be exercised locally with `pnpm test`.
 
 No separate QA template, device matrix, screenshot collection, or manual timing sheet is needed.
 

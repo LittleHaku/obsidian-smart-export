@@ -5,8 +5,8 @@
 	"main": "main.js",
 	"packageManager": "pnpm@11.18.0",
 	"engines": {
-		"node": "^22.22.2 || ^24.15.0 || >=26 <27",
-		"pnpm": ">=11 <12"
+		"node": "24.15.0",
+		"pnpm": "11.18.0"
 	},
 	"scripts": {
 		"dev": "node esbuild.config.mjs",
