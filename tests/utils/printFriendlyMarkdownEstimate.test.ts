@@ -117,6 +117,25 @@ describe("estimatePrintFriendlyMarkdownCharacterCount", () => {
 		expect(estimatedLength).toBe(actualLength);
 	});
 
+	it("matches exporter length when a synthetic root repeats an already rendered child", () => {
+		const repeated = createMockExportNode("Repeated", "repeated.md", 0, "Repeated body");
+		const bundle = createMockExportNode(
+			"Export bundle",
+			"__smart_export_bundle_root__",
+			0,
+			"",
+			[repeated, repeated],
+			false
+		);
+		bundle.synthetic = true;
+		const exporter = new PrintFriendlyMarkdownExporter();
+
+		const estimatedLength = estimateSelectedLength(bundle, ["repeated.md"]);
+		const actualLength = exporter.export(bundle).length;
+
+		expect(estimatedLength).toBe(actualLength);
+	});
+
 	it("matches exporter length when frontmatter is already normalized", () => {
 		const rootNode = createMockExportNode(
 			"Root",

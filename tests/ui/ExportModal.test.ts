@@ -365,6 +365,7 @@ describe("ExportModal", () => {
 	it("renders all controls, auto-selects the active note, and enforces depth invariants", async () => {
 		const activeFile = createFile("Folder/Root.md");
 		const { modal, internals } = createModal({}, activeFile);
+		const calculateTokens = vi.spyOn(internals, "calculateAndDisplayTokens").mockResolvedValue();
 
 		modal.onOpen();
 		await Promise.resolve();
@@ -382,6 +383,15 @@ describe("ExportModal", () => {
 		sliders.item(1).dispatchEvent(new Event("input"));
 		expect(internals.contentDepth).toBe(4);
 		expect(internals.titleDepth).toBe(4);
+		sliders.item(0).value = "3";
+		sliders.item(0).dispatchEvent(new Event("input"));
+		sliders.item(1).value = "5";
+		sliders.item(1).dispatchEvent(new Event("input"));
+		expect(internals.contentDepth).toBe(3);
+		expect(internals.titleDepth).toBe(5);
+		vi.advanceTimersByTime(500);
+		await Promise.resolve();
+		expect(calculateTokens).toHaveBeenCalled();
 
 		const selects = modal.contentEl.querySelectorAll("select");
 		const linkDirection = selects.item(1);
@@ -408,6 +418,10 @@ describe("ExportModal", () => {
 		expect(findButton(noteDefault.modal.contentEl, "Export to new note").classList).toContain(
 			"mod-cta"
 		);
+
+		const emptyAutoSelection = createModal();
+		emptyAutoSelection.modal.onOpen();
+		expect(emptyAutoSelection.internals.selectedFile).toBeNull();
 	});
 
 	it("supports both source pickers and all extra-note row actions", async () => {
@@ -595,6 +609,21 @@ describe("ExportModal", () => {
 		await expect(internals.ensureExportTree()).resolves.toBe(tree);
 	});
 
+	it("continues when an extra traversal has no root tree", async () => {
+		const rootFile = createFile("Root.md");
+		const extraFile = createFile("Missing extra.md");
+		const primary = createNode("Root.md");
+		mocks.traversalPlans.push({ traverse: primary }, { traverse: null });
+		const { modal, internals } = createModal({ autoSelectCurrentNote: false });
+		modal.onOpen();
+		internals.selectedFile = rootFile;
+		internals.addedNotes = [{ kind: "note", file: extraFile, mode: "extra-root" }];
+		internals.treeBuildId = 8;
+
+		await expect(internals.buildExportTree(8)).resolves.toBe(primary);
+		expect(mocks.traverseCalls).toEqual(["Root.md", "Missing extra.md"]);
+	});
+
 	it("handles missing, stale, and failed tree builds", async () => {
 		const root = createFile("Root.md");
 		const { modal, internals } = createModal({ autoSelectCurrentNote: false });
@@ -768,6 +797,8 @@ describe("ExportModal", () => {
 
 		internals.renderedAncestorIds.set("orphan", ["not-selected"]);
 		expect(internals.getNodeParentSelectedState("orphan")).toBe(false);
+		internals.renderedAncestorIds.set("selected-child", ["Root.md"]);
+		expect(internals.getNodeParentSelectedState("selected-child")).toBe(true);
 		expect(internals.getNodeParentSelectedState("unknown")).toBe(true);
 		internals.renderNodeChildrenIfNeeded(leaf);
 		internals.renderNodeChildrenIfNeeded(child);
@@ -796,6 +827,23 @@ describe("ExportModal", () => {
 		internals.renderedChildListElements.set("Lazy group", document.body.createEl("ul"));
 		internals.renderedAncestorIds.delete("Lazy group");
 		internals.renderNodeChildrenIfNeeded(lazyGroup);
+
+		internals.renderedToggleElements.delete("Child.md");
+		internals.renderedChildListElements.delete("Child.md");
+		internals.updateCollapseUI(child);
+
+		const noEstimateModal = createModal({
+			autoSelectCurrentNote: false,
+			showTokenEstimatesInTree: false,
+		});
+		noEstimateModal.modal.onOpen();
+		const noEstimateList = document.body.createEl("ul");
+		noEstimateModal.internals.renderExportTreeNode(
+			createNode("No estimate.md"),
+			noEstimateList,
+			true
+		);
+		expect(noEstimateList.querySelector(".smart-export-tree-token")).toBeNull();
 	});
 
 	it("renders every tree placeholder and content-only projection", () => {

@@ -414,6 +414,17 @@ describe("llmMarkdownTemplateResolver", () => {
 		expect(vault.cachedRead).toHaveBeenCalledTimes(2);
 	});
 
+	it("falls back directly to the built-in default when the template directory is blank", async () => {
+		const vault = createMockVault();
+		const app = createMockApp(vault);
+
+		const result = await resolveLlmMarkdownTemplate(app, "   ");
+
+		expect(result.templateId).toBe(DEFAULT_BUILTIN_LLM_TEMPLATE_ID);
+		expect(result.sourcePath).toBeNull();
+		expect(vault.getFolderByPath).not.toHaveBeenCalled();
+	});
+
 	it("normalizes directory paths", () => {
 		expect(normalizeTemplateDirectoryPath(" /alpha//beta/ ")).toBe("alpha/beta");
 	});
