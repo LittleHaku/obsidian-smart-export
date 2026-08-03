@@ -13,6 +13,14 @@ export interface ReleaseNotesEntry {
 
 export const RELEASE_NOTES: ReleaseNotesEntry[] = [
 	{
+		version: "1.17.0-beta.1",
+		date: "2026-08-03",
+		showOnUpdate: false,
+		new: [
+			"Custom Markdown templates can now use {{note_contents_page_separated}} to place each exported note on a separate page.",
+		],
+	},
+	{
 		version: "1.16.4",
 		date: "2026-08-01",
 		showOnUpdate: false,

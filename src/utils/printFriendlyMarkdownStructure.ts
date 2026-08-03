@@ -2,11 +2,12 @@ import { ExportNode, PrintFriendlyMarkdownOptions } from "../types";
 import { isSyntheticExportNode } from "../engine/exportTreeComposition";
 import { buildExportedHeadingLabels } from "./exportMarkdownLinks";
 import { DEFAULT_PRINT_FRIENDLY_MARKDOWN_OPTIONS } from "./printFriendlyMarkdownOptions";
+import { MARKDOWN_PAGE_BREAK_MARKUP, MARKDOWN_SECTION_DIVIDER } from "./markdownSectionSeparators";
 import { escapeWikiLinkValue } from "./wikiLinkEscaping";
 
 export const PRINT_FRIENDLY_TABLE_OF_CONTENTS_HEADING = "# Table of contents\n\n";
-export const PRINT_FRIENDLY_SECTION_DIVIDER = "---\n\n";
-export const PRINT_FRIENDLY_PAGE_BREAK_MARKUP = '<div style="page-break-after: always;"></div>\n\n';
+export const PRINT_FRIENDLY_SECTION_DIVIDER = MARKDOWN_SECTION_DIVIDER;
+export const PRINT_FRIENDLY_PAGE_BREAK_MARKUP = MARKDOWN_PAGE_BREAK_MARKUP;
 
 export interface PrintFriendlyMarkdownStructure {
 	allNotes: ExportNode[];

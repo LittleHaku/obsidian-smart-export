@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.17.0-beta.1] - 2026-08-03
+
+### Added
+
+- Added the `{{note_contents_page_separated}}` custom Markdown template placeholder, which separates exported notes with HTML page breaks for one-note-per-page workflows.
+
 ## [1.16.4] - 2026-08-01
 
 ### Changed

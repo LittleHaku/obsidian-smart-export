@@ -9,6 +9,10 @@ import {
 	buildExportedHeadingLabels,
 	rewriteMarkdownLinksForExport,
 } from "../utils/exportMarkdownLinks";
+import {
+	MARKDOWN_PAGE_BREAK_MARKUP,
+	MARKDOWN_SECTION_DIVIDER,
+} from "../utils/markdownSectionSeparators";
 import { isSyntheticExportNode } from "./exportTreeComposition";
 
 const DEFAULT_PROCESSING_ORDER = "BFS (Breadth-First Search)";
@@ -120,7 +124,8 @@ export class LlmMarkdownExporter {
 
 	private buildNoteContentsBlocks(
 		allNotes: ExportNode[],
-		headingLabels: Map<string, string>
+		headingLabels: Map<string, string>,
+		sectionSeparator: string
 	): string {
 		const linkIndex = buildExportedMarkdownLinkIndex(allNotes, (note) =>
 			headingLabels.get(note.id)!
@@ -135,7 +140,7 @@ export class LlmMarkdownExporter {
 				const headingLabel = headingLabels.get(note.id)!;
 				return `## ${headingLabel}\n\n${rewrittenContent}`;
 			})
-			.join("\n\n---\n\n");
+			.join(sectionSeparator);
 	}
 
 	private buildTemplateContext(
@@ -160,7 +165,16 @@ export class LlmMarkdownExporter {
 			noteStructureDescription,
 			includedNotes
 		);
-		const noteContents = this.buildNoteContentsBlocks(allNotes, headingLabels);
+		const noteContents = this.buildNoteContentsBlocks(
+			allNotes,
+			headingLabels,
+			`\n\n${MARKDOWN_SECTION_DIVIDER}`
+		);
+		const noteContentsPageSeparated = this.buildNoteContentsBlocks(
+			allNotes,
+			headingLabels,
+			`\n\n${MARKDOWN_PAGE_BREAK_MARKUP}`
+		);
 		const noteContentsSection = `## Note Contents\n\n${noteContents}`;
 
 		return {
@@ -180,6 +194,7 @@ export class LlmMarkdownExporter {
 			note_structure_section: noteStructureSection,
 			note_contents: noteContents,
 			note_contents_section: noteContentsSection,
+			note_contents_page_separated: noteContentsPageSeparated,
 		};
 	}
 

@@ -390,6 +390,48 @@ Missing: {{missing_notes}}
 			expect(result).toContain("Child content");
 		});
 
+		it("renders page-separated note contents for custom templates", () => {
+			const child = createMockExportNode("Child", "child.md", 1, "Child content");
+			const rootNode = createMockExportNode("Root", "root.md", 0, "Root content", [child]);
+			const exporter = new LlmMarkdownExporter();
+
+			const result = exporter.export(
+				rootNode,
+				"TemplateVault",
+				0,
+				"{{note_contents_page_separated}}"
+			);
+
+			expect(result).toBe(
+				'## Root\n\nRoot content\n\n<div style="page-break-after: always;"></div>\n\n## Child\n\nChild content'
+			);
+		});
+
+		it("does not add a page break after a single page-separated note", () => {
+			const rootNode = createMockExportNode("Root", "root.md", 0, "Root content");
+			const exporter = new LlmMarkdownExporter();
+
+			const result = exporter.export(
+				rootNode,
+				"TemplateVault",
+				0,
+				"{{note_contents_page_separated}}"
+			);
+
+			expect(result).toBe("## Root\n\nRoot content");
+		});
+
+		it("keeps the existing note contents separator unchanged", () => {
+			const child = createMockExportNode("Child", "child.md", 1, "Child content");
+			const rootNode = createMockExportNode("Root", "root.md", 0, "Root content", [child]);
+			const exporter = new LlmMarkdownExporter();
+
+			const result = exporter.export(rootNode, "TemplateVault", 0, "{{note_contents}}");
+
+			expect(result).toContain("Root content\n\n---\n\n## Child");
+			expect(result).not.toContain("page-break-after");
+		});
+
 		it("keeps unknown placeholders unchanged", () => {
 			const rootNode = createMockExportNode("Root", "root.md");
 			const exporter = new LlmMarkdownExporter();
