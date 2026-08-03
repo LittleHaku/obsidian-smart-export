@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.17.0-beta.2] - 2026-08-03
+
+### Fixed
+
+- Reused rendered note blocks when producing the standard and page-separated template values, avoiding duplicate link-rewriting work during Markdown exports.
+
 ## [1.17.0-beta.1] - 2026-08-03
 
 ### Added

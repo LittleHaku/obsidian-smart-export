@@ -13,6 +13,14 @@ export interface ReleaseNotesEntry {
 
 export const RELEASE_NOTES: ReleaseNotesEntry[] = [
 	{
+		version: "1.17.0-beta.2",
+		date: "2026-08-03",
+		showOnUpdate: false,
+		fixed: [
+			"LLM Markdown exports now reuse rendered note blocks when preparing template placeholders, avoiding duplicate link-rewriting work.",
+		],
+	},
+	{
 		version: "1.17.0-beta.1",
 		date: "2026-08-03",
 		showOnUpdate: false,
