@@ -9,6 +9,10 @@ import {
 	buildExportedHeadingLabels,
 	rewriteMarkdownLinksForExport,
 } from "../utils/exportMarkdownLinks";
+import {
+	MARKDOWN_PAGE_BREAK_MARKUP,
+	MARKDOWN_SECTION_DIVIDER,
+} from "../utils/markdownSectionSeparators";
 import { isSyntheticExportNode } from "./exportTreeComposition";
 
 const DEFAULT_PROCESSING_ORDER = "BFS (Breadth-First Search)";
@@ -121,21 +125,19 @@ export class LlmMarkdownExporter {
 	private buildNoteContentsBlocks(
 		allNotes: ExportNode[],
 		headingLabels: Map<string, string>
-	): string {
+	): string[] {
 		const linkIndex = buildExportedMarkdownLinkIndex(allNotes, (note) =>
 			headingLabels.get(note.id)!
 		);
-		return allNotes
-			.map((note) => {
-				const rewrittenContent = rewriteMarkdownLinksForExport(
-					note.content ?? "",
-					linkIndex,
-					note.id
-				);
-				const headingLabel = headingLabels.get(note.id)!;
-				return `## ${headingLabel}\n\n${rewrittenContent}`;
-			})
-			.join("\n\n---\n\n");
+		return allNotes.map((note) => {
+			const rewrittenContent = rewriteMarkdownLinksForExport(
+				note.content ?? "",
+				linkIndex,
+				note.id
+			);
+			const headingLabel = headingLabels.get(note.id)!;
+			return `## ${headingLabel}\n\n${rewrittenContent}`;
+		});
 	}
 
 	private buildTemplateContext(
@@ -160,7 +162,9 @@ export class LlmMarkdownExporter {
 			noteStructureDescription,
 			includedNotes
 		);
-		const noteContents = this.buildNoteContentsBlocks(allNotes, headingLabels);
+		const noteContentsBlocks = this.buildNoteContentsBlocks(allNotes, headingLabels);
+		const noteContents = noteContentsBlocks.join(`\n\n${MARKDOWN_SECTION_DIVIDER}`);
+		const noteContentsPageSeparated = noteContentsBlocks.join(`\n\n${MARKDOWN_PAGE_BREAK_MARKUP}`);
 		const noteContentsSection = `## Note Contents\n\n${noteContents}`;
 
 		return {
@@ -180,6 +184,7 @@ export class LlmMarkdownExporter {
 			note_structure_section: noteStructureSection,
 			note_contents: noteContents,
 			note_contents_section: noteContentsSection,
+			note_contents_page_separated: noteContentsPageSeparated,
 		};
 	}
 

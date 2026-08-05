@@ -165,6 +165,9 @@ Placeholder reference: [`templates/README.md`](templates/README.md)
 
 `{{metadata_yaml}}` includes the full YAML block with `---` delimiters and keys like
 `export_timestamp`, `starting_note`, `total_notes_exported`, and `missing_notes_count`.
+Use `{{note_contents_page_separated}}` when a custom Markdown template should place each
+exported note on a separate page. Existing `{{note_contents}}` templates keep their divider
+behavior unchanged.
 
 ## Keyboard Shortcuts
 

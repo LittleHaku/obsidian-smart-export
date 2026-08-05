@@ -64,6 +64,7 @@ Use it once near the top of the template.
 - `{{metadata_yaml}}`: YAML frontmatter block with export metadata.
 - `{{included_notes}}`: bullet list like `- Note 1: "Root"`.
 - `{{note_contents}}`: all exported note sections separated by `---`.
+- `{{note_contents_page_separated}}`: all exported note sections separated by HTML page breaks, so each note starts on a new page after the first.
 - `{{note_structure_section}}`: prebuilt "Note Structure" section.
 - `{{note_contents_section}}`: prebuilt "Note Contents" section.
 
