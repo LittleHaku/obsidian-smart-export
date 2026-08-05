@@ -13,19 +13,14 @@ export interface ReleaseNotesEntry {
 
 export const RELEASE_NOTES: ReleaseNotesEntry[] = [
 	{
-		version: "1.17.0-beta.2",
-		date: "2026-08-03",
-		showOnUpdate: false,
-		fixed: [
-			"LLM Markdown exports now reuse rendered note blocks when preparing template placeholders, avoiding duplicate link-rewriting work.",
-		],
-	},
-	{
-		version: "1.17.0-beta.1",
-		date: "2026-08-03",
-		showOnUpdate: false,
+		version: "1.17.0",
+		date: "2026-08-05",
+		showOnUpdate: true,
 		new: [
 			"Custom Markdown templates can now use {{note_contents_page_separated}} to place each exported note on a separate page.",
+		],
+		changed: [
+			"LLM Markdown exports now reuse rendered note blocks when preparing template placeholders, avoiding duplicate link-rewriting work.",
 		],
 	},
 	{
