@@ -16,6 +16,7 @@ Core modules:
 - `src/engine/BFSTraversal.ts`
 - `src/engine/exportTreeComposition.ts`
 - `src/engine/XMLExporter.ts`
+- `src/engine/MermaidExporter.ts`
 - `src/engine/LlmMarkdownExporter.ts`
 - `src/engine/PrintFriendlyMarkdownExporter.ts`
 - `src/utils/folderFilters.ts`
@@ -159,12 +160,19 @@ Print-friendly Markdown formatting:
 5. Divider lines between note sections are controlled by print-friendly settings.
 6. Optional HTML page breaks can replace divider lines between note sections; if a table of contents is included, this also moves the first note section onto a new page.
 
+Mermaid diagram formatting:
+
+1. Mermaid exports render the selected notes as a `flowchart TD` inside a fenced `mermaid` block so the result can be pasted into an Obsidian note and rendered immediately.
+2. Note IDs are generated from stable vault paths; note titles remain the visible labels and are escaped for Mermaid syntax.
+3. Directed edges come from traversal-discovered links, so cross-links and incoming/backlink direction are preserved even when the tree keeps only the first path to a note.
+4. Nodes at the same traversal depth share a Mermaid class and color. Edges whose target is outside the selected export are omitted.
+
 Notes:
 
 - `{{metadata_yaml}}` renders as a complete YAML frontmatter block (including `---` delimiters).
 - Templates can use full metadata keys (`{{total_notes_exported}}`) or aliases (`{{total_notes}}`).
-- Plugin settings expose `Default output`, which shows XML/print-friendly, built-in `LLM-ready`, and custom templates.
-- The modal output dropdown uses the same built-in filtering as settings (`LLM-ready` only).
+- Plugin settings expose `Default output`, which shows XML, Mermaid, print-friendly, built-in `LLM-ready`, and custom templates.
+- The modal output dropdown uses the same built-in filtering as settings (`LLM-ready` only) and includes Mermaid as a graph format.
 - `compact` remains in the repository as a reference template example for users to copy/customize.
 
 ## 2) Traversal and Exclusion Logic

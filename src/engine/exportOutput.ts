@@ -1,4 +1,5 @@
 import { LlmMarkdownExporter } from "./LlmMarkdownExporter";
+import { MermaidExporter } from "./MermaidExporter";
 import { PrintFriendlyMarkdownExporter } from "./PrintFriendlyMarkdownExporter";
 import { XMLExporter } from "./XMLExporter";
 import {
@@ -9,7 +10,7 @@ import {
 } from "../types";
 import { redactExportTreeContent } from "../utils/contentRedaction";
 
-const VALID_EXPORT_FORMATS = new Set(["xml", "llm-markdown", "print-friendly-markdown"]);
+const VALID_EXPORT_FORMATS = new Set(["xml", "llm-markdown", "print-friendly-markdown", "mermaid"]);
 
 export type ExportFormat = SmartExportSettings["defaultExportFormat"];
 
@@ -60,6 +61,7 @@ export function buildExportOutput(options: BuildExportOutputOptions): string {
 				rootNode,
 				options.printFriendlyMarkdownOptions ?? undefined
 			),
+		mermaid: () => new MermaidExporter().export(rootNode),
 	};
 
 	return exporters[normalizedFormat]();

@@ -15,7 +15,7 @@ Smart Export 1.16.0 and later require Obsidian 1.13.0 or newer. Smart Export 1.1
 - Follow outgoing links, backlinks, or both from a root note.
 - Export all notes matching a tag as top-level roots.
 - Include disconnected notes or tags in the export modal.
-- Export as XML, print-friendly Markdown, or Markdown templates such as `LLM-ready`.
+- Export as XML, Mermaid diagrams, print-friendly Markdown, or Markdown templates such as `LLM-ready`.
 - Exclude folders, tags, and notes based on frontmatter properties (property rules) from traversal.
 - Optionally redact marked private sections from exported note content.
 - Copy exports to the clipboard or create a new note directly in your vault.
@@ -52,6 +52,7 @@ Use [BRAT (Beta Reviewers Auto-update Tool)](https://github.com/TfTHacker/obsidi
 ## Export Formats
 
 - **XML** for structured machine-readable exports.
+- **Mermaid** for directed note graphs that can be rendered directly in Markdown.
 - **Markdown templates** for prompt and context workflows, including the built-in `LLM-ready` template and custom templates loaded from your vault.
 - **Print-friendly Markdown** for readable note bundles, PDF export, linked tables of contents, and normalized nested headings.
 
@@ -85,7 +86,7 @@ On Obsidian 1.13+, Smart Export settings are indexed by the global settings sear
 
 - **Default content depth**: `1-20`
 - **Default title depth**: `1-20`
-- **Default output**: XML, print-friendly Markdown, `LLM-ready`, or your custom templates
+- **Default output**: XML, Mermaid, print-friendly Markdown, `LLM-ready`, or your custom templates
 - **Default export target**: clipboard or new note
 - **Default link direction**
 - **Default export note folder**: vault-relative folder for new export notes (leave empty to use the source note folder)
@@ -145,7 +146,7 @@ The selected folder must be visible inside Obsidian; hidden or excluded folders 
 Template selection:
 
 - In the export modal, use the **Output** dropdown.
-- It includes XML, print-friendly Markdown, and Markdown template options.
+- It includes XML, Mermaid, print-friendly Markdown, and Markdown template options.
 - Markdown template options include built-in templates and templates found in your configured folder.
 - Built-in templates are always available as fallback.
 
@@ -210,6 +211,15 @@ behavior unchanged.
 
 - Starting Note: Machine Learning
 - Total Notes: 5
+```
+
+### Mermaid (excerpt)
+
+```mermaid
+flowchart TD
+    note_root["Root"]
+    note_child["Child"]
+    note_root --> note_child
 ```
 
 ## Troubleshooting

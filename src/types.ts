@@ -14,6 +14,8 @@ export interface ExportNode {
 	content?: string;
 	/** An array of child nodes representing outgoing links. */
 	children: ExportNode[];
+	/** Vault paths reached by directed links discovered during traversal. */
+	outgoingLinks?: string[];
 	/** An estimated token count for the node's content. */
 	tokenCount: number;
 	/** The last modification date of the note file. */
@@ -75,7 +77,7 @@ export interface SmartExportSettings {
 	/** The default depth for including only note titles. */
 	defaultTitleDepth: number;
 	/** The default format for the exported output. */
-	defaultExportFormat: "xml" | "llm-markdown" | "print-friendly-markdown";
+	defaultExportFormat: "xml" | "llm-markdown" | "print-friendly-markdown" | "mermaid";
 	/** The default delivery target used by quick export and the modal CTA. */
 	defaultExportTarget: ExportTarget;
 	/** The default LLM template id used when defaultExportFormat is llm-markdown. */

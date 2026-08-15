@@ -46,6 +46,7 @@ import {
 	expandAllNodes as expandTree,
 	ExportSourceMode,
 	EXPORT_CHOICE_LLM_PREFIX,
+	EXPORT_CHOICE_MERMAID,
 	EXPORT_CHOICE_PRINT_FRIENDLY,
 	EXPORT_CHOICE_XML,
 	flattenExportTree as flattenTree,
@@ -105,7 +106,7 @@ export class ExportModal extends Modal {
 	/** Which link directions are followed when building the tree. */
 	private linkTraversalMode: LinkTraversalMode = "outgoing";
 	/** The selected export format. */
-	private exportFormat: "xml" | "llm-markdown" | "print-friendly-markdown";
+	private exportFormat: "xml" | "llm-markdown" | "print-friendly-markdown" | "mermaid";
 	/** The selected LLM template id for markdown exports. */
 	private selectedLlmTemplateId: string = DEFAULT_BUILTIN_LLM_TEMPLATE_ID;
 	/** Available built-in and custom template options. */
@@ -356,7 +357,7 @@ export class ExportModal extends Modal {
 		});
 
 		const outputDesc = createLinkedDescription(exportSection, {
-			text: "Choose XML, print-friendly Markdown, or a Markdown template (built-in or custom). ",
+			text: "Choose XML, Mermaid, print-friendly Markdown, or a Markdown template (built-in or custom). ",
 			linkText: "Template docs",
 			href: TEMPLATE_DOCS_URL,
 		});
@@ -523,6 +524,7 @@ export class ExportModal extends Modal {
 			EXPORT_CHOICE_PRINT_FRIENDLY,
 			"Print-friendly Markdown - clean, readable format"
 		);
+		this.exportChoiceDropdown.addOption(EXPORT_CHOICE_MERMAID, "Mermaid - directed note graph");
 		for (const option of this.getAvailableLlmTemplateOptions()) {
 			this.exportChoiceDropdown.addOption(
 				`${EXPORT_CHOICE_LLM_PREFIX}${option.id}`,

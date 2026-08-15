@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.18.0] - 2026-08-15
+
+### Added
+
+- Added Mermaid diagram export with stable note IDs, directed links, and depth-based node styles.
+- Mermaid exports preserve discovered cross-links and link direction for outgoing, incoming, and both traversal modes.
+
 ## [1.17.0] - 2026-08-05
 
 ### Added

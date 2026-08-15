@@ -428,6 +428,7 @@ describe("SmartExportSettingTab", () => {
 		for (const value of [
 			"format:xml",
 			"format:print-friendly-markdown",
+			"format:mermaid",
 			"template:builtin:default",
 			"unsupported",
 		]) {
@@ -446,6 +447,11 @@ describe("SmartExportSettingTab", () => {
 			cleanup();
 			cleanup();
 		}
+		plugin.settings.defaultExportFormat = "mermaid";
+		const mermaidCleanup = definition.render?.(setting, {} as never);
+		expect(setting.controlEl.querySelector("select")?.value).toBe("format:mermaid");
+		if (typeof mermaidCleanup === "function") mermaidCleanup();
+		plugin.settings.defaultExportFormat = "llm-markdown";
 		const rerenderCleanup = definition.render?.(setting, {} as never);
 		await Promise.resolve();
 		expect(setting.controlEl.querySelector("select")?.value).toBe("template:builtin:default");

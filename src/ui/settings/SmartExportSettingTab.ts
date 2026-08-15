@@ -38,12 +38,13 @@ import { normalizePropertyFilterList, normalizeTagFilterList } from "../../utils
 
 const DEFAULT_OUTPUT_CHOICE_XML = "format:xml";
 const DEFAULT_OUTPUT_CHOICE_PRINT_FRIENDLY = "format:print-friendly-markdown";
+const DEFAULT_OUTPUT_CHOICE_MERMAID = "format:mermaid";
 const DEFAULT_OUTPUT_CHOICE_LLM_PREFIX = "template:";
 const TRAVERSAL_EXCLUSIONS_SAVE_DELAY_MS = 300;
 const REDACTION_REGEX_SAVE_DELAY_MS = 500;
 const TEMPLATE_DIRECTORY_UPDATE_DELAY_MS = 300;
 const DEFAULT_OUTPUT_DESCRIPTION =
-	"Choose your default output: XML, print-friendly Markdown, or a Markdown template. ";
+	"Choose your default output: XML, Mermaid, print-friendly Markdown, or a Markdown template. ";
 const TEMPLATE_DIRECTORY_DESCRIPTION =
 	"Vault-relative folder for custom Markdown templates. The folder must be visible inside Obsidian. Every .md file in this folder is available as a custom template option.";
 const DEFAULT_REDACTION_REGEX_SAMPLE_TEXT = [
@@ -88,6 +89,9 @@ function getCurrentDefaultOutputChoice(
 	if (settings.defaultExportFormat === "print-friendly-markdown") {
 		return DEFAULT_OUTPUT_CHOICE_PRINT_FRIENDLY;
 	}
+	if (settings.defaultExportFormat === "mermaid") {
+		return DEFAULT_OUTPUT_CHOICE_MERMAID;
+	}
 	const options = getAvailableTemplateOptions(templateOptions);
 	const hasSelectedTemplate = options.some((option) => option.id === settings.defaultLlmTemplateId);
 	const templateId = hasSelectedTemplate
@@ -103,6 +107,10 @@ function applyDefaultOutputChoiceToSettings(settings: SmartExportSettings, value
 	}
 	if (value === DEFAULT_OUTPUT_CHOICE_PRINT_FRIENDLY) {
 		settings.defaultExportFormat = "print-friendly-markdown";
+		return;
+	}
+	if (value === DEFAULT_OUTPUT_CHOICE_MERMAID) {
+		settings.defaultExportFormat = "mermaid";
 		return;
 	}
 	if (value.startsWith(DEFAULT_OUTPUT_CHOICE_LLM_PREFIX)) {
@@ -687,6 +695,7 @@ export class SmartExportSettingTab extends PluginSettingTab {
 			DEFAULT_OUTPUT_CHOICE_PRINT_FRIENDLY,
 			"Print-friendly Markdown - clean, readable format"
 		);
+		dropdown.addOption(DEFAULT_OUTPUT_CHOICE_MERMAID, "Mermaid - directed note graph");
 		for (const option of availableOptions) {
 			dropdown.addOption(
 				`${DEFAULT_OUTPUT_CHOICE_LLM_PREFIX}${option.id}`,
