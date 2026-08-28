@@ -215,7 +215,7 @@ describe("release validation scripts", () => {
 		expect(relaxedPolicyResult.status).toBe(0);
 	});
 
-	it("allows timer noise below the configured absolute duration floor", () => {
+	it("rejects fast duration regressions beyond the percentage limit", () => {
 		const fixtureRoot = createTemporaryDirectory();
 		const baselineReportPath = path.join(fixtureRoot, "baseline-report.json");
 		const currentReportPath = path.join(fixtureRoot, "current-report.json");
@@ -227,7 +227,6 @@ describe("release validation scripts", () => {
 			JSON.stringify({
 				tolerances: {
 					maximumMedianRegressionPercent: 25,
-					minimumMedianRegressionMs: 1,
 					maximumTraversalSpeedupDropPercent: 20,
 				},
 			})
@@ -239,6 +238,7 @@ describe("release validation scripts", () => {
 			repositoryRoot
 		);
 
-		expect(result.status).toBe(0);
+		expect(result.status).toBe(1);
+		expect(result.stderr).toContain("xmlMedianMs: 2.34 ms exceeds the 1.95 ms limit");
 	});
 });

@@ -9,7 +9,6 @@
   },
   "tolerances": {
     "maximumMedianRegressionPercent": 25,
-    "minimumMedianRegressionMs": 1,
     "maximumTraversalSpeedupDropPercent": 20
   },
   "metrics": {

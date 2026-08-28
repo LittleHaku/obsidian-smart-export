@@ -13,7 +13,6 @@ const current = JSON.parse(await readFile(currentPath, "utf8"));
 const tolerances = baselineDocument.tolerances ?? acceptedBaseline.tolerances;
 const maximumDurationMultiplier =
 	1 + tolerances.maximumMedianRegressionPercent / 100;
-const minimumMedianRegressionMs = tolerances.minimumMedianRegressionMs ?? 1;
 const minimumSpeedupMultiplier =
 	1 - tolerances.maximumTraversalSpeedupDropPercent / 100;
 
@@ -27,10 +26,7 @@ const durationMetrics = [
 const failures = [];
 
 for (const metric of durationMetrics) {
-	const allowedMaximum = Math.max(
-		baseline[metric] * maximumDurationMultiplier,
-		baseline[metric] + minimumMedianRegressionMs
-	);
+	const allowedMaximum = baseline[metric] * maximumDurationMultiplier;
 	if (current[metric] > allowedMaximum) {
 		failures.push(
 			`${metric}: ${current[metric]} ms exceeds the ${allowedMaximum.toFixed(2)} ms limit`
