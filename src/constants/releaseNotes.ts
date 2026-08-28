@@ -13,8 +13,8 @@ export interface ReleaseNotesEntry {
 
 export const RELEASE_NOTES: ReleaseNotesEntry[] = [
 	{
-		version: "1.18.0",
-		date: "2026-08-15",
+		version: "1.18.0-beta.1",
+		date: "2026-08-28",
 		showOnUpdate: true,
 		new: [
 			"Mermaid exports now turn selected note traversals into directed, depth-colored diagrams with stable note IDs.",
