@@ -39,8 +39,11 @@ reuses the same result for every warm run.
 ## Regression tolerances
 
 The release gate allows traversal/export/tag-discovery duration medians to increase by at most
-25%. Estimated traversal speedup may drop by at most 20%. The warm-cache tag timing is reported but
-is not gated because sub-microsecond timer noise makes ratios misleading.
+25%, with a 1 ms absolute noise floor for very fast operations. Estimated traversal speedup may
+drop by at most 20%. The warm-cache tag timing is reported but is not gated because sub-microsecond
+timer noise makes ratios misleading. The absolute floor prevents small Windows runner scheduling
+variations from blocking a change while the percentage limit remains the effective threshold for
+the slower operations.
 
 GitHub Actions checks out the target branch and candidate commit side by side, benchmarks both on
 the same Windows runner, and compares their reports using the target branch's accepted tolerances.

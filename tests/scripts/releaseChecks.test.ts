@@ -214,4 +214,31 @@ describe("release validation scripts", () => {
 		expect(targetPolicyResult.stderr).toContain("Benchmark regression detected");
 		expect(relaxedPolicyResult.status).toBe(0);
 	});
+
+	it("allows timer noise below the configured absolute duration floor", () => {
+		const fixtureRoot = createTemporaryDirectory();
+		const baselineReportPath = path.join(fixtureRoot, "baseline-report.json");
+		const currentReportPath = path.join(fixtureRoot, "current-report.json");
+		const policyPath = path.join(fixtureRoot, "policy.json");
+		writeFileSync(baselineReportPath, JSON.stringify(createBenchmarkReport(1.56)));
+		writeFileSync(currentReportPath, JSON.stringify(createBenchmarkReport(2.34)));
+		writeFileSync(
+			policyPath,
+			JSON.stringify({
+				tolerances: {
+					maximumMedianRegressionPercent: 25,
+					minimumMedianRegressionMs: 1,
+					maximumTraversalSpeedupDropPercent: 20,
+				},
+			})
+		);
+
+		const result = runNodeScript(
+			benchmarkCheckScript,
+			[baselineReportPath, currentReportPath, policyPath],
+			repositoryRoot
+		);
+
+		expect(result.status).toBe(0);
+	});
 });
