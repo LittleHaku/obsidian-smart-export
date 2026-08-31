@@ -68,6 +68,8 @@ export interface ContentRedactionOptions {
 	regexPatterns?: string[];
 }
 
+export type ExportFormat = "xml" | "llm-markdown" | "print-friendly-markdown" | "mermaid";
+
 /**
  * Defines the settings for the Smart Export plugin.
  */
@@ -77,7 +79,7 @@ export interface SmartExportSettings {
 	/** The default depth for including only note titles. */
 	defaultTitleDepth: number;
 	/** The default format for the exported output. */
-	defaultExportFormat: "xml" | "llm-markdown" | "print-friendly-markdown" | "mermaid";
+	defaultExportFormat: ExportFormat;
 	/** The default delivery target used by quick export and the modal CTA. */
 	defaultExportTarget: ExportTarget;
 	/** The default LLM template id used when defaultExportFormat is llm-markdown. */

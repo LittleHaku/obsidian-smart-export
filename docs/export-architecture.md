@@ -166,10 +166,16 @@ Mermaid diagram formatting:
 2. Note IDs are generated from stable vault paths; note titles remain the visible labels and are escaped for Mermaid syntax.
 3. Directed edges come from traversal-discovered links, so cross-links and incoming/backlink direction are preserved even when the tree keeps only the first path to a note.
 4. Nodes at the same traversal depth share a Mermaid class and color. Edges whose target is outside the selected export are omitted.
+5. Custom Markdown templates can insert the complete fenced graph with `{{mermaid_diagram}}`; built-in templates do not include it by default.
+6. When the template also uses `{{note_contents}}`, `{{note_contents_section}}`, or `{{note_contents_page_separated}}`, graph labels use HTML `internal-link` anchors that navigate to deterministic note block IDs in Obsidian.
+7. Only the first recognized content-placeholder expansion receives block IDs, preventing duplicate anchors when templates repeat content. Repeated Mermaid placeholders render the same graph and target that first expansion.
+8. Without a recognized content placeholder, embedded diagrams omit navigation rather than producing broken links. Other Mermaid renderers may display the graph without preserving Obsidian-specific HTML navigation.
+9. Embedded labels use the same exported note labels as Markdown headings: unique titles remain clean, while duplicate titles include their vault paths.
 
 Notes:
 
 - `{{metadata_yaml}}` renders as a complete YAML frontmatter block (including `---` delimiters).
+- `{{mermaid_diagram}}` renders a complete fenced graph and enables Obsidian navigation only when a recognized note-content placeholder is present.
 - Templates can use full metadata keys (`{{total_notes_exported}}`) or aliases (`{{total_notes}}`).
 - Plugin settings expose `Default output`, which shows XML, Mermaid, print-friendly, built-in `LLM-ready`, and custom templates.
 - The modal output dropdown uses the same built-in filtering as settings (`LLM-ready` only) and includes Mermaid as a graph format.

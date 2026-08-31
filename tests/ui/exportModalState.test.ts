@@ -4,16 +4,18 @@ import { DEFAULT_SETTINGS } from "../../src/settings/defaultSettings";
 import { ExportNode } from "../../src/types";
 import {
 	applyExportChoiceSelection,
+	EXPORT_CHOICE_LLM_PREFIX,
+	EXPORT_CHOICE_MERMAID,
+	getCurrentExportChoiceValue,
+} from "../../src/utils/exportChoice";
+import {
 	buildContentDisplayTree,
 	clearNodeIdsInSubtree,
 	collapseAllNodes,
 	countTreeNodes,
-	EXPORT_CHOICE_LLM_PREFIX,
-	EXPORT_CHOICE_MERMAID,
 	estimateExportCharacterCount,
 	formatTokenCountMessage,
 	getAddedItemScopeText,
-	getCurrentExportChoiceValue,
 	getExportTreeSource,
 	getTreeCacheKey,
 	markUserDeselectedSubtree,

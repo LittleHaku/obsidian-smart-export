@@ -68,6 +68,32 @@ describe("MermaidExporter", () => {
 		expect(output).not.toContain("Synthetic");
 	});
 
+	it("renders cyclic legacy trees without revisiting note objects", () => {
+		const root = createNode("Root", "root.md");
+		const child = createNode("Child", "child.md", 1);
+		root.children.push(child);
+		child.children.push(root);
+
+		const output = new MermaidExporter().export(root);
+		const edgeLines = output.split("\n").filter((line) => line.includes(" --> "));
+
+		expect(output.match(/\["Root"\]/g)).toHaveLength(1);
+		expect(output.match(/\["Child"\]/g)).toHaveLength(1);
+		expect(edgeLines).toHaveLength(2);
+	});
+
+	it("escapes embedded link labels and block targets", () => {
+		const root = createNode("Original", "root.md");
+		const output = new MermaidExporter().export(root, {
+			labelsByNoteId: new Map([["root.md", 'Label <tag> & "details"']]),
+			internalLinkBlockIdsByNoteId: new Map([["root.md", `target'&"<>\nnext`]]),
+		});
+
+		expect(output).toContain(
+			`<a class='internal-link' href='#^target&#39;&amp;&quot;&lt;&gt; next'>Label &lt;tag&gt; &amp; &quot;details&quot;</a>`
+		);
+	});
+
 	it("adds a suffix when generated IDs collide", () => {
 		const exporter = new MermaidExporter();
 		const hash = (exporter as unknown as { hash: (value: string) => string }).hash;

@@ -170,6 +170,12 @@ Use `{{note_contents_page_separated}}` when a custom Markdown template should pl
 exported note on a separate page. Existing `{{note_contents}}` templates keep their divider
 behavior unchanged.
 
+Use `{{mermaid_diagram}}` in a custom template to insert the complete fenced Mermaid graph.
+When the same template also contains `{{note_contents}}`, `{{note_contents_section}}`, or
+`{{note_contents_page_separated}}`, note titles in the diagram become HTML internal links to
+the first rendered note-content section. Navigation is an Obsidian-specific enhancement;
+other Mermaid renderers should still display the graph but may not preserve those links.
+
 ## Keyboard Shortcuts
 
 - Primary command: `Smart Export: Open export`

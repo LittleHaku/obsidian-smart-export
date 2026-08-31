@@ -667,6 +667,11 @@ export function buildExportedHeadingLabels(notes: ExportNode[]): Map<string, str
 	);
 }
 
+export function buildExportedNoteBlockIds(notes: ExportNode[]): Map<string, string> {
+	// Position keeps IDs short, deterministic for one rendered export, and collision-free.
+	return new Map(notes.map((note, index) => [note.id, `smart-export-note-${index + 1}`]));
+}
+
 export function buildExportedMarkdownLinkIndex(
 	notes: ExportNode[],
 	getHeadingTarget: (note: ExportNode, index: number) => string

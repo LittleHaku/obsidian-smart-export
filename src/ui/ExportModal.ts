@@ -11,7 +11,7 @@ import {
 } from "obsidian";
 import { RootNoteSuggestModal } from "./RootNoteSuggestModal";
 import { TagSuggestModal } from "./TagSuggestModal";
-import { ExportNode, LinkTraversalMode, SmartExportSettings } from "../types";
+import { ExportFormat, ExportNode, LinkTraversalMode, SmartExportSettings } from "../types";
 import {
 	DEFAULT_BUILTIN_LLM_TEMPLATE_ID,
 	LlmMarkdownTemplateOption,
@@ -29,13 +29,21 @@ import { createExportNote } from "../utils/exportNote";
 import { ExportNoteDestinationModal } from "./ExportNoteDestinationModal";
 import { normalizeNoteTag } from "../utils/noteFilters";
 import { createLinkedDescription } from "../utils/linkedDescription";
+import {
+	applyExportChoiceSelection as selectExportChoice,
+	EXPORT_CHOICE_LLM_PREFIX,
+	EXPORT_CHOICE_MERMAID,
+	EXPORT_CHOICE_PRINT_FRIENDLY,
+	EXPORT_CHOICE_XML,
+	getAvailableLlmTemplateOptions as getTemplateOptions,
+	getCurrentExportChoiceValue as getExportChoiceValue,
+} from "../utils/exportChoice";
 import { TagDiscoveryService } from "../tagDiscovery";
 import { serializeSelectedExport } from "./exportExecution";
 import { buildExportTreeFromSelection } from "./exportTreeController";
 import {
 	AddedExportItem,
 	AddedNoteMode,
-	applyExportChoiceSelection as selectExportChoice,
 	buildContentDisplayTree as createContentDisplayTree,
 	clearNodeIdsInSubtree,
 	collapseAllNodes as collapseTree,
@@ -45,17 +53,11 @@ import {
 	estimateTokensFromCharacterCount,
 	expandAllNodes as expandTree,
 	ExportSourceMode,
-	EXPORT_CHOICE_LLM_PREFIX,
-	EXPORT_CHOICE_MERMAID,
-	EXPORT_CHOICE_PRINT_FRIENDLY,
-	EXPORT_CHOICE_XML,
 	flattenExportTree as flattenTree,
 	formatTokenCountMessage as formatTokenEstimate,
 	getAddedItemPathText as getExportItemPathText,
 	getAddedItemScopeText as getExportItemScopeText,
 	getAddedItemTitle as getExportItemTitle,
-	getAvailableLlmTemplateOptions as getTemplateOptions,
-	getCurrentExportChoiceValue as getExportChoiceValue,
 	getDomSafeId as createDomSafeId,
 	getExportSourceName as createExportSourceName,
 	getExportTreeSource as createExportTreeSource,
@@ -106,7 +108,7 @@ export class ExportModal extends Modal {
 	/** Which link directions are followed when building the tree. */
 	private linkTraversalMode: LinkTraversalMode = "outgoing";
 	/** The selected export format. */
-	private exportFormat: "xml" | "llm-markdown" | "print-friendly-markdown" | "mermaid";
+	private exportFormat: ExportFormat;
 	/** The selected LLM template id for markdown exports. */
 	private selectedLlmTemplateId: string = DEFAULT_BUILTIN_LLM_TEMPLATE_ID;
 	/** Available built-in and custom template options. */

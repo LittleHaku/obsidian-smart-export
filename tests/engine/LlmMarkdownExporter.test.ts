@@ -361,6 +361,103 @@ console.log("code block");
 	});
 
 	describe("Template Rendering", () => {
+		it("renders a complete non-navigable Mermaid diagram without note contents", () => {
+			const child = createMockExportNode("Child", "child.md", 1, "Child content");
+			const rootNode = createMockExportNode("Root", "root.md", 0, "Root content", [child]);
+			const exporter = new LlmMarkdownExporter();
+
+			const result = exporter.export(rootNode, "TemplateVault", 0, "{{mermaid_diagram}}");
+
+			expect(result).toContain("```mermaid\nflowchart TD");
+			expect(result).toContain('["Root"]');
+			expect(result).toContain('["Child"]');
+			expect(result).not.toContain("internal-link");
+			expect(result).toMatch(/\n```$/);
+		});
+
+		it("links embedded Mermaid titles to anchored note contents", () => {
+			const child = createMockExportNode("Child", "child.md", 1, "Child content");
+			const rootNode = createMockExportNode("Root", "root.md", 0, "Root content", [child]);
+			const exporter = new LlmMarkdownExporter();
+
+			const result = exporter.export(
+				rootNode,
+				"TemplateVault",
+				0,
+				"{{mermaid_diagram}}\n\n{{note_contents}}"
+			);
+
+			expect(result).toContain(
+				`["<a class='internal-link' href='#^smart-export-note-1'>Root</a>"]`
+			);
+			expect(result).toContain(
+				`["<a class='internal-link' href='#^smart-export-note-2'>Child</a>"]`
+			);
+			expect(result).toContain("## Root ^smart-export-note-1\n\nRoot content");
+			expect(result).toContain("## Child ^smart-export-note-2\n\nChild content");
+		});
+
+		it("uses disambiguated labels and unique anchors despite heading collisions", () => {
+			const duplicateA = createMockExportNode("Duplicate", "folder-a/Duplicate.md", 1, "A");
+			const duplicateB = createMockExportNode("Duplicate", "folder-b/Duplicate.md", 1, "B");
+			const rootNode = createMockExportNode(
+				"Root",
+				"root.md",
+				0,
+				"## Duplicate (folder-a/Duplicate)\n\nWrong earlier heading",
+				[duplicateA, duplicateB]
+			);
+			const exporter = new LlmMarkdownExporter();
+
+			const result = exporter.export(
+				rootNode,
+				"TemplateVault",
+				0,
+				"{{mermaid_diagram}}\n\n{{note_contents}}"
+			);
+
+			expect(result).toContain(`href='#^smart-export-note-2'>Duplicate (folder-a/Duplicate)</a>`);
+			expect(result).toContain(`href='#^smart-export-note-3'>Duplicate (folder-b/Duplicate)</a>`);
+			expect(result).toContain("## Duplicate (folder-a/Duplicate) ^smart-export-note-2\n\nA");
+			expect(result).toContain("## Duplicate (folder-b/Duplicate) ^smart-export-note-3\n\nB");
+		});
+
+		it("anchors only the first recognized note contents placeholder", () => {
+			const rootNode = createMockExportNode("Root", "root.md", 0, "Root content");
+			const exporter = new LlmMarkdownExporter();
+			const template = `{{mermaid_diagram}}
+
+{{note_contents_section}}
+
+{{note_contents_page_separated}}
+
+{{note_contents}}
+
+{{mermaid_diagram}}`;
+
+			const result = exporter.export(rootNode, "TemplateVault", 0, template);
+
+			expect(result.match(/href='#\^smart-export-note-1'/g)).toHaveLength(2);
+			expect(result.match(/## Root \^smart-export-note-1/g)).toHaveLength(1);
+			expect(result.match(/## Root\n\nRoot content/g)).toHaveLength(2);
+		});
+
+		it.each(["note_contents", "note_contents_section", "note_contents_page_separated"])(
+			"enables Mermaid navigation with {{%s}}",
+			(placeholder) => {
+				const rootNode = createMockExportNode("Root", "root.md", 0, "Root content");
+				const result = new LlmMarkdownExporter().export(
+					rootNode,
+					"TemplateVault",
+					0,
+					`{{mermaid_diagram}}\n\n{{${placeholder}}}`
+				);
+
+				expect(result).toContain("href='#^smart-export-note-1'");
+				expect(result).toContain("## Root ^smart-export-note-1");
+			}
+		);
+
 		it("renders custom templates with placeholders", () => {
 			const child = createMockExportNode("Child", "child.md", 1, "Child content");
 			const rootNode = createMockExportNode("Root", "root.md", 0, "Root content", [child]);

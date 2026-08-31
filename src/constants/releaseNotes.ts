@@ -13,6 +13,18 @@ export interface ReleaseNotesEntry {
 
 export const RELEASE_NOTES: ReleaseNotesEntry[] = [
 	{
+		version: "1.18.0-beta.2",
+		date: "2026-09-01",
+		showOnUpdate: true,
+		new: [
+			"Custom Markdown templates can now use {{mermaid_diagram}} to include the complete directed note graph.",
+			"Embedded Mermaid titles link to their unique exported note sections when the template also includes note contents.",
+		],
+		changed: [
+			"Repeated content targets only the first rendered copy, while diagrams without note contents remain non-navigable instead of creating broken links.",
+		],
+	},
+	{
 		version: "1.18.0-beta.1",
 		date: "2026-08-28",
 		showOnUpdate: true,

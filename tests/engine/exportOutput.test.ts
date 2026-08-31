@@ -75,6 +75,19 @@ describe("exportOutput", () => {
 		expect(output).toContain("Root=Root|Count=2");
 	});
 
+	it("builds navigable Mermaid diagrams inside custom Markdown templates", () => {
+		const output = buildExportOutput({
+			rootNode: createTree(),
+			vaultPath: "Vault",
+			format: "llm-markdown",
+			llmMarkdownTemplate: "{{mermaid_diagram}}\n\n{{note_contents}}",
+		});
+
+		expect(output).toContain("```mermaid\nflowchart TD");
+		expect(output).toContain("class='internal-link'");
+		expect(output).toContain("## Root ^smart-export-note-1");
+	});
+
 	it("builds print-friendly markdown output", () => {
 		const output = buildExportOutput({
 			rootNode: createTree(),

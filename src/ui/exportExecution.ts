@@ -1,11 +1,11 @@
 import { App } from "obsidian";
 import { buildExportOutput } from "../engine/exportOutput";
-import { ExportNode, SmartExportSettings } from "../types";
+import { ExportFormat, ExportNode, SmartExportSettings } from "../types";
 import { getContentRedactionOptions } from "../utils/contentRedaction";
 import { resolveLlmMarkdownTemplate } from "../utils/llmMarkdownTemplateResolver";
 import { getPrintFriendlyMarkdownOptions } from "../utils/printFriendlyMarkdownOptions";
 import { applyContentSelection } from "./treeContentSelection";
-import { estimateTokensFromCharacterCount, ExportFormat } from "./exportModalState";
+import { estimateTokensFromCharacterCount } from "./exportModalState";
 
 export interface SerializeSelectedExportOptions {
 	app: App;

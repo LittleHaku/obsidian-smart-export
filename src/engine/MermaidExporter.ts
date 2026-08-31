@@ -22,9 +22,15 @@ interface MermaidEdge {
 	target: string;
 }
 
+export interface MermaidExportOptions {
+	/** Optional display labels and same-note Obsidian block targets for embedded diagrams. */
+	labelsByNoteId?: ReadonlyMap<string, string>;
+	internalLinkBlockIdsByNoteId?: ReadonlyMap<string, string>;
+}
+
 /** Serializes the selected export graph into a Mermaid flowchart. */
 export class MermaidExporter {
-	public export(rootNode: ExportNode): string {
+	public export(rootNode: ExportNode, options: MermaidExportOptions = {}): string {
 		const notes = this.flattenTree(rootNode);
 		const mermaidNotes = this.createMermaidNotes(notes);
 		const mermaidIds = new Map(mermaidNotes.map((note) => [note.node.id, note.mermaidId]));
@@ -35,7 +41,12 @@ export class MermaidExporter {
 
 		const lines = ["```mermaid", "flowchart TD"];
 		for (const { node, mermaidId } of mermaidNotes) {
-			lines.push(`    ${mermaidId}["${this.escapeLabel(node.title)}"]`);
+			const label = options.labelsByNoteId?.get(node.id) ?? node.title;
+			const blockId = options.internalLinkBlockIdsByNoteId?.get(node.id);
+			const renderedLabel = blockId
+				? `<a class='internal-link' href='#^${this.escapeAttribute(blockId)}'>${this.escapeLabel(label)}</a>`
+				: this.escapeLabel(label);
+			lines.push(`    ${mermaidId}["${renderedLabel}"]`);
 		}
 
 		if (edges.length > 0) {
@@ -65,10 +76,13 @@ export class MermaidExporter {
 	private flattenTree(rootNode: ExportNode): ExportNode[] {
 		const notes: ExportNode[] = [];
 		const seenIds = new Set<string>();
+		const visitedNodes = new Set<ExportNode>();
 		const queue: ExportNode[] = [rootNode];
 
 		for (let index = 0; index < queue.length; index += 1) {
 			const node = queue[index];
+			if (visitedNodes.has(node)) continue;
+			visitedNodes.add(node);
 			if (!isSyntheticExportNode(node) && !seenIds.has(node.id)) {
 				seenIds.add(node.id);
 				notes.push(node);
@@ -118,19 +132,24 @@ export class MermaidExporter {
 	private addTreeEdges(
 		node: ExportNode,
 		mermaidIds: Map<string, string>,
-		edges: Map<string, MermaidEdge>
+		edges: Map<string, MermaidEdge>,
+		visitedNodes: Set<ExportNode> = new Set()
 	): void {
+		if (visitedNodes.has(node)) return;
+		visitedNodes.add(node);
 		if (!isSyntheticExportNode(node)) {
 			for (const child of node.children) {
 				if (!isSyntheticExportNode(child)) {
 					this.addEdge(edges, mermaidIds, node.id, child.id);
 				}
-				this.addTreeEdges(child, mermaidIds, edges);
+				this.addTreeEdges(child, mermaidIds, edges, visitedNodes);
 			}
 			return;
 		}
 
-		for (const child of node.children) this.addTreeEdges(child, mermaidIds, edges);
+		for (const child of node.children) {
+			this.addTreeEdges(child, mermaidIds, edges, visitedNodes);
+		}
 	}
 
 	private addEdge(
@@ -157,6 +176,10 @@ export class MermaidExporter {
 			.replace(/>/g, "&gt;")
 			.replace(/"/g, "&quot;")
 			.replace(/[\r\n]+/g, " ");
+	}
+
+	private escapeAttribute(value: string): string {
+		return this.escapeLabel(value).replace(/'/g, "&#39;");
 	}
 
 	private hash(value: string): string {
