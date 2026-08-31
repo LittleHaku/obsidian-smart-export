@@ -144,6 +144,20 @@ External references used by this repository:
 
 - Scan changed code for deprecated Obsidian API usage before finishing.
 
+## Agent skills
+
+### Issue tracker
+
+Issues and specs are tracked in this repository's GitHub Issues. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Triage uses the five canonical labels without overrides. See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Domain documentation uses the single-context layout. See `docs/agents/domain.md`.
+
 ## Skills in this repository
 
 Repository-local skill for Obsidian plugin development is available at:
