@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<title>Mermaid in-export link prototype</title>
+		<style>
+			:root { color-scheme: light dark; font-family: system-ui, sans-serif; --accent: #6d5bd0; }
+			body { max-width: 860px; margin: 0 auto; padding: 32px 20px 64px; line-height: 1.5; }
+			h1, h2 { line-height: 1.2; }
+			.panel { border: 1px solid #8886; border-radius: 12px; padding: 18px; margin: 18px 0; }
+			.status { display: grid; grid-template-columns: 10rem 1fr; gap: 8px 16px; }
+			button { border: 1px solid var(--accent); border-radius: 8px; padding: 9px 13px; margin: 4px; cursor: pointer; }
+			button.primary { background: var(--accent); color: white; }
+			pre { white-space: pre-wrap; overflow-wrap: anywhere; background: #8881; padding: 14px; border-radius: 8px; }
+			.tabs { display: flex; gap: 6px; border-bottom: 1px solid #8886; }
+			.tabs button[aria-selected="true"] { background: var(--accent); color: white; }
+			.hidden { display: none; }
+		</style>
+	</head>
+	<body>
+		<h1>Mermaid in-export link prototype</h1>
+		<p>
+			Question: can current Obsidian render a Mermaid node with a clean visible title while a
+			click navigates to a unique block anchor in the same exported note?
+		</p>
+		<section class="panel">
+			<h2>Validated verdict</h2>
+			<p>
+				On current Obsidian, the HTML <code>internal-link</code> candidate navigates correctly
+				with both a clean target and an earlier colliding heading. Mermaid <code>click</code>
+				does not navigate. The visible-destination control also works, but exposes the anchor.
+			</p>
+		</section>
+
+		<section class="panel">
+			<h2>Current state</h2>
+			<div class="status">
+				<strong>Candidate</strong><span id="candidate-name"></span>
+				<strong>Visible label</strong><span id="visible-label"></span>
+				<strong>Destination</strong><span id="destination"></span>
+				<strong>Observed result</strong><span id="result">Not tested</span>
+			</div>
+			<pre id="markdown"></pre>
+		</section>
+
+		<section class="panel">
+			<h2>Free play</h2>
+			<button data-candidate="click">Mermaid click</button>
+			<button data-candidate="html">HTML internal link</button>
+			<button data-candidate="control">Visible destination control</button>
+			<button class="primary" id="copy">Copy test note</button>
+			<button id="download">Download test note</button>
+			<button data-result="Navigated to the unique target">Mark success</button>
+			<button data-result="Rendered but did not navigate">Mark navigation failure</button>
+			<button data-result="Diagram failed to render">Mark render failure</button>
+		</section>
+
+		<section class="panel">
+			<h2>Guided walkthroughs</h2>
+			<div class="tabs" role="tablist">
+				<button aria-selected="true" data-tab="clean">Clean label</button>
+				<button aria-selected="false" data-tab="collision">Heading collision</button>
+			</div>
+			<div id="clean">
+				<p>Choose “Mermaid click”, copy the note into Obsidian, switch to reading view, and click “Clean target”. It must jump to the second heading without changing the node label.</p>
+				<button data-candidate="click">1. Select candidate</button>
+				<button id="copy-clean">2. Copy note</button>
+				<button data-result="Navigated to the unique target">3. Record success</button>
+			</div>
+			<div id="collision" class="hidden">
+				<p>The note deliberately contains an earlier heading with the same text. A successful click must skip it and land on the block carrying the unique anchor.</p>
+				<button data-candidate="click">1. Select candidate</button>
+				<button id="copy-collision">2. Copy collision note</button>
+				<button data-result="Navigated to the unique target despite the collision">3. Record success</button>
+			</div>
+		</section>
+
+		<script>
+			const candidates = {
+				click: {
+					name: "Mermaid click with a block fragment",
+					label: "Clean target",
+					destination: "#^smart-export-target",
+					interaction: '    click target "#^smart-export-target" "Jump to exported note"',
+				},
+				html: {
+					name: "HTML internal link inside the node label",
+					label: "Clean target",
+					destination: "#^smart-export-target",
+					node: '    target["<a class=\'internal-link\' href=\'#^smart-export-target\'>Clean target</a>"]',
+				},
+				control: {
+					name: "Obsidian internal-link control",
+					label: "#^smart-export-target (not clean)",
+					destination: "#^smart-export-target",
+					node: '    target["#^smart-export-target"]',
+					interaction: "    class target internal-link",
+				},
+			};
+
+			let state = { candidate: "click", collision: false, result: "Not tested" };
+
+			function buildPrototypeNote(current) {
+				const candidate = candidates[current.candidate];
+				const node = candidate.node ?? '    target["Clean target"]';
+				const collision = current.collision
+					? "## Clean target\n\n❌ WRONG EARLIER HEADING — the click must not stop here.\n\n"
+					: "";
+				const spacer = Array.from(
+					{ length: 40 },
+					(_, index) => `> Scroll spacer ${index + 1} — keep going to the green target.`
+				).join("\n\n");
+				return [
+					"# Mermaid link prototype",
+					"",
+					"```mermaid",
+					"flowchart TD",
+					node,
+					candidate.interaction ?? "",
+					"```",
+					"",
+					collision + spacer,
+					"## ✅ CORRECT TARGET: Clean target ^smart-export-target",
+					"",
+					"✅ Navigation worked only if this green target is now visible.",
+				].filter((line) => line !== "").join("\n");
+			}
+
+			function render() {
+				const candidate = candidates[state.candidate];
+				document.querySelector("#candidate-name").textContent = candidate.name;
+				document.querySelector("#visible-label").textContent = candidate.label;
+				document.querySelector("#destination").textContent = candidate.destination;
+				document.querySelector("#result").textContent = state.result;
+				document.querySelector("#markdown").textContent = buildPrototypeNote(state);
+			}
+
+			async function copyNote(collision = state.collision) {
+				state = { ...state, collision };
+				await navigator.clipboard.writeText(buildPrototypeNote(state));
+				render();
+			}
+
+			document.querySelectorAll("[data-candidate]").forEach((button) => {
+				button.addEventListener("click", () => {
+					state = { ...state, candidate: button.dataset.candidate, result: "Not tested" };
+					render();
+				});
+			});
+			document.querySelectorAll("[data-result]").forEach((button) => {
+				button.addEventListener("click", () => {
+					state = { ...state, result: button.dataset.result };
+					render();
+				});
+			});
+			document.querySelector("#copy").addEventListener("click", () => copyNote());
+			document.querySelector("#copy-clean").addEventListener("click", () => copyNote(false));
+			document.querySelector("#copy-collision").addEventListener("click", () => copyNote(true));
+			document.querySelector("#download").addEventListener("click", () => {
+				const blob = new Blob([buildPrototypeNote(state)], { type: "text/markdown" });
+				const link = document.createElement("a");
+				link.href = URL.createObjectURL(blob);
+				link.download = "mermaid-link-prototype.md";
+				link.click();
+				URL.revokeObjectURL(link.href);
+			});
+			document.querySelectorAll("[data-tab]").forEach((button) => {
+				button.addEventListener("click", () => {
+					document.querySelectorAll("[data-tab]").forEach((item) => item.setAttribute("aria-selected", String(item === button)));
+					document.querySelector("#clean").classList.toggle("hidden", button.dataset.tab !== "clean");
+					document.querySelector("#collision").classList.toggle("hidden", button.dataset.tab !== "collision");
+					state = { ...state, collision: button.dataset.tab === "collision", result: "Not tested" };
+					render();
+				});
+			});
+			render();
+		</script>
+	</body>
+</html>
