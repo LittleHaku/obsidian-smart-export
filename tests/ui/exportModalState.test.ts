@@ -4,14 +4,18 @@ import { DEFAULT_SETTINGS } from "../../src/settings/defaultSettings";
 import { ExportNode } from "../../src/types";
 import {
 	applyExportChoiceSelection,
+	EXPORT_CHOICE_LLM_PREFIX,
+	EXPORT_CHOICE_MERMAID,
+	getCurrentExportChoiceValue,
+} from "../../src/utils/exportChoice";
+import {
 	buildContentDisplayTree,
 	clearNodeIdsInSubtree,
 	collapseAllNodes,
 	countTreeNodes,
-	EXPORT_CHOICE_LLM_PREFIX,
+	estimateExportCharacterCount,
 	formatTokenCountMessage,
 	getAddedItemScopeText,
-	getCurrentExportChoiceValue,
 	getExportTreeSource,
 	getTreeCacheKey,
 	markUserDeselectedSubtree,
@@ -52,6 +56,30 @@ describe("exportModalState", () => {
 		expect(getCurrentExportChoiceValue(custom, [])).toBe(
 			`${EXPORT_CHOICE_LLM_PREFIX}builtin:default`
 		);
+	});
+
+	it("selects Mermaid as a graph output", () => {
+		const state = applyExportChoiceSelection(
+			{ format: "xml" as const, templateId: "builtin:default" },
+			EXPORT_CHOICE_MERMAID
+		);
+
+		expect(state).toEqual({ format: "mermaid", templateId: "builtin:default" });
+		expect(getCurrentExportChoiceValue(state, [])).toBe(EXPORT_CHOICE_MERMAID);
+	});
+
+	it("estimates Mermaid output without counting note content", () => {
+		const root = createNode("root.md", [createNode("child.md")]);
+		const estimate = estimateExportCharacterCount(
+			root,
+			new Set(["root.md", "child.md"]),
+			"mermaid",
+			DEFAULT_SETTINGS,
+			"Vault",
+			0
+		);
+
+		expect(estimate).toBe(80 + "root.md".length + "child.md".length + 2 * 85);
 	});
 
 	it("builds collision-safe cache keys for mixed session-only additions", () => {

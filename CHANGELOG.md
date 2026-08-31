@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.18.0-beta.2] - 2026-09-01
+
+### Added
+
+- Custom Markdown templates can now use `{{mermaid_diagram}}` to insert the complete fenced Mermaid graph.
+- Mermaid diagrams embedded alongside a recognized note-content placeholder link note titles to unique sections in the same Obsidian export.
+
+### Changed
+
+- Repeated template content targets only the first rendered copy, duplicate note titles include their vault paths, and diagrams without exported content remain non-navigable.
+
+## [1.18.0-beta.1] - 2026-08-28
+
+### Added
+
+- Added Mermaid diagram export with stable note IDs, directed links, and depth-based node styles.
+- Mermaid exports preserve discovered cross-links and link direction for outgoing, incoming, and both traversal modes.
+
 ## [1.17.0] - 2026-08-05
 
 ### Added

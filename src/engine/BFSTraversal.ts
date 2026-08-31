@@ -33,6 +33,12 @@ export interface BFSTraversalOptions {
 	ignoredTraversalPropertyRules?: string[];
 }
 
+interface DiscoveredLink {
+	file: TFile;
+	sourcePath: string;
+	targetPath: string;
+}
+
 /**
  * Implements a Breadth-First Search (BFS) traversal engine to discover and structure
  * linked notes from a starting root note.
@@ -48,6 +54,7 @@ export class BFSTraversal {
 	private ignoredTraversalPropertyRules: PropertyFilterRule[];
 	private visited: Set<string> = new Set();
 	private missingNotes: Set<string> = new Set();
+	private discoveredOutgoingLinks: Map<string, Set<string>> = new Map();
 
 	/**
 	 * Creates an instance of the BFSTraversal engine.
@@ -93,6 +100,7 @@ export class BFSTraversal {
 		// Clear missing notes from any previous traversal
 		this.missingNotes.clear();
 		this.visited.clear();
+		this.discoveredOutgoingLinks.clear();
 
 		const rootFile = this.obsidianAPI.getTFile(rootNotePath);
 		if (!rootFile) {
@@ -103,6 +111,7 @@ export class BFSTraversal {
 		const rootNode = this.createExportNode(rootFile, 0);
 		this.visited.add(rootFile.path);
 		this.traverseQueue([{ file: rootFile, depth: 0, parent: rootNode }]);
+		this.applyDiscoveredOutgoingLinks(rootNode);
 
 		await this.updateNodeContent(rootNode);
 
@@ -115,6 +124,7 @@ export class BFSTraversal {
 	public async traverseTag(tag: string): Promise<ExportNode | null> {
 		this.missingNotes.clear();
 		this.visited.clear();
+		this.discoveredOutgoingLinks.clear();
 
 		const rootFiles = this.obsidianAPI
 			.getFilesMatchingTag(tag)
@@ -138,6 +148,7 @@ export class BFSTraversal {
 			roots: rootNodes,
 		})!;
 
+		this.applyDiscoveredOutgoingLinks(rootNode);
 		await this.updateNodeContent(rootNode);
 		return rootNode;
 	}
@@ -157,6 +168,7 @@ export class BFSTraversal {
 			depth,
 			includeContent: depth <= this.contentDepth,
 			children: [],
+			outgoingLinks: [],
 			tokenCount: 0, // Token counting will be implemented later
 			lastModified: new Date(file.stat.mtime),
 		};
@@ -171,11 +183,14 @@ export class BFSTraversal {
 
 			if (depth >= this.titleDepth) continue;
 
-			const linkedFiles = this.getLinkedFiles(file);
-			for (const linkedFile of linkedFiles) {
+			const discoveredLinks = this.getDiscoveredLinks(file);
+			for (const discoveredLink of discoveredLinks) {
+				const linkedFile = discoveredLink.file;
 				// Global exclusions are applied before any node is added to the tree.
 				// Excluded notes are not traversed further, so links "from them" are ignored too.
 				if (this.shouldExcludeTraversalFile(linkedFile)) continue;
+
+				this.recordDiscoveredLink(discoveredLink.sourcePath, discoveredLink.targetPath);
 				if (this.visited.has(linkedFile.path)) continue;
 
 				this.visited.add(linkedFile.path);
@@ -199,29 +214,60 @@ export class BFSTraversal {
 	 * Gets linked files based on the configured traversal mode.
 	 * @private
 	 */
-	private getLinkedFiles(file: TFile): TFile[] {
-		const linkedFiles: TFile[] = [];
-		const seenPaths = new Set<string>();
+	private getDiscoveredLinks(file: TFile): DiscoveredLink[] {
+		const discoveredLinks: DiscoveredLink[] = [];
+		const seenEdges = new Set<string>();
+		const addDiscoveredLink = (link: DiscoveredLink): void => {
+			const edgeKey = `${link.sourcePath}\u0000${link.targetPath}`;
+			if (seenEdges.has(edgeKey)) return;
+			seenEdges.add(edgeKey);
+			discoveredLinks.push(link);
+		};
 
 		if (this.linkTraversalMode === "outgoing" || this.linkTraversalMode === "both") {
 			const outgoingFiles = this.getOutgoingLinkedFiles(file);
 			for (const outgoingFile of outgoingFiles) {
-				if (seenPaths.has(outgoingFile.path)) continue;
-				seenPaths.add(outgoingFile.path);
-				linkedFiles.push(outgoingFile);
+				addDiscoveredLink({
+					file: outgoingFile,
+					sourcePath: file.path,
+					targetPath: outgoingFile.path,
+				});
 			}
 		}
 
 		if (this.linkTraversalMode === "incoming" || this.linkTraversalMode === "both") {
 			const incomingFiles = this.obsidianAPI.getIncomingLinksForFile(file);
 			for (const incomingFile of incomingFiles) {
-				if (seenPaths.has(incomingFile.path)) continue;
-				seenPaths.add(incomingFile.path);
-				linkedFiles.push(incomingFile);
+				addDiscoveredLink({
+					file: incomingFile,
+					sourcePath: incomingFile.path,
+					targetPath: file.path,
+				});
 			}
 		}
 
-		return linkedFiles;
+		return discoveredLinks;
+	}
+
+	private recordDiscoveredLink(sourcePath: string, targetPath: string): void {
+		const targets = this.discoveredOutgoingLinks.get(sourcePath) ?? new Set<string>();
+		targets.add(targetPath);
+		this.discoveredOutgoingLinks.set(sourcePath, targets);
+	}
+
+	private applyDiscoveredOutgoingLinks(rootNode: ExportNode): void {
+		const nodesByPath = new Map<string, ExportNode>();
+		const stack: ExportNode[] = [rootNode];
+		while (stack.length > 0) {
+			const node = stack.pop()!;
+			if (!node.synthetic) nodesByPath.set(node.id, node);
+			stack.push(...node.children);
+		}
+
+		for (const [sourcePath, sourceNode] of nodesByPath) {
+			const targets = this.discoveredOutgoingLinks.get(sourcePath) ?? [];
+			sourceNode.outgoingLinks = [...targets].filter((targetPath) => nodesByPath.has(targetPath));
+		}
 	}
 
 	private shouldExcludeTraversalFile(file: TFile): boolean {

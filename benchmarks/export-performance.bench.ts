@@ -193,10 +193,31 @@ function measureSyncRuns(runs: number, task: () => void): number[] {
 	return durations;
 }
 
+function measureSyncBatches(
+	samples: number,
+	operationsPerSample: number,
+	task: () => void
+): number[] {
+	for (let i = 0; i < operationsPerSample; i++) {
+		task();
+	}
+
+	const durations: number[] = [];
+	for (let sample = 0; sample < samples; sample++) {
+		const start = performance.now();
+		for (let operation = 0; operation < operationsPerSample; operation++) {
+			task();
+		}
+		durations.push((performance.now() - start) / operationsPerSample);
+	}
+	return durations;
+}
+
 describe("Performance benchmarks", () => {
 	it("benchmarks traversal and exporter throughput on a 1k+ note synthetic graph", async () => {
 		const traversalRuns = 5;
-		const exporterRuns = 30;
+		const exporterSamples = 30;
+		const exporterOperationsPerSample = 20;
 		const fixture = createSyntheticGraphFixture(
 			GRAPH_FIXTURE.branchingFactor,
 			GRAPH_FIXTURE.maxDepth,
@@ -229,13 +250,13 @@ describe("Performance benchmarks", () => {
 		let xmlLength = 0;
 		let llmLength = 0;
 		let printLength = 0;
-		const xmlDurations = measureSyncRuns(exporterRuns, () => {
+		const xmlDurations = measureSyncBatches(exporterSamples, exporterOperationsPerSample, () => {
 			xmlLength = xmlExporter.export(rootTree, "benchmark-vault", 0).length;
 		});
-		const llmDurations = measureSyncRuns(exporterRuns, () => {
+		const llmDurations = measureSyncBatches(exporterSamples, exporterOperationsPerSample, () => {
 			llmLength = llmExporter.export(rootTree, "benchmark-vault", 0).length;
 		});
-		const printDurations = measureSyncRuns(exporterRuns, () => {
+		const printDurations = measureSyncBatches(exporterSamples, exporterOperationsPerSample, () => {
 			printLength = printExporter.export(rootTree).length;
 		});
 
@@ -262,9 +283,9 @@ describe("Performance benchmarks", () => {
 			`- BFS traversal median (${traversalRuns} runs): ${traversalMedian.toFixed(2)} ms`,
 			`- Estimated serial read cost: ${expectedSerialReadCostMs.toFixed(2)} ms`,
 			`- Estimated traversal speedup vs serial reads: ${estimatedSpeedup.toFixed(2)}x`,
-			`- XML export median (${exporterRuns} runs): ${median(xmlDurations).toFixed(2)} ms (len ${xmlLength.toLocaleString()})`,
-			`- LLM Markdown export median (${exporterRuns} runs): ${median(llmDurations).toFixed(2)} ms (len ${llmLength.toLocaleString()})`,
-			`- Print-friendly export median (${exporterRuns} runs): ${median(printDurations).toFixed(2)} ms (len ${printLength.toLocaleString()})`,
+			`- XML export median (${exporterSamples} samples x ${exporterOperationsPerSample} exports): ${median(xmlDurations).toFixed(2)} ms/export (len ${xmlLength.toLocaleString()})`,
+			`- LLM Markdown export median (${exporterSamples} samples x ${exporterOperationsPerSample} exports): ${median(llmDurations).toFixed(2)} ms/export (len ${llmLength.toLocaleString()})`,
+			`- Print-friendly export median (${exporterSamples} samples x ${exporterOperationsPerSample} exports): ${median(printDurations).toFixed(2)} ms/export (len ${printLength.toLocaleString()})`,
 			`- Tag discovery cold median (${tagColdRuns} runs, ${tagFileCount.toLocaleString()} notes): ${median(tagColdDurations).toFixed(2)} ms`,
 			`- Tag discovery cached median (${tagCachedRuns} runs): ${median(tagCachedDurations).toFixed(4)} ms`,
 		];
@@ -282,7 +303,8 @@ describe("Performance benchmarks", () => {
 					traversalMedianMs: Number(traversalMedian.toFixed(2)),
 					estimatedSerialReadCostMs: Number(expectedSerialReadCostMs.toFixed(2)),
 					estimatedTraversalSpeedup: Number(estimatedSpeedup.toFixed(2)),
-					exporterRuns,
+					exporterSamples,
+					exporterOperationsPerSample,
 					xmlMedianMs: Number(median(xmlDurations).toFixed(2)),
 					xmlLength,
 					llmMedianMs: Number(median(llmDurations).toFixed(2)),

@@ -63,6 +63,7 @@ Use it once near the top of the template.
 
 - `{{metadata_yaml}}`: YAML frontmatter block with export metadata.
 - `{{included_notes}}`: bullet list like `- Note 1: "Root"`.
+- `{{mermaid_diagram}}`: complete fenced Mermaid graph for the selected note traversal.
 - `{{note_contents}}`: all exported note sections separated by `---`.
 - `{{note_contents_page_separated}}`: all exported note sections separated by HTML page breaks, so each note starts on a new page after the first.
 - `{{note_structure_section}}`: prebuilt "Note Structure" section.
@@ -83,6 +84,44 @@ Use it once near the top of the template.
 - `{{total_notes}}` = `{{total_notes_exported}}`
 - `{{missing_notes}}` = `{{missing_notes_count}}`
 - `{{max_depth}}` = `{{max_depth_used}}`
+
+## Navigable Mermaid Diagrams
+
+`{{mermaid_diagram}}` is intended for custom templates. It expands to the complete fenced
+Mermaid code block, including nodes, directed edges, and depth styles.
+
+Add one of these content placeholders to the same template to make diagram titles navigate to
+their exported note sections:
+
+- `{{note_contents}}`
+- `{{note_contents_section}}`
+- `{{note_contents_page_separated}}`
+
+Example:
+
+```md
+# Export graph
+
+{{mermaid_diagram}}
+
+## Exported notes
+
+{{note_contents}}
+```
+
+Navigation uses HTML links with Obsidian's `internal-link` class and unique same-note block
+anchors. This has several intentional rules:
+
+- Without a recognized note-content placeholder, the diagram remains non-navigable so it never
+  creates broken links.
+- If more than one recognized note-content placeholder appears, links target the first one. Later
+  copies remain unanchored.
+- Every occurrence of `{{mermaid_diagram}}` renders the same complete graph and points to that
+  first content section.
+- Unique note titles stay unchanged. Equal titles are disambiguated with their vault paths in
+  both the graph and exported headings.
+- The graph remains readable in other Mermaid renderers, but internal navigation is only
+  guaranteed in Obsidian because it depends on Obsidian's HTML `internal-link` handling.
 
 ## Minimal Template Example
 

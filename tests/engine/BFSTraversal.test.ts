@@ -174,6 +174,8 @@ describe("BFSTraversal", () => {
 		expect(rootNode?.children[1].title).toBe("B");
 		expect(rootNode?.children[0].children.length).toBe(2);
 		expect(rootNode?.children[0].children[0].title).toBe("C");
+		expect(rootNode?.outgoingLinks).toEqual(["A.md", "B.md"]);
+		expect(rootNode?.children[0].outgoingLinks).toEqual(["C.md", "D.md"]);
 	});
 
 	it("should respect contentDepth and titleDepth", async () => {
@@ -331,6 +333,9 @@ describe("BFSTraversal", () => {
 		expect(rootNode).not.toBeNull();
 		expect(rootNode?.title).toBe("A");
 		expect(rootNode?.children.map((child) => child.title)).toEqual(["D", "root"]);
+		expect(rootNode?.outgoingLinks).toEqual(["D.md"]);
+		expect(rootNode?.children[0].outgoingLinks).toEqual(["A.md"]);
+		expect(rootNode?.children[1].outgoingLinks).toEqual(["A.md"]);
 		expect(traversal.getMissingNotes()).toHaveLength(0);
 	});
 
@@ -755,6 +760,10 @@ describe("BFSTraversal", () => {
 		expect(rootNode?.title).toBe("A");
 		expect(rootNode?.children.map((child) => child.title)).toEqual(["C", "D", "root"]);
 		expect(new Set(rootNode?.children.map((child) => child.id)).size).toBe(3);
+		expect(rootNode?.outgoingLinks).toEqual(["C.md", "D.md"]);
+		expect(rootNode?.children.find((child) => child.id === "root.md")?.outgoingLinks).toEqual([
+			"A.md",
+		]);
 	});
 
 	it("should deduplicate repeated outgoing links to the same file", async () => {

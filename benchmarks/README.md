@@ -42,6 +42,10 @@ The release gate allows traversal/export/tag-discovery duration medians to incre
 25%. Estimated traversal speedup may drop by at most 20%. The warm-cache tag timing is reported but
 is not gated because sub-microsecond timer noise makes ratios misleading.
 
+Fast exporters are warmed up and measured in 30 batches of 20 operations. Each batch is timed as a
+single block and normalized back to milliseconds per export before taking the median. This keeps
+the strict percentage threshold while reducing timer-resolution and runner-scheduling noise.
+
 GitHub Actions checks out the target branch and candidate commit side by side, benchmarks both on
 the same Windows runner, and compares their reports using the target branch's accepted tolerances.
 The candidate cannot relax its own performance gate. Contributors do not need to reproduce the

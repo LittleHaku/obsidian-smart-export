@@ -13,6 +13,27 @@ export interface ReleaseNotesEntry {
 
 export const RELEASE_NOTES: ReleaseNotesEntry[] = [
 	{
+		version: "1.18.0-beta.2",
+		date: "2026-09-01",
+		showOnUpdate: true,
+		new: [
+			"Custom Markdown templates can now use {{mermaid_diagram}} to include the complete directed note graph.",
+			"Embedded Mermaid titles link to their unique exported note sections when the template also includes note contents.",
+		],
+		changed: [
+			"Repeated content targets only the first rendered copy, while diagrams without note contents remain non-navigable instead of creating broken links.",
+		],
+	},
+	{
+		version: "1.18.0-beta.1",
+		date: "2026-08-28",
+		showOnUpdate: true,
+		new: [
+			"Mermaid exports now turn selected note traversals into directed, depth-colored diagrams with stable note IDs.",
+			"Mermaid diagrams preserve cross-links and the direction of outgoing, incoming, and both traversal modes.",
+		],
+	},
+	{
 		version: "1.17.0",
 		date: "2026-08-05",
 		showOnUpdate: true,

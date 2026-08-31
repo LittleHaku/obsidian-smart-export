@@ -7,6 +7,7 @@ import {
 import {
 	buildExportedMarkdownLinkIndex,
 	buildExportedHeadingLabels,
+	buildExportedNoteBlockIds,
 	rewriteMarkdownLinksForExport,
 } from "../utils/exportMarkdownLinks";
 import {
@@ -14,9 +15,17 @@ import {
 	MARKDOWN_SECTION_DIVIDER,
 } from "../utils/markdownSectionSeparators";
 import { isSyntheticExportNode } from "./exportTreeComposition";
+import { MermaidExporter } from "./MermaidExporter";
 
 const DEFAULT_PROCESSING_ORDER = "BFS (Breadth-First Search)";
 const TEMPLATE_PLACEHOLDER_REGEX = /{{\s*([a-z0-9_]+)\s*}}/g;
+const NOTE_CONTENT_PLACEHOLDERS = [
+	"note_contents",
+	"note_contents_section",
+	"note_contents_page_separated",
+] as const;
+
+type NoteContentPlaceholder = (typeof NOTE_CONTENT_PLACEHOLDERS)[number];
 
 interface LlmMarkdownMetadata {
 	export_timestamp: string;
@@ -26,6 +35,16 @@ interface LlmMarkdownMetadata {
 	missing_notes_count: number;
 	max_depth_used: number;
 	processing_order: string;
+}
+
+interface NoteContentsBlock {
+	plain: string;
+	anchored: string;
+}
+
+interface LlmMarkdownTemplateContext {
+	values: Record<string, string>;
+	firstNoteContentValues?: Record<NoteContentPlaceholder, string>;
 }
 
 /**
@@ -47,6 +66,10 @@ export class LlmMarkdownExporter {
 		missingNotes: number = 0,
 		template?: string
 	): string {
+		const templateSource =
+			typeof template === "string" && template.trim().length > 0
+				? template
+				: DEFAULT_BUILTIN_LLM_TEMPLATE_CONTENT;
 		const allNotes = this.flattenTree(rootNode);
 		const maxDepth = allNotes.reduce((max, note) => Math.max(max, note.depth), 0);
 		const context = this.buildTemplateContext(
@@ -54,12 +77,9 @@ export class LlmMarkdownExporter {
 			vaultPath,
 			allNotes,
 			missingNotes,
-			maxDepth
+			maxDepth,
+			templateSource
 		);
-		const templateSource =
-			typeof template === "string" && template.trim().length > 0
-				? template
-				: DEFAULT_BUILTIN_LLM_TEMPLATE_CONTENT;
 
 		return this.renderTemplate(templateSource, context);
 	}
@@ -124,8 +144,9 @@ export class LlmMarkdownExporter {
 
 	private buildNoteContentsBlocks(
 		allNotes: ExportNode[],
-		headingLabels: Map<string, string>
-	): string[] {
+		headingLabels: Map<string, string>,
+		blockIds?: ReadonlyMap<string, string>
+	): NoteContentsBlock[] {
 		const linkIndex = buildExportedMarkdownLinkIndex(allNotes, (note) =>
 			headingLabels.get(note.id)!
 		);
@@ -136,8 +157,24 @@ export class LlmMarkdownExporter {
 				note.id
 			);
 			const headingLabel = headingLabels.get(note.id)!;
-			return `## ${headingLabel}\n\n${rewrittenContent}`;
+			const blockId = blockIds?.get(note.id);
+			const plain = `## ${headingLabel}\n\n${rewrittenContent}`;
+			return {
+				plain,
+				anchored: blockId ? `## ${headingLabel} ^${blockId}\n\n${rewrittenContent}` : plain,
+			};
 		});
+	}
+
+	private buildNoteContentValues(
+		noteContentsBlocks: string[]
+	): Record<NoteContentPlaceholder, string> {
+		const noteContents = noteContentsBlocks.join(`\n\n${MARKDOWN_SECTION_DIVIDER}`);
+		return {
+			note_contents: noteContents,
+			note_contents_section: `## Note Contents\n\n${noteContents}`,
+			note_contents_page_separated: noteContentsBlocks.join(`\n\n${MARKDOWN_PAGE_BREAK_MARKUP}`),
+		};
 	}
 
 	private buildTemplateContext(
@@ -145,8 +182,9 @@ export class LlmMarkdownExporter {
 		vaultPath: string,
 		allNotes: ExportNode[],
 		missingNotes: number,
-		maxDepth: number
-	): Record<string, string> {
+		maxDepth: number,
+		template: string
+	): LlmMarkdownTemplateContext {
 		const metadata = this.buildMetadata(
 			rootNode,
 			vaultPath,
@@ -156,42 +194,80 @@ export class LlmMarkdownExporter {
 		);
 		const metadataYaml = this.buildMetadataYaml(metadata);
 		const headingLabels = buildExportedHeadingLabels(allNotes);
+		const hasNavigableMermaid =
+			this.hasPlaceholder(template, "mermaid_diagram") &&
+			NOTE_CONTENT_PLACEHOLDERS.some((placeholder) => this.hasPlaceholder(template, placeholder));
+		const noteBlockIds = hasNavigableMermaid ? buildExportedNoteBlockIds(allNotes) : undefined;
 		const noteStructureDescription = DEFAULT_NOTE_STRUCTURE_DESCRIPTION;
 		const includedNotes = this.buildIncludedNotes(allNotes, headingLabels);
 		const noteStructureSection = this.buildNoteStructureSection(
 			noteStructureDescription,
 			includedNotes
 		);
-		const noteContentsBlocks = this.buildNoteContentsBlocks(allNotes, headingLabels);
-		const noteContents = noteContentsBlocks.join(`\n\n${MARKDOWN_SECTION_DIVIDER}`);
-		const noteContentsPageSeparated = noteContentsBlocks.join(`\n\n${MARKDOWN_PAGE_BREAK_MARKUP}`);
-		const noteContentsSection = `## Note Contents\n\n${noteContents}`;
+		const noteContentsBlocks = this.buildNoteContentsBlocks(allNotes, headingLabels, noteBlockIds);
+		const noteContentValues = this.buildNoteContentValues(
+			noteContentsBlocks.map((block) => block.plain)
+		);
+		const firstNoteContentValues = noteBlockIds
+			? this.buildNoteContentValues(noteContentsBlocks.map((block) => block.anchored))
+			: undefined;
+		const mermaidDiagram = this.hasPlaceholder(template, "mermaid_diagram")
+			? new MermaidExporter().export(rootNode, {
+					labelsByNoteId: headingLabels,
+					internalLinkBlockIdsByNoteId: noteBlockIds,
+				})
+			: "";
 
 		return {
-			export_timestamp: metadata.export_timestamp,
-			vault_path: metadata.vault_path,
-			starting_note: metadata.starting_note,
-			total_notes_exported: String(metadata.total_notes_exported),
-			total_notes: String(metadata.total_notes_exported),
-			missing_notes_count: String(metadata.missing_notes_count),
-			missing_notes: String(metadata.missing_notes_count),
-			max_depth_used: String(metadata.max_depth_used),
-			max_depth: String(metadata.max_depth_used),
-			processing_order: metadata.processing_order,
-			metadata_yaml: metadataYaml,
-			note_structure_description: noteStructureDescription,
-			included_notes: includedNotes,
-			note_structure_section: noteStructureSection,
-			note_contents: noteContents,
-			note_contents_section: noteContentsSection,
-			note_contents_page_separated: noteContentsPageSeparated,
+			values: {
+				export_timestamp: metadata.export_timestamp,
+				vault_path: metadata.vault_path,
+				starting_note: metadata.starting_note,
+				total_notes_exported: String(metadata.total_notes_exported),
+				total_notes: String(metadata.total_notes_exported),
+				missing_notes_count: String(metadata.missing_notes_count),
+				missing_notes: String(metadata.missing_notes_count),
+				max_depth_used: String(metadata.max_depth_used),
+				max_depth: String(metadata.max_depth_used),
+				processing_order: metadata.processing_order,
+				metadata_yaml: metadataYaml,
+				note_structure_description: noteStructureDescription,
+				included_notes: includedNotes,
+				note_structure_section: noteStructureSection,
+				...noteContentValues,
+				mermaid_diagram: mermaidDiagram,
+			},
+			...(firstNoteContentValues ? { firstNoteContentValues } : {}),
 		};
 	}
 
-	private renderTemplate(template: string, context: Record<string, string>): string {
+	private hasPlaceholder(template: string, placeholder: string): boolean {
+		for (const match of template.matchAll(TEMPLATE_PLACEHOLDER_REGEX)) {
+			if (match[1]?.trim() === placeholder) return true;
+		}
+		return false;
+	}
+
+	private renderTemplate(template: string, context: LlmMarkdownTemplateContext): string {
+		let hasRenderedFirstNoteContents = false;
 		return template.replace(TEMPLATE_PLACEHOLDER_REGEX, (match, rawKey: string) => {
 			const key = rawKey.trim();
-			return Object.prototype.hasOwnProperty.call(context, key) ? context[key] : match;
+			// Repeated content stays readable without producing duplicate Obsidian block IDs.
+			if (
+				!hasRenderedFirstNoteContents &&
+				this.isNoteContentPlaceholder(key) &&
+				context.firstNoteContentValues
+			) {
+				hasRenderedFirstNoteContents = true;
+				return context.firstNoteContentValues[key];
+			}
+			return Object.prototype.hasOwnProperty.call(context.values, key)
+				? context.values[key]
+				: match;
 		});
+	}
+
+	private isNoteContentPlaceholder(value: string): value is NoteContentPlaceholder {
+		return NOTE_CONTENT_PLACEHOLDERS.includes(value as NoteContentPlaceholder);
 	}
 }

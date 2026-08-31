@@ -1,6 +1,6 @@
 # API reference
 
-Updated: April 1, 2026
+Updated: September 1, 2026
 
 This reference documents current Smart Export behavior exposed to users and contributors.
 
@@ -23,6 +23,7 @@ Defined in `src/main.ts` (`SmartExportSettings` + settings tab):
   - `Default title depth` (`1-20`, kept `>=` content depth)
   - `Default output`
     - XML
+    - Mermaid
     - Print-friendly Markdown
     - Markdown templates (`LLM-ready` built-in + custom templates)
   - `Default link direction`
@@ -52,6 +53,7 @@ Format dispatch is implemented in `src/engine/exportOutput.ts`:
 
 - `xml` via `XMLExporter`
 - `llm-markdown` via `LlmMarkdownExporter`
+- `mermaid` via `MermaidExporter`
 - `print-friendly-markdown` via `PrintFriendlyMarkdownExporter`
   - Uses settings-controlled formatting for table of contents links, heading numbering, note dividers, and page breaks.
   - Normalizes included note content headings below each exported note title heading by default. This can be disabled with `Normalize content headings`.
@@ -67,6 +69,7 @@ Template resolver: `src/utils/llmMarkdownTemplateResolver.ts`.
   - `builtin:compact` (`Compact`, kept as a reference template)
 - Settings/modal dropdowns intentionally show:
   - XML
+  - Mermaid
   - Print-friendly Markdown
   - `LLM-ready`
   - Custom templates from `<template-folder>/*.md`
@@ -79,6 +82,11 @@ Resolution rules:
    - `<template-folder>/llm-markdown.md`
    - first readable `.md` file in folder (sorted path order)
    - built-in default fallback.
+
+Custom templates can use `{{mermaid_diagram}}` to insert a complete fenced Mermaid graph. If
+the template also contains `{{note_contents}}`, `{{note_contents_section}}`, or
+`{{note_contents_page_separated}}`, diagram titles use Obsidian HTML internal links to the first
+rendered content expansion. Other Mermaid renderers are not guaranteed to preserve navigation.
 
 ## Exclusion and traversal behavior
 

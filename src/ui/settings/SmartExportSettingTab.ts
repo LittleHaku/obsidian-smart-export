@@ -26,6 +26,15 @@ import {
 	redactMarkedContent,
 } from "../../utils/contentRedaction";
 import { normalizeExportNoteFolderPath } from "../../utils/exportNote";
+import {
+	applyExportChoiceSelection,
+	EXPORT_CHOICE_LLM_PREFIX,
+	EXPORT_CHOICE_MERMAID,
+	EXPORT_CHOICE_PRINT_FRIENDLY,
+	EXPORT_CHOICE_XML,
+	getAvailableLlmTemplateOptions,
+	getCurrentExportChoiceValue,
+} from "../../utils/exportChoice";
 import { normalizeFolderFilterList } from "../../utils/folderFilters";
 import {
 	DEFAULT_BUILTIN_LLM_TEMPLATE_ID,
@@ -36,14 +45,11 @@ import {
 import { createLinkedDescription } from "../../utils/linkedDescription";
 import { normalizePropertyFilterList, normalizeTagFilterList } from "../../utils/noteFilters";
 
-const DEFAULT_OUTPUT_CHOICE_XML = "format:xml";
-const DEFAULT_OUTPUT_CHOICE_PRINT_FRIENDLY = "format:print-friendly-markdown";
-const DEFAULT_OUTPUT_CHOICE_LLM_PREFIX = "template:";
 const TRAVERSAL_EXCLUSIONS_SAVE_DELAY_MS = 300;
 const REDACTION_REGEX_SAVE_DELAY_MS = 500;
 const TEMPLATE_DIRECTORY_UPDATE_DELAY_MS = 300;
 const DEFAULT_OUTPUT_DESCRIPTION =
-	"Choose your default output: XML, print-friendly Markdown, or a Markdown template. ";
+	"Choose your default output: XML, Mermaid, print-friendly Markdown, or a Markdown template. ";
 const TEMPLATE_DIRECTORY_DESCRIPTION =
 	"Vault-relative folder for custom Markdown templates. The folder must be visible inside Obsidian. Every .md file in this folder is available as a custom template option.";
 const DEFAULT_REDACTION_REGEX_SAMPLE_TEXT = [
@@ -63,54 +69,13 @@ export type SmartExportSettingsPlugin = Plugin & {
 	saveSettings(): Promise<void>;
 };
 
-function getAvailableTemplateOptions(
-	templateOptions: LlmMarkdownTemplateOption[]
-): LlmMarkdownTemplateOption[] {
-	if (templateOptions.length > 0) {
-		return templateOptions;
-	}
-	return [
-		{
-			id: DEFAULT_BUILTIN_LLM_TEMPLATE_ID,
-			label: "LLM-ready",
-			source: "builtin",
-		},
-	];
-}
-
-function getCurrentDefaultOutputChoice(
-	settings: SmartExportSettings,
-	templateOptions: LlmMarkdownTemplateOption[]
-): string {
-	if (settings.defaultExportFormat === "xml") {
-		return DEFAULT_OUTPUT_CHOICE_XML;
-	}
-	if (settings.defaultExportFormat === "print-friendly-markdown") {
-		return DEFAULT_OUTPUT_CHOICE_PRINT_FRIENDLY;
-	}
-	const options = getAvailableTemplateOptions(templateOptions);
-	const hasSelectedTemplate = options.some((option) => option.id === settings.defaultLlmTemplateId);
-	const templateId = hasSelectedTemplate
-		? settings.defaultLlmTemplateId
-		: DEFAULT_BUILTIN_LLM_TEMPLATE_ID;
-	return `${DEFAULT_OUTPUT_CHOICE_LLM_PREFIX}${templateId}`;
-}
-
 function applyDefaultOutputChoiceToSettings(settings: SmartExportSettings, value: string): void {
-	if (value === DEFAULT_OUTPUT_CHOICE_XML) {
-		settings.defaultExportFormat = "xml";
-		return;
-	}
-	if (value === DEFAULT_OUTPUT_CHOICE_PRINT_FRIENDLY) {
-		settings.defaultExportFormat = "print-friendly-markdown";
-		return;
-	}
-	if (value.startsWith(DEFAULT_OUTPUT_CHOICE_LLM_PREFIX)) {
-		const templateId = value.slice(DEFAULT_OUTPUT_CHOICE_LLM_PREFIX.length);
-		settings.defaultExportFormat = "llm-markdown";
-		settings.defaultLlmTemplateId =
-			templateId.length > 0 ? templateId : DEFAULT_BUILTIN_LLM_TEMPLATE_ID;
-	}
+	const state = applyExportChoiceSelection(
+		{ format: settings.defaultExportFormat, templateId: settings.defaultLlmTemplateId },
+		value
+	);
+	settings.defaultExportFormat = state.format;
+	settings.defaultLlmTemplateId = state.templateId;
 }
 
 function isExportTarget(value: unknown): value is ExportTarget {
@@ -127,7 +92,7 @@ function clampDepth(value: number): number {
 
 export class SmartExportSettingTab extends PluginSettingTab {
 	plugin: SmartExportSettingsPlugin;
-	private defaultOutputTemplateOptions = getAvailableTemplateOptions([]);
+	private defaultOutputTemplateOptions = getAvailableLlmTemplateOptions([]);
 	private defaultOutputDropdown: DropdownComponent | null = null;
 	private titleDepthSlider: SliderComponent | null = null;
 	private templateOptionsDirectory: string | null = null;
@@ -680,20 +645,26 @@ export class SmartExportSettingTab extends PluginSettingTab {
 		dropdown: DropdownComponent,
 		templateOptions: LlmMarkdownTemplateOption[]
 	): void {
-		const availableOptions = getAvailableTemplateOptions(templateOptions);
+		const availableOptions = getAvailableLlmTemplateOptions(templateOptions);
 		dropdown.selectEl.empty();
-		dropdown.addOption(DEFAULT_OUTPUT_CHOICE_XML, "XML - structured format with metadata");
+		dropdown.addOption(EXPORT_CHOICE_XML, "XML - structured format with metadata");
 		dropdown.addOption(
-			DEFAULT_OUTPUT_CHOICE_PRINT_FRIENDLY,
+			EXPORT_CHOICE_PRINT_FRIENDLY,
 			"Print-friendly Markdown - clean, readable format"
 		);
+		dropdown.addOption(EXPORT_CHOICE_MERMAID, "Mermaid - directed note graph");
 		for (const option of availableOptions) {
-			dropdown.addOption(
-				`${DEFAULT_OUTPUT_CHOICE_LLM_PREFIX}${option.id}`,
-				`Markdown - ${option.label}`
-			);
+			dropdown.addOption(`${EXPORT_CHOICE_LLM_PREFIX}${option.id}`, `Markdown - ${option.label}`);
 		}
-		dropdown.setValue(getCurrentDefaultOutputChoice(this.plugin.settings, availableOptions));
+		dropdown.setValue(
+			getCurrentExportChoiceValue(
+				{
+					format: this.plugin.settings.defaultExportFormat,
+					templateId: this.plugin.settings.defaultLlmTemplateId,
+				},
+				availableOptions
+			)
+		);
 	}
 
 	private async loadDefaultOutputTemplateOptions(): Promise<LlmMarkdownTemplateOption[]> {
@@ -706,7 +677,7 @@ export class SmartExportSettingTab extends PluginSettingTab {
 		const loadedOptions = await listLlmMarkdownTemplateOptions(this.app, directory, {
 			includeCompactBuiltin: false,
 		});
-		const availableOptions = getAvailableTemplateOptions(loadedOptions);
+		const availableOptions = getAvailableLlmTemplateOptions(loadedOptions);
 		if (
 			request !== this.templateOptionsRequest ||
 			directory !== this.plugin.settings.llmMarkdownTemplateDirectory

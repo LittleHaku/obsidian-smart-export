@@ -31,6 +31,7 @@ describe("exportOutput", () => {
 		expect(normalizeExportFormat("xml")).toBe("xml");
 		expect(normalizeExportFormat("llm-markdown")).toBe("llm-markdown");
 		expect(normalizeExportFormat("print-friendly-markdown")).toBe("print-friendly-markdown");
+		expect(normalizeExportFormat("mermaid")).toBe("mermaid");
 	});
 
 	it("normalizes unknown export formats to xml", () => {
@@ -74,6 +75,19 @@ describe("exportOutput", () => {
 		expect(output).toContain("Root=Root|Count=2");
 	});
 
+	it("builds navigable Mermaid diagrams inside custom Markdown templates", () => {
+		const output = buildExportOutput({
+			rootNode: createTree(),
+			vaultPath: "Vault",
+			format: "llm-markdown",
+			llmMarkdownTemplate: "{{mermaid_diagram}}\n\n{{note_contents}}",
+		});
+
+		expect(output).toContain("```mermaid\nflowchart TD");
+		expect(output).toContain("class='internal-link'");
+		expect(output).toContain("## Root ^smart-export-note-1");
+	});
+
 	it("builds print-friendly markdown output", () => {
 		const output = buildExportOutput({
 			rootNode: createTree(),
@@ -86,6 +100,17 @@ describe("exportOutput", () => {
 		expect(output).toContain("Root content");
 		expect(output).toContain("## 1.1 Child");
 		expect(output).toContain("\n\n---\n\n");
+	});
+
+	it("builds Mermaid output", () => {
+		const output = buildExportOutput({
+			rootNode: createTree(),
+			vaultPath: "Vault",
+			format: "mermaid",
+		});
+
+		expect(output).toContain("```mermaid");
+		expect(output).toContain("flowchart TD");
 	});
 
 	it("redacts marked content before exporting", () => {

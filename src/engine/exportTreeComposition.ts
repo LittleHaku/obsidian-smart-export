@@ -35,6 +35,7 @@ export function createStandaloneExportNode(
 		includeContent: true,
 		content: options.content,
 		children: [],
+		outgoingLinks: [],
 		tokenCount: 0,
 		lastModified: new Date(file.stat.mtime),
 	};
